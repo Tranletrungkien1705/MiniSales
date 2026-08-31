@@ -1,0 +1,131 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using MiniSales.Data;
+using MiniSales.Models;
+using MiniSales.Services;
+using Serilog;
+
+JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+FleetObs.ConfigureLogger("minisales");
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
+builder.WebHost.UseUrls($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "8080"}");
+
+var conn = Environment.GetEnvironmentVariable("CONNECTION_STRING")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=minisales.db";
+builder.Services.AddDbContext<AppDbContext>(o =>
+{
+    if (DbUtil.IsPostgres(conn)) o.UseNpgsql(DbUtil.ToNpgsql(conn));
+    else o.UseSqlite(conn);
+});
+builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddScoped<ISalesService, SalesService>();
+
+var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
+{
+    o.Authority = ssoAuthority;
+    o.RequireHttpsMetadata = ssoAuthority.StartsWith("https");
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true, ValidIssuer = ssoAuthority,
+        ValidateAudience = false, ValidateLifetime = true, NameClaimType = "name", RoleClaimType = "role"
+    };
+});
+builder.Services.AddAuthorization();
+builder.Services.AddFleetObs();
+
+var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+    await Seeder.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>());
+
+app.UseFleetObs();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGet("/api/whoami", (ClaimsPrincipal u) => Results.Ok(new
+{
+    app = "minisales",
+    sub = u.FindFirst("sub")?.Value, name = u.Identity?.Name ?? u.FindFirst("name")?.Value,
+    email = u.FindFirst("email")?.Value, tenant = u.FindFirst("tenant")?.Value,
+    roles = u.FindAll("role").Select(c => c.Value)
+})).RequireAuthorization();
+
+app.Use(async (ctx, next) =>
+{
+    var key = ctx.Request.Headers["X-Api-Key"].FirstOrDefault();
+    if (string.IsNullOrWhiteSpace(key)) ctx.Request.Cookies.TryGetValue(TenantContext.CookieName, out key);
+    if (!string.IsNullOrWhiteSpace(key))
+    {
+        using var lookup = app.Services.CreateScope();
+        var ldb = lookup.ServiceProvider.GetRequiredService<AppDbContext>();
+        var org = await ldb.Orgs.FirstOrDefaultAsync(o => o.ApiKey == key);
+        if (org != null) ctx.RequestServices.GetRequiredService<ITenantContext>().OrgId = org.Id;
+    }
+    await next();
+});
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.MapGet("/healthz", () => "ok");
+
+// ===== Hợp đồng bán xe =====
+app.MapPost("/api/orders", async (CreateOrderDto dto, ISalesService svc) =>
+{
+    if (string.IsNullOrWhiteSpace(dto.CustomerName) || string.IsNullOrWhiteSpace(dto.Model))
+        return Results.BadRequest(new { error = "Cần CustomerName và Model." });
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/orders", async (ISalesService svc, string? status, string? dealer) =>
+    Results.Ok(await svc.ListAsync(status, dealer))).RequireAuthorization();
+
+app.MapGet("/api/orders/{code}", async (string code, ISalesService svc) =>
+{
+    var r = await svc.DetailAsync(code);
+    return r is null ? Results.NotFound(new { code }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/orders/{code}/deposit", async (string code, PayDto dto, ISalesService svc) =>
+{
+    try { var r = await svc.PayAsync(code, "Deposit", dto.Amount, dto.RefNo); return r is null ? Results.NotFound(new { code }) : Results.Ok(r); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/orders/{code}/pay", async (string code, PayDto dto, ISalesService svc) =>
+{
+    try { var r = await svc.PayAsync(code, "Payment", dto.Amount, dto.RefNo); return r is null ? Results.NotFound(new { code }) : Results.Ok(r); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/orders/{code}/deliver", async (string code, ISalesService svc) =>
+{
+    try { var r = await svc.DeliverAsync(code); return r is null ? Results.NotFound(new { code }) : Results.Ok(r); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/orders/{code}/cancel", async (string code, ISalesService svc) =>
+{
+    try { var r = await svc.CancelAsync(code); return r is null ? Results.NotFound(new { code }) : Results.Ok(r); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/stats", async (ISalesService svc) => Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapPost("/api/orgs/register", async (RegisterOrgDto dto, AppDbContext db) =>
+{
+    if (string.IsNullOrWhiteSpace(dto.Name)) return Results.BadRequest(new { error = "Cần Name." });
+    var org = new Org { Name = dto.Name.Trim(), ApiKey = "sls_" + Guid.NewGuid().ToString("N") };
+    db.Orgs.Add(org); await db.SaveChangesAsync();
+    return Results.Ok(new { orgId = org.Id, apiKey = org.ApiKey });
+});
+
+app.Run();
+
+record RegisterOrgDto(string Name);
