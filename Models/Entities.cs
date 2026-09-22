@@ -453,6 +453,69 @@ public sealed class CarTransportMinutesDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái Hợp đồng mua bán buôn xe Đại lý - NPP (DMS.Sales DMS40_CT_DealerContract DlrCtrStatus: Draft (NS=NotSign/Mới lập) -> PreliminaryApproved (A1=NPP duyệt sơ bộ) -> Signed (S=Đã ký 2 bên, hiệu lực) -> Adjusted (AJ=Đã bị điều chỉnh), Cancelled (C=Đã hủy)).</summary>
+public enum DealerContractStatus { Draft = 0, PreliminaryApproved = 1, Signed = 2, Adjusted = 3, Cancelled = 4 }
 
+/// <summary>Loại hợp đồng mua bán buôn xe (DMS.Sales DMS40_CT_DealerContract FlagDlrCtrAdjust: Standard = Hợp đồng chuẩn, Adjust = Hợp đồng điều chỉnh từ HĐ gốc).</summary>
+public enum DealerContractType { Standard = 0, Adjust = 1 }
 
+/// <summary>Phương thức thanh toán hợp đồng bán buôn xe đại lý (DMS.Sales DMS40_CT_DealerContract DCPType: CASH = Tiền mặt, BL = Bảo lãnh thanh toán, LC = Thư tín dụng, UPAS = Thư tín dụng UPAS LC).</summary>
+public enum DealerContractPaymentType { Cash = 0, Guarantee = 1, LC = 2, UpasLC = 3 }
 
+/// <summary>Trạng thái ký số hợp đồng từng bên (DMS.Sales DMS40_CT_DealerContract DlrSignStatus / HTCSignStatus: Pending -> Signed).</summary>
+public enum DealerContractSignStatus { Pending = 0, Signed = 1 }
+
+/// <summary>Hợp đồng mua bán buôn xe ô tô giữa Nhà phân phối và Đại lý (DMS.Sales DMS40_CT_DealerContract / CT_DealerContract): thỏa thuận mua bán lô xe ô tô, điều khoản thanh toán, bảo lãnh ngân hàng và quy trình ký số 2 bên.</summary>
+public sealed class DealerContract
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ContractNo { get; set; } = ""; // Số hợp đồng (PK DlrCtrNo, vd: 2609DRC00001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý mua xe
+    public string DealerName { get; set; } = ""; // Tên đại lý mua xe
+    public DateTime ContractDate { get; set; } = DateTime.Today; // Ngày hợp đồng
+    public DealerContractType ContractType { get; set; } = DealerContractType.Standard;
+    public string? ParentContractNo { get; set; } // Số HĐ gốc nếu là HĐ điều chỉnh (DlrCtrNoParent)
+    public DealerContractPaymentType PaymentType { get; set; } = DealerContractPaymentType.Cash;
+    public string? BankCode { get; set; } // Mã ngân hàng bảo lãnh / tài trợ (BankCodeMD: BIDV, VCB, VPB...)
+    public string? BankName { get; set; } // Tên ngân hàng bảo lãnh (BankNameMD)
+    public decimal DepositPercent { get; set; } = 10m; // Tỷ lệ đặt cọc (%)
+    public int GuaranteeDays { get; set; } = 15; // Thời hạn thanh toán bảo lãnh (ngày)
+    public int TotalCars { get; set; } // Tổng số lượng xe trong hợp đồng
+    public decimal TotalAmount { get; set; } // Tổng giá trị hợp đồng gồm VAT
+    public DealerContractStatus Status { get; set; } = DealerContractStatus.Draft;
+    public DealerContractSignStatus DealerSignStatus { get; set; } = DealerContractSignStatus.Pending;
+    public DealerContractSignStatus HQSignStatus { get; set; } = DealerContractSignStatus.Pending;
+    public string? DealerSignedBy { get; set; }
+    public DateTime? DealerSignedAt { get; set; }
+    public string? HQSignedBy { get; set; }
+    public DateTime? HQSignedAt { get; set; }
+    public DateTime? Approved1At { get; set; } // Thời điểm NPP thẩm tra & duyệt sơ bộ
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt (RejectHQ)
+    public string? CancelReason { get; set; } // Lý do hủy hợp đồng (CancelDL)
+    public string? SignedFilePath { get; set; } // File hợp đồng scan/ký điện tử (FileName / FileUrl)
+    public string? Remark { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? CancelledAt { get; set; }
+
+    public List<DealerContractDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Hợp đồng mua bán buôn đại lý (DMS.Sales DMS40_CT_DealerContractDetail).</summary>
+public sealed class DealerContractDetail
+{
+    public long Id { get; set; }
+    public long ContractId { get; set; }
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung xe (OriginNo / VIN)
+    public string Model { get; set; } = ""; // Dòng xe / Model
+    public string? SpecCode { get; set; } // Cấu hình / Spec
+    public string? ColorCode { get; set; } // Mã màu xe
+    public int ProductionYear { get; set; } = DateTime.Today.Year; // Năm sản xuất
+    public decimal UnitPrice { get; set; } // Đơn giá xe trước VAT
+    public decimal VatRate { get; set; } = 10m; // Thuế suất VAT (%)
+    public decimal TotalAmount { get; set; } // Thành tiền gồm VAT
+    public string? OrderNo { get; set; } // Số đơn đặt hàng đại lý (SOCode)
+    public string? Remark { get; set; }
+}

@@ -341,6 +341,57 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(TransportMinutesId) REFERENCES TransportMinutes(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS DealerContracts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    ContractDate TEXT NOT NULL,
+                    ContractType INTEGER NOT NULL,
+                    ParentContractNo TEXT,
+                    PaymentType INTEGER NOT NULL,
+                    BankCode TEXT,
+                    BankName TEXT,
+                    DepositPercent REAL NOT NULL,
+                    GuaranteeDays INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    DealerSignStatus INTEGER NOT NULL,
+                    HQSignStatus INTEGER NOT NULL,
+                    DealerSignedBy TEXT,
+                    DealerSignedAt TEXT,
+                    HQSignedBy TEXT,
+                    HQSignedAt TEXT,
+                    Approved1At TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    SignedFilePath TEXT,
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerContracts_OrgId_ContractNo ON DealerContracts(OrgId, ContractNo);
+
+                CREATE TABLE IF NOT EXISTS DealerContractDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ContractId INTEGER NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    ProductionYear INTEGER NOT NULL,
+                    UnitPrice REAL NOT NULL,
+                    VatRate REAL NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    OrderNo TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(ContractId) REFERENCES DealerContracts(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -1106,6 +1157,154 @@ public static class Seeder
             };
 
             db.TransportMinutes.AddRange(tm1, tm2, tm3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.DealerContracts.AnyAsync(o => o.OrgId == orgId))
+        {
+            var ctr1 = new DealerContract
+            {
+                OrgId = orgId,
+                ContractNo = "2603DRC00001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ContractDate = DateTime.Today.AddDays(-10),
+                ContractType = DealerContractType.Standard,
+                PaymentType = DealerContractPaymentType.Guarantee,
+                BankCode = "VCB",
+                BankName = "Vietcombank Thăng Long",
+                DepositPercent = 10m,
+                GuaranteeDays = 15,
+                TotalCars = 2,
+                TotalAmount = 2266000000m,
+                Status = DealerContractStatus.Signed,
+                DealerSignStatus = DealerContractSignStatus.Signed,
+                HQSignStatus = DealerContractSignStatus.Signed,
+                DealerSignedBy = "Nguyễn Văn Hưng (Giám đốc Đại lý Đông Đô)",
+                DealerSignedAt = DateTime.Now.AddDays(-9),
+                HQSignedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                HQSignedAt = DateTime.Now.AddDays(-8),
+                Approved1At = DateTime.Now.AddDays(-9),
+                SignedFilePath = "/storage/contracts/2603DRC00001_signed_full.pdf",
+                Remark = "Hợp đồng mua bán lô 02 xe Santa Fe & Creta tháng 03/2026 thanh toán qua bảo lãnh Vietcombank",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-10),
+                Details = new List<DealerContractDetail>
+                {
+                    new DealerContractDetail
+                    {
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        ProductionYear = 2026,
+                        UnitPrice = 1320000000m,
+                        VatRate = 10m,
+                        TotalAmount = 1452000000m,
+                        OrderNo = "ORD2603010001",
+                        Remark = "Xe giao đợt 1 tháng 3 theo kế hoạch phân bổ"
+                    },
+                    new DealerContractDetail
+                    {
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        ProductionYear = 2026,
+                        UnitPrice = 740000000m,
+                        VatRate = 10m,
+                        TotalAmount = 814000000m,
+                        OrderNo = "ORD2603010001",
+                        Remark = "Xe giao đợt 2 theo thỏa thuận bổ sung"
+                    }
+                }
+            };
+
+            var ctr2 = new DealerContract
+            {
+                OrgId = orgId,
+                ContractNo = "2603DRC00002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                ContractDate = DateTime.Today.AddDays(-3),
+                ContractType = DealerContractType.Standard,
+                PaymentType = DealerContractPaymentType.LC,
+                BankCode = "BIDV",
+                BankName = "BIDV Thăng Long",
+                DepositPercent = 10m,
+                GuaranteeDays = 30,
+                TotalCars = 1,
+                TotalAmount = 946000000m,
+                Status = DealerContractStatus.PreliminaryApproved,
+                DealerSignStatus = DealerContractSignStatus.Signed,
+                HQSignStatus = DealerContractSignStatus.Pending,
+                DealerSignedBy = "Lê Hồng Quân (Đại diện Nam Trung)",
+                DealerSignedAt = DateTime.Now.AddDays(-2),
+                Approved1At = DateTime.Now.AddDays(-2),
+                SignedFilePath = "/storage/contracts/2603DRC00002_dlr_signed.pdf",
+                Remark = "Đại lý đã ký số điện tử hợp đồng mua xe Tucson mở LC, chờ NPP ký duyệt cấp 2",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-3),
+                Details = new List<DealerContractDetail>
+                {
+                    new DealerContractDetail
+                    {
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        ProductionYear = 2026,
+                        UnitPrice = 860000000m,
+                        VatRate = 10m,
+                        TotalAmount = 946000000m,
+                        OrderNo = "ORD2603150002",
+                        Remark = "Xe lái thử và trưng bày showroom Nam Trung"
+                    }
+                }
+            };
+
+            var ctr3 = new DealerContract
+            {
+                OrgId = orgId,
+                ContractNo = "2603DRC00003",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ContractDate = DateTime.Today,
+                ContractType = DealerContractType.Standard,
+                PaymentType = DealerContractPaymentType.Cash,
+                BankCode = "DEALER",
+                DepositPercent = 20m,
+                GuaranteeDays = 0,
+                TotalCars = 1,
+                TotalAmount = 495000000m,
+                Status = DealerContractStatus.Draft,
+                DealerSignStatus = DealerContractSignStatus.Pending,
+                HQSignStatus = DealerContractSignStatus.Pending,
+                Remark = "Hợp đồng nháp mua buôn 01 xe Accent 1.4 AT thanh toán tiền mặt trực tiếp",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now,
+                Details = new List<DealerContractDetail>
+                {
+                    new DealerContractDetail
+                    {
+                        CarId = "CAR2026-AC9011",
+                        Vin = "KMHE281BBSA667788",
+                        Model = "Accent 1.4 AT",
+                        SpecCode = "AC14-AT-01",
+                        ColorCode = "WH1",
+                        ProductionYear = 2026,
+                        UnitPrice = 450000000m,
+                        VatRate = 10m,
+                        TotalAmount = 495000000m,
+                        Remark = "Hợp đồng chờ nộp tiền đặt cọc 20%"
+                    }
+                }
+            };
+
+            db.DealerContracts.AddRange(ctr1, ctr2, ctr3);
             await db.SaveChangesAsync();
         }
     }

@@ -33,6 +33,7 @@ builder.Services.AddScoped<ICarInvoiceService, CarInvoiceService>();
 builder.Services.AddScoped<ICarRetrieveService, CarRetrieveService>();
 builder.Services.AddScoped<IContractCancelService, ContractCancelService>();
 builder.Services.AddScoped<ICarTransportMinutesService, CarTransportMinutesService>();
+builder.Services.AddScoped<IDealerContractService, DealerContractService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -678,6 +679,131 @@ app.MapDelete("/api/transport-minutes/{minutesNo}/cars/{detailId:long}", async (
     {
         var r = await svc.RemoveCarAsync(minutesNo, detailId);
         return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo, detailId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Hợp đồng Mua bán buôn xe Đại lý - NPP (Wholesale Dealer Contract - DMS.Sales CT_DealerContract / DMS40_CT_DealerContract) =====
+app.MapPost("/api/dealer-contracts", async (CreateDealerContractDto dto, IDealerContractService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/adjust", async (CreateAdjustDealerContractDto dto, IDealerContractService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAdjustAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-contracts", async (IDealerContractService svc, string? status, string? dealer, string? paymentType, string? contractType, string? contractNo) =>
+    Results.Ok(await svc.ListAsync(status, dealer, paymentType, contractType, contractNo))).RequireAuthorization();
+
+app.MapGet("/api/dealer-contracts/stats", async (IDealerContractService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/dealer-contracts/{contractNo}", async (string contractNo, IDealerContractService svc) =>
+{
+    var r = await svc.DetailAsync(contractNo);
+    return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-contracts/{contractNo}", async (string contractNo, UpdateDealerContractDto dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/{contractNo}/bank", async (string contractNo, UpdateContractBankDto dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateBankCodeAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/{contractNo}/approve1", async (string contractNo, Approve1DealerContractDto? dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1HQAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/{contractNo}/approve-dl", async (string contractNo, SignDealerContractDto? dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveDLAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/{contractNo}/approve2", async (string contractNo, Approve2HQDealerContractDto? dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2HQAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/{contractNo}/reject", async (string contractNo, RejectDealerContractDto dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectHQAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/{contractNo}/cancel", async (string contractNo, CancelDealerContractDto dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelDLAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-contracts/{contractNo}", async (string contractNo, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(contractNo);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contracts/{contractNo}/cars", async (string contractNo, AddDealerContractCarDto dto, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-contracts/{contractNo}/cars/{detailId:long}", async (string contractNo, long detailId, IDealerContractService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(contractNo, detailId);
+        return r is null ? Results.NotFound(new { contractNo, detailId }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
