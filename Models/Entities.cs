@@ -332,6 +332,61 @@ public sealed class CarRetrieveOrderDetail
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
+/// <summary>Trạng thái Đề nghị hủy hợp đồng bán xe (DMS.Sales Dlr_ContractCancel ContractCancelStatus: Pending (P=chờ duyệt) -> Approved (A=đã duyệt hủy) / Rejected (R=từ chối) / Cancelled (C=hủy đề nghị)).</summary>
+public enum ContractCancelStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Đề nghị hủy hợp đồng bán lẻ xe ô tô từ Đại lý gửi Nhà phân phối (DMS.Sales Dlr_ContractCancel): quản lý quy trình hủy hợp đồng/hủy xe do đổi màu, không vay được NH hoặc dừng mua.</summary>
+public sealed class ContractCancelOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ContractCNo { get; set; } = ""; // Số đề nghị hủy (PK Dlr_ContractCancel)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public ContractCancelStatus Status { get; set; } = ContractCancelStatus.Pending;
+    public int TotalCars { get; set; } // Tổng số lượng xe đề nghị hủy
+    public string? Remark { get; set; } // Ghi chú chung
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<ContractCancelCar> Cars { get; set; } = new();
+    public List<ContractCancelDtl> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết từng xe cần hủy trong hợp đồng bán lẻ (DMS.Sales Dlr_ContractCancelCar - đơn vị hủy cốt lõi theo xe).</summary>
+public sealed class ContractCancelCar
+{
+    public long Id { get; set; }
+    public long ContractCancelId { get; set; }
+    public string OrderCode { get; set; } = ""; // Số HĐ bán lẻ (DlrContractNo)
+    public long? OrderId { get; set; } // ID hợp đồng bán xe
+    public string? Vin { get; set; } // Số VIN xe
+    public string Model { get; set; } = ""; // Model xe
+    public string? SpecCode { get; set; } // Mã spec / cấu hình
+    public string? ColorCode { get; set; } // Mã màu
+    public string CtrCTDNo { get; set; } = ""; // Mã lý do hủy (Mst_CtrCancelTypeDtl: RC1.PRICE, RC2.COLOR, RC3.STOPBUY, RC4.LOANFAIL, RC5.OTHER)
+    public string CtrCTDName { get; set; } = ""; // Tên lý do hủy
+    public string CtrCType { get; set; } = ""; // Nhóm lý do hủy (RC1..RC5)
+    public string? Remark { get; set; } // Ghi chú chi tiết cho xe (bắt buộc khi nhóm RC5)
+}
+
+/// <summary>Bảng gom cấu hình xe hủy (DMS.Sales Dlr_ContractCancelDtl - server tự dẫn xuất từ danh sách xe, Qty = đếm xe).</summary>
+public sealed class ContractCancelDtl
+{
+    public long Id { get; set; }
+    public long ContractCancelId { get; set; }
+    public string OrderCode { get; set; } = ""; // Số HĐ bán lẻ
+    public string Model { get; set; } = ""; // Model xe
+    public string? SpecCode { get; set; }
+    public string? ColorCode { get; set; }
+    public int Qty { get; set; } // Số lượng xe gom theo cấu hình
+    public string? Remark { get; set; }
+}
+
 
 
 

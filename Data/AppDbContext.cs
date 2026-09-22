@@ -17,6 +17,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarInvoiceDetail> CarInvoiceDetails => Set<CarInvoiceDetail>();
     public DbSet<CarRetrieveOrder> CarRetrieveOrders => Set<CarRetrieveOrder>();
     public DbSet<CarRetrieveOrderDetail> CarRetrieveOrderDetails => Set<CarRetrieveOrderDetail>();
+    public DbSet<ContractCancelOrder> ContractCancels => Set<ContractCancelOrder>();
+    public DbSet<ContractCancelCar> ContractCancelCars => Set<ContractCancelCar>();
+    public DbSet<ContractCancelDtl> ContractCancelDtls => Set<ContractCancelDtl>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -45,5 +48,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CarRetrieveOrder>().Property(x => x.Status).HasConversion<int>();
         b.Entity<CarRetrieveOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RetrieveOrderId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<CarRetrieveOrderDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<ContractCancelOrder>().HasIndex(x => new { x.OrgId, x.ContractCNo }).IsUnique();
+        b.Entity<ContractCancelOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<ContractCancelOrder>().HasMany(x => x.Cars).WithOne().HasForeignKey(x => x.ContractCancelId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<ContractCancelOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.ContractCancelId).OnDelete(DeleteBehavior.Cascade);
     }
 }

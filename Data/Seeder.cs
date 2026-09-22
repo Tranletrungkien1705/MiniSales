@@ -245,6 +245,52 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(RetrieveOrderId) REFERENCES CarRetrieveOrders(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS ContractCancels (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ContractCNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ApprovedBy TEXT,
+                    ApprovedAt TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_ContractCancels_OrgId_ContractCNo ON ContractCancels(OrgId, ContractCNo);
+
+                CREATE TABLE IF NOT EXISTS ContractCancelCars (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ContractCancelId INTEGER NOT NULL,
+                    OrderCode TEXT NOT NULL,
+                    OrderId INTEGER,
+                    Vin TEXT,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    CtrCTDNo TEXT NOT NULL,
+                    CtrCTDName TEXT NOT NULL,
+                    CtrCType TEXT NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(ContractCancelId) REFERENCES ContractCancels(Id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS ContractCancelDtls (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ContractCancelId INTEGER NOT NULL,
+                    OrderCode TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    Qty INTEGER NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(ContractCancelId) REFERENCES ContractCancels(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -788,6 +834,94 @@ public static class Seeder
             };
 
             db.CarRetrieveOrders.AddRange(ro1, ro2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.ContractCancels.AnyAsync(o => o.OrgId == orgId))
+        {
+            var cc1 = new ContractCancelOrder
+            {
+                OrgId = orgId,
+                ContractCNo = "CCN2603010001",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                Status = ContractCancelStatus.Approved,
+                TotalCars = 1,
+                Remark = "Đề nghị hủy xe Accent do khách hàng không đủ điều kiện giải ngân ngân hàng",
+                CreatedBy = "DEALER_SALESMAN",
+                CreatedAt = DateTime.Now.AddDays(-6),
+                ApprovedBy = "NPP_HQ_DIRECTOR",
+                ApprovedAt = DateTime.Now.AddDays(-5),
+                Cars = new List<ContractCancelCar>
+                {
+                    new ContractCancelCar
+                    {
+                        OrderCode = "SO2602150099",
+                        Vin = "KMHE281BBSA112233",
+                        Model = "Accent 1.4 AT",
+                        SpecCode = "AC14-AT-01",
+                        ColorCode = "WH1",
+                        CtrCTDNo = "RC4.LOANFAIL",
+                        CtrCTDName = "Ngân hàng từ chối cho vay trả góp / hồ sơ tín dụng không đạt",
+                        CtrCType = "RC4",
+                        Remark = "Hồ sơ tín dụng ngân hàng VIB từ chối giải ngân"
+                    }
+                },
+                Details = new List<ContractCancelDtl>
+                {
+                    new ContractCancelDtl
+                    {
+                        OrderCode = "SO2602150099",
+                        Model = "Accent 1.4 AT",
+                        SpecCode = "AC14-AT-01",
+                        ColorCode = "WH1",
+                        Qty = 1,
+                        Remark = "Gom tự động từ 1 xe đề nghị hủy"
+                    }
+                }
+            };
+
+            var cc2 = new ContractCancelOrder
+            {
+                OrgId = orgId,
+                ContractCNo = "CCN2603200002",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                Status = ContractCancelStatus.Pending,
+                TotalCars = 1,
+                Remark = "Khách hàng tạm dừng mua xe do có kế hoạch tài chính cá nhân đột xuất",
+                CreatedBy = "DEALER_SALESMAN",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                Cars = new List<ContractCancelCar>
+                {
+                    new ContractCancelCar
+                    {
+                        OrderCode = "SO2603200003",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        CtrCTDNo = "RC3.STOPBUY",
+                        CtrCTDName = "Khách hàng tạm dừng mua xe / đổi kế hoạch tài chính cá nhân",
+                        CtrCType = "RC3",
+                        Remark = "Khách hàng xin rút lại đặt cọc hoặc chuyển sang quý 4/2026"
+                    }
+                },
+                Details = new List<ContractCancelDtl>
+                {
+                    new ContractCancelDtl
+                    {
+                        OrderCode = "SO2603200003",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        Qty = 1,
+                        Remark = "Gom tự động từ 1 xe đề nghị hủy"
+                    }
+                }
+            };
+
+            db.ContractCancels.AddRange(cc1, cc2);
             await db.SaveChangesAsync();
         }
     }
