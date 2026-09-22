@@ -934,6 +934,72 @@ public static class Seeder
                     LUBy TEXT
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerContractCancelMinutes_OrgId_CancelMinutesNo ON DealerContractCancelMinutes(OrgId, CancelMinutesNo);
+
+                CREATE TABLE IF NOT EXISTS GuaranteeClaims (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    GrtClaimNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    GrtClaimTypeCode TEXT NOT NULL,
+                    FlagisHTC TEXT NOT NULL,
+                    BankCode TEXT,
+                    BankName TEXT,
+                    BankCodeMonitor TEXT,
+                    BankAccountNo TEXT,
+                    TotalCars INTEGER NOT NULL,
+                    TotalClaimAmount REAL NOT NULL,
+                    TotalGuaranteeValue REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    VinSignStatus INTEGER NOT NULL,
+                    SignDate TEXT,
+                    SignBy TEXT,
+                    FileSigned TEXT,
+                    FileName TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    RejectDateTime TEXT,
+                    RejectBy TEXT,
+                    CancelReason TEXT,
+                    CancelDateTime TEXT,
+                    CancelBy TEXT,
+                    CreatedBy TEXT,
+                    CreatedDate TEXT NOT NULL,
+                    CreatedDateTime TEXT NOT NULL,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_GuaranteeClaims_OrgId_GrtClaimNo ON GuaranteeClaims(OrgId, GrtClaimNo);
+
+                CREATE TABLE IF NOT EXISTS GuaranteeClaimDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    GrtClaimId INTEGER NOT NULL,
+                    GrtClaimNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    ModelCode TEXT,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    ContractNo TEXT,
+                    FlagDealerContractDMS40 INTEGER NOT NULL,
+                    GuaranteeNo TEXT,
+                    BankGuaranteeNo TEXT,
+                    BankCode TEXT,
+                    BankName TEXT,
+                    BankCodeMonitor TEXT,
+                    DateOpen TEXT,
+                    DateStart TEXT,
+                    DateEnd TEXT,
+                    UnitPriceActual REAL NOT NULL,
+                    GuaranteeValue REAL NOT NULL,
+                    ClaimAmount REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(GrtClaimId) REFERENCES GuaranteeClaims(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -3533,6 +3599,267 @@ public static class Seeder
             };
 
             db.DealerContractCancelMinutes.AddRange(cm1, cm2, cm3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.GuaranteeClaims.AnyAsync(o => o.OrgId == orgId))
+        {
+            var gcl1 = new PaymentGuaranteeClaim
+            {
+                OrgId = orgId,
+                GrtClaimNo = "CV-260320-001/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                GrtClaimTypeCode = "YC",
+                FlagisHTC = "1",
+                BankCode = "VCB",
+                BankName = "Vietcombank Thăng Long",
+                BankCodeMonitor = "VCB",
+                BankAccountNo = "0011004123899",
+                TotalCars = 2,
+                TotalClaimAmount = 2090000000m,
+                TotalGuaranteeValue = 2090000000m,
+                Status = GuaranteeClaimStatus.Approved,
+                VinSignStatus = ClaimVinSignStatus.Approved,
+                SignDate = DateTime.Now.AddDays(-2),
+                SignBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                FileName = "CV-260320-001_VN001_Signed.pdf",
+                FileSigned = "/storage/grtclaim/CV-260320-001_VN001_Signed.pdf",
+                Remark = "Công văn yêu cầu Ngân hàng Vietcombank thực hiện nghĩa vụ bảo lãnh thanh toán cho 02 xe ô tô Santa Fe và Creta theo Thư bảo lãnh số BL-VCB-20260301-88 do đại lý quá hạn thanh toán đợt 2",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-3),
+                CreatedDateTime = DateTime.Now.AddDays(-3),
+                LUDateTime = DateTime.Now.AddDays(-2),
+                LUBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                Details = new List<PaymentGuaranteeClaimDetail>
+                {
+                    new PaymentGuaranteeClaimDetail
+                    {
+                        GrtClaimNo = "CV-260320-001/VN001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        ModelCode = "TM",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 xăng cao cấp HTRAC",
+                        ColorCode = "WW2",
+                        ColorName = "Trắng ngọc trai / Đen",
+                        ContractNo = "2603DRC00001",
+                        FlagDealerContractDMS40 = true,
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        BankName = "Vietcombank Thăng Long",
+                        BankCodeMonitor = "VCB",
+                        DateOpen = DateTime.Today.AddDays(-30),
+                        DateStart = DateTime.Today.AddDays(-25),
+                        DateEnd = DateTime.Today.AddDays(5),
+                        UnitPriceActual = 1350000000m,
+                        GuaranteeValue = 1350000000m,
+                        ClaimAmount = 1350000000m,
+                        Status = ClaimVinSignStatus.Approved,
+                        Remark = "Xe quá hạn thanh toán theo cam kết bảo lãnh"
+                    },
+                    new PaymentGuaranteeClaimDetail
+                    {
+                        GrtClaimNo = "CV-260320-001/VN001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        ModelCode = "SU2b",
+                        SpecCode = "CR15-PRE-02",
+                        SpecDescription = "Creta 1.5 CVT bản cao cấp",
+                        ColorCode = "R3R",
+                        ColorName = "Đỏ mận / Nâu",
+                        ContractNo = "2603DRC00001",
+                        FlagDealerContractDMS40 = true,
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        BankName = "Vietcombank Thăng Long",
+                        BankCodeMonitor = "VCB",
+                        DateOpen = DateTime.Today.AddDays(-30),
+                        DateStart = DateTime.Today.AddDays(-25),
+                        DateEnd = DateTime.Today.AddDays(5),
+                        UnitPriceActual = 740000000m,
+                        GuaranteeValue = 740000000m,
+                        ClaimAmount = 740000000m,
+                        Status = ClaimVinSignStatus.Approved,
+                        Remark = "Trích thu tiền bảo lãnh xe Creta thanh toán cho HTC"
+                    }
+                }
+            };
+
+            var gcl2 = new PaymentGuaranteeClaim
+            {
+                OrgId = orgId,
+                GrtClaimNo = "CV-260322-001/VN002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                GrtClaimTypeCode = "DN",
+                FlagisHTC = "2",
+                BankCode = "BIDV",
+                BankName = "BIDV Hà Nội",
+                BankCodeMonitor = "BIDV",
+                BankAccountNo = "12410000678912",
+                TotalCars = 1,
+                TotalClaimAmount = 620000000m,
+                TotalGuaranteeValue = 620000000m,
+                Status = GuaranteeClaimStatus.Pending,
+                VinSignStatus = ClaimVinSignStatus.Pending,
+                Remark = "Đại lý Nam Trung chủ động đề nghị Ngân hàng BIDV trích tiền từ hạn mức bảo lãnh BL-BIDV-20260305-12 thanh toán lô xe Stargazer X cho Nhà phân phối HTCLD",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-1),
+                CreatedDateTime = DateTime.Now.AddDays(-1),
+                Details = new List<PaymentGuaranteeClaimDetail>
+                {
+                    new PaymentGuaranteeClaimDetail
+                    {
+                        GrtClaimNo = "CV-260322-001/VN002",
+                        CarId = "CAR2026-SG0109",
+                        Vin = "KMHE281BBSA778899",
+                        Model = "Stargazer X 1.5 Cao Cấp",
+                        ModelCode = "KS",
+                        SpecCode = "SG15-PRE-01",
+                        SpecDescription = "Stargazer X 1.5 IVT bản cao cấp",
+                        ColorCode = "MB1",
+                        ColorName = "Xám từ tính / Đen",
+                        ContractNo = "2603DRC00004",
+                        FlagDealerContractDMS40 = true,
+                        GuaranteeNo = "BG2603-BIDV-00130",
+                        BankGuaranteeNo = "BL-BIDV-20260305-12",
+                        BankCode = "BIDV",
+                        BankName = "BIDV Hà Nội",
+                        BankCodeMonitor = "BIDV",
+                        DateOpen = DateTime.Today.AddDays(-20),
+                        DateStart = DateTime.Today.AddDays(-18),
+                        DateEnd = DateTime.Today.AddDays(12),
+                        UnitPriceActual = 620000000m,
+                        GuaranteeValue = 620000000m,
+                        ClaimAmount = 620000000m,
+                        Status = ClaimVinSignStatus.Pending,
+                        Remark = "Đại lý đề nghị thanh toán giải tỏa bảo lãnh để nhận hồ sơ gốc"
+                    }
+                }
+            };
+
+            var gcl3 = new PaymentGuaranteeClaim
+            {
+                OrgId = orgId,
+                GrtClaimNo = "CV-260318-001/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                GrtClaimTypeCode = "YC",
+                FlagisHTC = "1",
+                BankCode = "TCB",
+                BankName = "Techcombank Hoàn Kiếm",
+                BankCodeMonitor = "TCB",
+                BankAccountNo = "19033445566778",
+                TotalCars = 1,
+                TotalClaimAmount = 850000000m,
+                TotalGuaranteeValue = 850000000m,
+                Status = GuaranteeClaimStatus.Rejected,
+                VinSignStatus = ClaimVinSignStatus.Cancelled,
+                RejectReason = "Đại lý đã xuất trình ủy nhiệm chi chuyển khoản thanh toán trực tiếp trước thời điểm ký duyệt công văn đòi bảo lãnh",
+                RejectDateTime = DateTime.Now.AddDays(-4),
+                RejectBy = "Lê Thị Thu Thủy (Trưởng phòng Tài vụ HTC)",
+                Remark = "Công văn đòi tiền bảo lãnh từ chối duyệt do đối tác đại lý đã hoàn tất thanh toán tiền mặt/chuyển khoản",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-5),
+                CreatedDateTime = DateTime.Now.AddDays(-5),
+                LUDateTime = DateTime.Now.AddDays(-4),
+                LUBy = "Lê Thị Thu Thủy (Trưởng phòng Tài vụ HTC)",
+                Details = new List<PaymentGuaranteeClaimDetail>
+                {
+                    new PaymentGuaranteeClaimDetail
+                    {
+                        GrtClaimNo = "CV-260318-001/VN001",
+                        CarId = "CAR2026-CU0211",
+                        Vin = "KMHE281BBSA556677",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        ModelCode = "KU",
+                        SpecCode = "CU15-PRE-01",
+                        SpecDescription = "Custin 1.5T máy xăng tăng áp cao cấp",
+                        ColorCode = "GY1",
+                        ColorName = "Xám kim loại / Đen",
+                        ContractNo = "2603DRC00002",
+                        FlagDealerContractDMS40 = true,
+                        GuaranteeNo = "BG2603-TCB-00129",
+                        BankGuaranteeNo = "BL-TCB-20260310-09",
+                        BankCode = "TCB",
+                        BankName = "Techcombank Hoàn Kiếm",
+                        BankCodeMonitor = "TCB",
+                        DateOpen = DateTime.Today.AddDays(-28),
+                        DateStart = DateTime.Today.AddDays(-22),
+                        DateEnd = DateTime.Today.AddDays(8),
+                        UnitPriceActual = 850000000m,
+                        GuaranteeValue = 850000000m,
+                        ClaimAmount = 850000000m,
+                        Status = ClaimVinSignStatus.Cancelled,
+                        Remark = "Đã thu tiền thanh toán trực tiếp, không gọi bảo lãnh ngân hàng"
+                    }
+                }
+            };
+
+            var gcl4 = new PaymentGuaranteeClaim
+            {
+                OrgId = orgId,
+                GrtClaimNo = "CV-260315-001/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                GrtClaimTypeCode = "YC",
+                FlagisHTC = "1",
+                BankCode = "VCB",
+                BankName = "Vietcombank Thăng Long",
+                BankCodeMonitor = "VCB",
+                BankAccountNo = "0011004123899",
+                TotalCars = 1,
+                TotalClaimAmount = 490000000m,
+                TotalGuaranteeValue = 490000000m,
+                Status = GuaranteeClaimStatus.Cancelled,
+                VinSignStatus = ClaimVinSignStatus.Cancelled,
+                CancelReason = "Đại lý và NPP đã ký biên bản gia hạn thời hạn bảo lãnh theo công văn CVGH số 260315-001/CVGH/VN001",
+                CancelDateTime = DateTime.Now.AddDays(-7),
+                CancelBy = "DEALER_SALES_ADMIN",
+                Remark = "Hủy yêu cầu đòi tiền bảo lãnh xe Accent do được phê duyệt gia hạn thêm 30 ngày",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-10),
+                CreatedDateTime = DateTime.Now.AddDays(-10),
+                LUDateTime = DateTime.Now.AddDays(-7),
+                LUBy = "DEALER_SALES_ADMIN",
+                Details = new List<PaymentGuaranteeClaimDetail>
+                {
+                    new PaymentGuaranteeClaimDetail
+                    {
+                        GrtClaimNo = "CV-260315-001/VN001",
+                        CarId = "CAR2026-AC0512",
+                        Vin = "KMHE281BBSA667788",
+                        Model = "Accent 1.5 AT Cao Cấp",
+                        ModelCode = "BN7",
+                        SpecCode = "AC15-PRE-01",
+                        SpecDescription = "Accent 1.5 số tự động bản cao cấp",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng tuyết / Đen",
+                        ContractNo = "2603DRC00003",
+                        FlagDealerContractDMS40 = true,
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        BankName = "Vietcombank Thăng Long",
+                        BankCodeMonitor = "VCB",
+                        DateOpen = DateTime.Today.AddDays(-30),
+                        DateStart = DateTime.Today.AddDays(-25),
+                        DateEnd = DateTime.Today.AddDays(5),
+                        UnitPriceActual = 490000000m,
+                        GuaranteeValue = 490000000m,
+                        ClaimAmount = 490000000m,
+                        Status = ClaimVinSignStatus.Cancelled,
+                        Remark = "Hủy dòng xe đòi bảo lãnh do đã gia hạn hạn mức"
+                    }
+                }
+            };
+
+            db.GuaranteeClaims.AddRange(gcl1, gcl2, gcl3, gcl4);
             await db.SaveChangesAsync();
         }
     }

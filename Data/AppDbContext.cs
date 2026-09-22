@@ -44,6 +44,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentDiscount> PaymentDiscounts => Set<PaymentDiscount>();
     public DbSet<PaymentDiscountDetail> PaymentDiscountDetails => Set<PaymentDiscountDetail>();
     public DbSet<DealerContractCancelMinutes> DealerContractCancelMinutes => Set<DealerContractCancelMinutes>();
+    public DbSet<PaymentGuaranteeClaim> GuaranteeClaims => Set<PaymentGuaranteeClaim>();
+    public DbSet<PaymentGuaranteeClaimDetail> GuaranteeClaimDetails => Set<PaymentGuaranteeClaimDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -137,5 +139,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerContractCancelMinutes>().Property(x => x.CancelMinutesStatus).HasConversion<int>();
         b.Entity<DealerContractCancelMinutes>().Property(x => x.DealerSignStatus).HasConversion<int>();
         b.Entity<DealerContractCancelMinutes>().Property(x => x.HQSignStatus).HasConversion<int>();
+        b.Entity<PaymentGuaranteeClaim>().HasIndex(x => new { x.OrgId, x.GrtClaimNo }).IsUnique();
+        b.Entity<PaymentGuaranteeClaim>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentGuaranteeClaim>().Property(x => x.VinSignStatus).HasConversion<int>();
+        b.Entity<PaymentGuaranteeClaim>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.GrtClaimId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PaymentGuaranteeClaimDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

@@ -43,6 +43,7 @@ builder.Services.AddScoped<IPaymentGuaranteeExtService, PaymentGuaranteeExtServi
 builder.Services.AddScoped<IPdiRequestService, PdiRequestService>();
 builder.Services.AddScoped<IPaymentDiscountService, PaymentDiscountService>();
 builder.Services.AddScoped<IDealerContractCancelMinutesService, DealerContractCancelMinutesService>();
+builder.Services.AddScoped<IPaymentGuaranteeClaimService, PaymentGuaranteeClaimService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1742,6 +1743,98 @@ app.MapPost("/api/dealer-contract-cancels/{minutesNo}/cancel-dl", async (string 
     {
         var r = await svc.CancelDealerAsync(minutesNo, dto);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Công văn Yêu cầu / Đòi tiền thực hiện Bảo lãnh ngân hàng mua bán xe Đại lý - NPP (Payment Guarantee Claim Letter - DMS.Sales Pmt_GrtClaim / PmtGrtClaimController / 17_CONG_VAN_BON_CHUC_NANG.md) =====
+app.MapPost("/api/guarantee-claims", async (CreatePaymentGuaranteeClaimDto dto, IPaymentGuaranteeClaimService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/guarantee-claims", async (IPaymentGuaranteeClaimService svc, string? status, string? dealer, string? bankCode, string? bankCodeMonitor, string? claimType, string? flagisHTC, string? vin, string? claimNo, string? contractNo) =>
+    Results.Ok(await svc.ListAsync(status, dealer, bankCode, bankCodeMonitor, claimType, flagisHTC, vin, claimNo, contractNo))).RequireAuthorization();
+
+app.MapGet("/api/guarantee-claims/eligible-cars", async (IPaymentGuaranteeClaimService svc, string? dealerCode, string? bankCode, string? bankCodeMonitor) =>
+    Results.Ok(await svc.EligibleCarsAsync(dealerCode, bankCode, bankCodeMonitor))).RequireAuthorization();
+
+app.MapGet("/api/guarantee-claims/stats", async (IPaymentGuaranteeClaimService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/guarantee-claims/{claimNo}", async (string claimNo, IPaymentGuaranteeClaimService svc) =>
+{
+    var r = await svc.DetailAsync(claimNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/guarantee-claims/{claimNo}", async (string claimNo, UpdatePaymentGuaranteeClaimDto dto, IPaymentGuaranteeClaimService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(claimNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/guarantee-claims/{claimNo}", async (string claimNo, IPaymentGuaranteeClaimService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(claimNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantee-claims/{claimNo}/sign", async (string claimNo, SignPaymentGuaranteeClaimDto? dto, IPaymentGuaranteeClaimService svc) =>
+{
+    try
+    {
+        var r = await svc.SignAndApproveAsync(claimNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantee-claims/{claimNo}/reject", async (string claimNo, RejectPaymentGuaranteeClaimDto dto, IPaymentGuaranteeClaimService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(claimNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantee-claims/{claimNo}/cancel", async (string claimNo, CancelPaymentGuaranteeClaimDto dto, IPaymentGuaranteeClaimService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(claimNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantee-claims/{claimNo}/cars", async (string claimNo, AddCarToGuaranteeClaimDto dto, IPaymentGuaranteeClaimService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(claimNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/guarantee-claims/{claimNo}/cars/{vin}", async (string claimNo, string vin, IPaymentGuaranteeClaimService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(claimNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

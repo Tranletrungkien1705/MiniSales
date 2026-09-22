@@ -1169,3 +1169,79 @@ public sealed class DealerContractCancelMinutes
     public DateTime? LUDateTime { get; set; } // Ngày cập nhật cuối
     public string? LUBy { get; set; } // Người cập nhật cuối
 }
+
+/// <summary>Trạng thái Công văn yêu cầu / đòi tiền thực hiện bảo lãnh thanh toán bán buôn xe (DMS.Sales Pmt_GrtClaim SignStatus: Pending = 'P' [Chờ ký/duyệt], Approved = 'A' [Đã duyệt và ký số điện tử phát hành tới ngân hàng], Rejected = 'R' [NPP từ chối duyệt], Cancelled = 'C' [Đã hủy]).</summary>
+public enum GuaranteeClaimStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái xử lý dòng VIN xe trong công văn đòi tiền bảo lãnh (DMS.Sales Pmt_GrtClaim VinSignStatus / Pmt_GrtClaimDetail: Pending = 'P' [Chưa xử lý], Approved = 'A' [Đã xử lý / ký duyệt], Cancelled = 'C' [Đã hủy]).</summary>
+public enum ClaimVinSignStatus { Pending = 0, Approved = 1, Cancelled = 2 }
+
+/// <summary>Công văn Yêu cầu / Đòi tiền thực hiện bảo lãnh ngân hàng thanh toán mua buôn xe ô tô Đại lý - NPP (DMS.Sales Pmt_GrtClaim / PmtGrtClaimController / 17_CONG_VAN_BON_CHUC_NANG.md): NPP phát hành công văn đòi tiền ngân hàng bảo lãnh (loại YC) khi đại lý vi phạm hạn nợ hoặc đại lý chủ động đề nghị ngân hàng trích nợ thực hiện bảo lãnh (loại DN), quy trình ký số điện tử E-Sign hoàn tất và phát hành tới ngân hàng giám sát.</summary>
+public sealed class PaymentGuaranteeClaim
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string GrtClaimNo { get; set; } = ""; // Số hiệu công văn: CV-{yyMMdd}-{seq:D3}/{DealerCode} (vd: CV-260323-001/VN001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string GrtClaimTypeCode { get; set; } = "YC"; // Loại công văn: "DN" = Đề nghị thực hiện BL, "YC" = YC thực hiện BL thanh toán
+    public string FlagisHTC { get; set; } = "1"; // Pháp nhân phát hành: "1" = HTC (Hyundai Thành Công VN), "2" = HTCLD (Liên doanh)
+    public string? BankCode { get; set; } // Ngân hàng phát hành bảo lãnh (PMGBankCode)
+    public string? BankName { get; set; } // Tên ngân hàng phát hành bảo lãnh
+    public string? BankCodeMonitor { get; set; } // Ngân hàng giám sát (phía NPP quản lý bảo lãnh)
+    public string? BankAccountNo { get; set; } // Số tài khoản ngân hàng liên quan / thụ hưởng
+    public int TotalCars { get; set; } // Tổng số lượng xe ô tô trong công văn
+    public decimal TotalClaimAmount { get; set; } // Tổng số tiền yêu cầu đòi bảo lãnh (VNĐ)
+    public decimal TotalGuaranteeValue { get; set; } // Tổng giá trị bảo lãnh tương ứng (VNĐ)
+    public GuaranteeClaimStatus Status { get; set; } = GuaranteeClaimStatus.Pending; // Trạng thái công văn: P -> A / R / C
+    public ClaimVinSignStatus VinSignStatus { get; set; } = ClaimVinSignStatus.Pending; // Trạng thái tổng hợp xử lý VIN xe: P -> A / C
+    public DateTime? SignDate { get; set; } // Ngày giờ ký số điện tử E-Sign
+    public string? SignBy { get; set; } // Người đại diện NPP / Lãnh đạo ký số
+    public string? FileSigned { get; set; } // Đường dẫn server file PDF đã ký số
+    public string? FileName { get; set; } // Tên file PDF hiển thị
+    public string? Remark { get; set; } // Ghi chú nội dung công văn
+    public string? RejectReason { get; set; } // Lý do NPP từ chối duyệt công văn
+    public DateTime? RejectDateTime { get; set; } // Ngày giờ từ chối
+    public string? RejectBy { get; set; } // Người từ chối
+    public string? CancelReason { get; set; } // Lý do hủy công văn
+    public DateTime? CancelDateTime { get; set; } // Ngày giờ hủy công văn
+    public string? CancelBy { get; set; } // Người thực hiện hủy
+    public string? CreatedBy { get; set; } // Người tạo công văn
+    public DateTime CreatedDate { get; set; } = DateTime.Today; // Ngày tạo (DATE)
+    public DateTime CreatedDateTime { get; set; } = DateTime.Now; // Ngày giờ tạo đầy đủ
+    public DateTime? LUDateTime { get; set; } // Ngày cập nhật cuối
+    public string? LUBy { get; set; } // Người cập nhật cuối
+
+    public List<PaymentGuaranteeClaimDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Công văn yêu cầu / đòi tiền thực hiện bảo lãnh (DMS.Sales Pmt_GrtClaimDetail): liên kết số khung VIN, mã xe, hợp đồng mua bán buôn, thư bảo lãnh ngân hàng, giá trị xe và số tiền đòi bảo lãnh.</summary>
+public sealed class PaymentGuaranteeClaimDetail
+{
+    public long Id { get; set; }
+    public long GrtClaimId { get; set; }
+    public string GrtClaimNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung xe (17 ký tự)
+    public string Model { get; set; } = ""; // Tên model (Santa Fe, Tucson, Creta, Accent...)
+    public string? ModelCode { get; set; } // Mã model
+    public string? SpecCode { get; set; } // Mã cấu hình xe (spec)
+    public string? SpecDescription { get; set; } // Mô tả đặc tả kỹ thuật xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? ColorName { get; set; } // Tên màu xe (Ngoại/Nội)
+    public string? ContractNo { get; set; } // Số hợp đồng mua buôn đại lý (DlrCtrNo)
+    public bool FlagDealerContractDMS40 { get; set; } = true; // Là HĐĐT DMS 4.0
+    public string? GuaranteeNo { get; set; } // Mã bảo lãnh hệ thống
+    public string? BankGuaranteeNo { get; set; } // Số thư bảo lãnh ngân hàng
+    public string? BankCode { get; set; } // Mã ngân hàng phát hành BL
+    public string? BankName { get; set; } // Tên ngân hàng phát hành BL
+    public string? BankCodeMonitor { get; set; } // Mã ngân hàng giám sát
+    public DateTime? DateOpen { get; set; } // Ngày mở bảo lãnh
+    public DateTime? DateStart { get; set; } // Ngày bắt đầu hiệu lực bảo lãnh
+    public DateTime? DateEnd { get; set; } // Ngày hết hạn thanh toán bảo lãnh
+    public decimal UnitPriceActual { get; set; } // Giá xe thực tế (VNĐ)
+    public decimal GuaranteeValue { get; set; } // Giá trị bảo lãnh xe (VNĐ)
+    public decimal ClaimAmount { get; set; } // Số tiền yêu cầu đòi bảo lãnh cho xe này (VNĐ)
+    public ClaimVinSignStatus Status { get; set; } = ClaimVinSignStatus.Pending; // Trạng thái xử lý VIN: P / A / C
+    public string? Remark { get; set; } // Ghi chú chi tiết dòng xe
+}
