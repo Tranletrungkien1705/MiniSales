@@ -291,6 +291,56 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(ContractCancelId) REFERENCES ContractCancels(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS TransportMinutes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TransportMinutesNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    TransporterName TEXT,
+                    PlateNo TEXT,
+                    DriverName TEXT,
+                    DriverPhone TEXT,
+                    BankCode TEXT,
+                    BankName TEXT,
+                    TransportMinutesDate TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    DLSignStatus INTEGER NOT NULL,
+                    HTCSignStatus INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    DLCreatedBy TEXT,
+                    DLCreatedAt TEXT NOT NULL,
+                    DLApprBy TEXT,
+                    DLApprAt TEXT,
+                    HTCApprBy TEXT,
+                    HTCApprAt TEXT,
+                    HTCCancelBy TEXT,
+                    HTCCancelAt TEXT,
+                    CancelReason TEXT,
+                    FilePath TEXT,
+                    Remark TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_TransportMinutes_OrgId_TransportMinutesNo ON TransportMinutes(OrgId, TransportMinutesNo);
+
+                CREATE TABLE IF NOT EXISTS TransportMinutesDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TransportMinutesId INTEGER NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    EngineNo TEXT,
+                    DeliveryOrderNo TEXT,
+                    OrderNo TEXT,
+                    GuaranteeNo TEXT,
+                    Odometer INTEGER NOT NULL,
+                    ConditionNote TEXT,
+                    Status INTEGER NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(TransportMinutesId) REFERENCES TransportMinutes(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -922,6 +972,140 @@ public static class Seeder
             };
 
             db.ContractCancels.AddRange(cc1, cc2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.TransportMinutes.AnyAsync(o => o.OrgId == orgId))
+        {
+            var tm1 = new CarTransportMinutes
+            {
+                OrgId = orgId,
+                TransportMinutesNo = "BBBG2603010001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                TransporterName = "Đội xe Vận tải Nam Trung",
+                PlateNo = "29C-888.99",
+                DriverName = "Trần Văn An",
+                DriverPhone = "0912888999",
+                BankCode = "VCB",
+                BankName = "Vietcombank Thăng Long",
+                TransportMinutesDate = DateTime.Today.AddDays(-2),
+                Status = TransportMinutesStatus.Completed,
+                DLSignStatus = DLSignStatus.Approved,
+                HTCSignStatus = HTCSignStatus.Approved,
+                TotalCars = 1,
+                DLCreatedBy = "DEALER_STORE",
+                DLCreatedAt = DateTime.Now.AddDays(-3),
+                DLApprBy = "DEALER_MANAGER",
+                DLApprAt = DateTime.Now.AddDays(-2),
+                HTCApprBy = "NPP_DISPATCH_LEAD",
+                HTCApprAt = DateTime.Now.AddDays(-2),
+                FilePath = "/storage/docs/esign/BBBG2603010001_signed.pdf",
+                Remark = "Biên bản bàn giao xe Santa Fe đợt 1 tháng 3/2026, xe mới 100% đầy đủ hồ sơ pháp lý",
+                Cars = new List<CarTransportMinutesDetail>
+                {
+                    new CarTransportMinutesDetail
+                    {
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        EngineNo = "G4KP-102941",
+                        DeliveryOrderNo = "DO2603010001",
+                        OrderNo = "SO2603010001",
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        Odometer = 12,
+                        ConditionNote = "Xe nguyên vẹn, sơn đẹp không trầy xước, 2 chìa smartkey, lốp dự phòng, sổ bảo hành",
+                        Status = TransportMinutesCarStatus.Approved,
+                        Remark = "Đã bàn giao và ký nhận trực tiếp tại bãi xe đại lý"
+                    }
+                }
+            };
+
+            var tm2 = new CarTransportMinutes
+            {
+                OrgId = orgId,
+                TransportMinutesNo = "BBBG2603150002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                TransporterName = "Xe cứu hộ / Chuyên dùng HTC",
+                PlateNo = "30H-123.45",
+                DriverName = "Lê Hoàng Quân",
+                DriverPhone = "0987654321",
+                BankCode = "BIDV",
+                BankName = "BIDV Thăng Long",
+                TransportMinutesDate = DateTime.Today.AddDays(-1),
+                Status = TransportMinutesStatus.DealerApproved,
+                DLSignStatus = DLSignStatus.Approved,
+                HTCSignStatus = HTCSignStatus.Pending,
+                TotalCars = 1,
+                DLCreatedBy = "DEALER_STORE",
+                DLCreatedAt = DateTime.Now.AddDays(-2),
+                DLApprBy = "DEALER_DIRECTOR",
+                DLApprAt = DateTime.Now.AddDays(-1),
+                Remark = "Đại lý đã kiểm tra xe Tucson và ký xác nhận nhận xe, chờ điều phối NPP ký đóng biên bản",
+                Cars = new List<CarTransportMinutesDetail>
+                {
+                    new CarTransportMinutesDetail
+                    {
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        EngineNo = "G4NL-983102",
+                        DeliveryOrderNo = "DO2602150002",
+                        OrderNo = "SO2602150002",
+                        GuaranteeNo = "LC2603-BIDV-88910",
+                        Odometer = 8,
+                        ConditionNote = "Xe mới nguyên bản, phụ kiện theo xe đầy đủ tiêu chuẩn HTC",
+                        Status = TransportMinutesCarStatus.Approved,
+                        Remark = "Đại lý đã tiếp nhận xe tại kho Đông Đô"
+                    }
+                }
+            };
+
+            var tm3 = new CarTransportMinutes
+            {
+                OrgId = orgId,
+                TransportMinutesNo = "BBBG2603200003",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                TransporterName = "Đội xe Vận tải Nam Trung",
+                PlateNo = "29C-888.99",
+                DriverName = "Trần Văn An",
+                DriverPhone = "0912888999",
+                BankCode = "DEALER",
+                TransportMinutesDate = DateTime.Today,
+                Status = TransportMinutesStatus.Pending,
+                DLSignStatus = DLSignStatus.Pending,
+                HTCSignStatus = HTCSignStatus.Pending,
+                TotalCars = 1,
+                DLCreatedBy = "NPP_DISPATCHER",
+                DLCreatedAt = DateTime.Now,
+                Remark = "Biên bản bàn giao xe Creta đang vận chuyển trên đường tới đại lý",
+                Cars = new List<CarTransportMinutesDetail>
+                {
+                    new CarTransportMinutesDetail
+                    {
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        EngineNo = "G4FL-334411",
+                        DeliveryOrderNo = "DO2603010001",
+                        OrderNo = "SO2603200003",
+                        Odometer = 15,
+                        ConditionNote = "Xe xuất kho nguyên niêm phong",
+                        Status = TransportMinutesCarStatus.Pending,
+                        Remark = "Chờ đại lý kiểm tra nghiệm thu"
+                    }
+                }
+            };
+
+            db.TransportMinutes.AddRange(tm1, tm2, tm3);
             await db.SaveChangesAsync();
         }
     }

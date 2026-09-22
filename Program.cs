@@ -32,6 +32,7 @@ builder.Services.AddScoped<ICarDocRequestService, CarDocRequestService>();
 builder.Services.AddScoped<ICarInvoiceService, CarInvoiceService>();
 builder.Services.AddScoped<ICarRetrieveService, CarRetrieveService>();
 builder.Services.AddScoped<IContractCancelService, ContractCancelService>();
+builder.Services.AddScoped<ICarTransportMinutesService, CarTransportMinutesService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -598,6 +599,85 @@ app.MapDelete("/api/contract-cancels/{contractCNo}/cars/{carId:long}", async (st
     {
         var r = await svc.RemoveCarAsync(contractCNo, carId);
         return r is null ? Results.NotFound(new { contractCNo, carId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Biên bản Bàn giao xe / Giao nhận xe (Car Transport Minutes - BBBG - DMS.Sales Car_TransportMinutes) =====
+app.MapPost("/api/transport-minutes", async (CreateTransportMinutesDto dto, ICarTransportMinutesService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-minutes", async (ICarTransportMinutesService svc, string? status, string? dealer, string? vin, string? doNo, string? minutesNo) =>
+    Results.Ok(await svc.ListAsync(status, dealer, vin, doNo, minutesNo))).RequireAuthorization();
+
+app.MapGet("/api/transport-minutes/stats", async (ICarTransportMinutesService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/transport-minutes/{minutesNo}", async (string minutesNo, ICarTransportMinutesService svc) =>
+{
+    var r = await svc.DetailAsync(minutesNo);
+    return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-minutes/{minutesNo}/approve-dl", async (string minutesNo, ApproveDLTransportMinutesDto? dto, ICarTransportMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveDLAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-minutes/{minutesNo}/approve-hq", async (string minutesNo, ApproveHQTransportMinutesDto? dto, ICarTransportMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveHQAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-minutes/{minutesNo}/cancel", async (string minutesNo, CancelTransportMinutesDto dto, ICarTransportMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transport-minutes/{minutesNo}", async (string minutesNo, ICarTransportMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(minutesNo);
+        return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-minutes/{minutesNo}/cars", async (string minutesNo, AddCarToTransportMinutesDto dto, ICarTransportMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transport-minutes/{minutesNo}/cars/{detailId:long}", async (string minutesNo, long detailId, ICarTransportMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(minutesNo, detailId);
+        return r is null ? Results.NotFound(new { transportMinutesNo = minutesNo, detailId }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

@@ -387,6 +387,72 @@ public sealed class ContractCancelDtl
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái Biên bản bàn giao xe (DMS.Sales Car_TransportMinutes TransportMinutesStatus: Pending (P=Chờ ký duyệt) -> DealerApproved (A1=Đại lý đã ký nhận) -> Completed (F=NPP duyệt hoàn tất bàn giao), Cancelled (C=Đã hủy)).</summary>
+public enum TransportMinutesStatus { Pending = 0, DealerApproved = 1, Completed = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái Đại lý ký nhận xe (DMS.Sales Car_TransportMinutes DLTransportMinutesStatus: Pending -> Approved).</summary>
+public enum DLSignStatus { Pending = 0, Approved = 1 }
+
+/// <summary>Trạng thái NPP xác nhận hoàn tất bàn giao (DMS.Sales Car_TransportMinutes HTCTransportMinutesStatus: Pending -> Approved).</summary>
+public enum HTCSignStatus { Pending = 0, Approved = 1 }
+
+/// <summary>Trạng thái dòng xe trong biên bản bàn giao (DMS.Sales Car_TransportMinutesDetail TransportMinutesDtlStatus: Pending -> Approved / Rejected).</summary>
+public enum TransportMinutesCarStatus { Pending = 0, Approved = 1, Rejected = 2 }
+
+/// <summary>Biên bản bàn giao xe / Biên bản giao nhận xe (DMS.Sales Car_TransportMinutes - BBBG/BBGN): quản lý bàn giao thực tế lô xe giữa NPP, Đại lý, Đơn vị vận chuyển và Ngân hàng.</summary>
+public sealed class CarTransportMinutes
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TransportMinutesNo { get; set; } = ""; // Số biên bản BBBG (PK Car_TransportMinutes)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string? TransporterName { get; set; } // Nhà vận chuyển / Đội xe
+    public string? PlateNo { get; set; } // Biển số xe chở xe
+    public string? DriverName { get; set; } // Lái xe bàn giao
+    public string? DriverPhone { get; set; } // SĐT lái xe
+    public string? BankCode { get; set; } // Ngân hàng tài trợ bảo lãnh (nếu có)
+    public string? BankName { get; set; }
+    public DateTime TransportMinutesDate { get; set; } = DateTime.Today; // Ngày lập biên bản
+    public TransportMinutesStatus Status { get; set; } = TransportMinutesStatus.Pending;
+    public DLSignStatus DLSignStatus { get; set; } = DLSignStatus.Pending;
+    public HTCSignStatus HTCSignStatus { get; set; } = HTCSignStatus.Pending;
+    public int TotalCars { get; set; } // Tổng số xe trong biên bản
+    public string? DLCreatedBy { get; set; }
+    public DateTime DLCreatedAt { get; set; } = DateTime.Now;
+    public string? DLApprBy { get; set; }
+    public DateTime? DLApprAt { get; set; }
+    public string? HTCApprBy { get; set; }
+    public DateTime? HTCApprAt { get; set; }
+    public string? HTCCancelBy { get; set; }
+    public DateTime? HTCCancelAt { get; set; }
+    public string? CancelReason { get; set; }
+    public string? FilePath { get; set; } // Đường dẫn file biên bản scan/ký số E-Sign
+    public string? Remark { get; set; }
+
+    public List<CarTransportMinutesDetail> Cars { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Biên bản bàn giao (DMS.Sales Car_TransportMinutesDetail).</summary>
+public sealed class CarTransportMinutesDetail
+{
+    public long Id { get; set; }
+    public long TransportMinutesId { get; set; }
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số VIN (17 ký tự)
+    public string Model { get; set; } = ""; // Dòng xe / Model
+    public string? SpecCode { get; set; } // Mã cấu hình
+    public string? ColorCode { get; set; } // Màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public string? DeliveryOrderNo { get; set; } // Số lệnh xuất xe DO liên quan
+    public string? OrderNo { get; set; } // Số đơn hàng / Hợp đồng bán lẻ
+    public string? GuaranteeNo { get; set; } // Số bảo lãnh ngân hàng
+    public int Odometer { get; set; } = 10; // Số km đồng hồ khi bàn giao
+    public string? ConditionNote { get; set; } // Tình trạng xe (2 chìa, phụ kiện, lốp phụ, nguyên vẹn)
+    public TransportMinutesCarStatus Status { get; set; } = TransportMinutesCarStatus.Pending;
+    public string? Remark { get; set; }
+}
+
 
 
 
