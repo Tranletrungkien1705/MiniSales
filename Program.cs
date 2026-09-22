@@ -27,6 +27,7 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IDeliveryOrderService, DeliveryOrderService>();
 builder.Services.AddScoped<IDealerOrderService, DealerOrderService>();
+builder.Services.AddScoped<IPaymentGuaranteeService, PaymentGuaranteeService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -225,6 +226,75 @@ app.MapPost("/api/dealer-orders/{orderNo}/cancel", async (string orderNo, Cancel
     {
         var r = await svc.CancelAsync(orderNo, dto);
         return r is null ? Results.NotFound(new { orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Bảo lãnh thanh toán Ngân hàng (Payment Guarantee - DMS.Sales Pmt_Guarantee) =====
+app.MapPost("/api/guarantees", async (CreatePaymentGuaranteeDto dto, IPaymentGuaranteeService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/guarantees", async (IPaymentGuaranteeService svc, string? status, string? dealer, string? bankCode, string? guaranteeType) =>
+    Results.Ok(await svc.ListAsync(status, dealer, bankCode, guaranteeType))).RequireAuthorization();
+
+app.MapGet("/api/guarantees/stats", async (IPaymentGuaranteeService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/guarantees/{guaranteeNo}", async (string guaranteeNo, IPaymentGuaranteeService svc) =>
+{
+    var r = await svc.DetailAsync(guaranteeNo);
+    return r is null ? Results.NotFound(new { guaranteeNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantees/{guaranteeNo}/approve", async (string guaranteeNo, ApprovePaymentGuaranteeDto? dto, IPaymentGuaranteeService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(guaranteeNo, dto);
+        return r is null ? Results.NotFound(new { guaranteeNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantees/{guaranteeNo}/reject", async (string guaranteeNo, RejectPaymentGuaranteeDto dto, IPaymentGuaranteeService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(guaranteeNo, dto);
+        return r is null ? Results.NotFound(new { guaranteeNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantees/{guaranteeNo}/cancel", async (string guaranteeNo, CancelPaymentGuaranteeDto? dto, IPaymentGuaranteeService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(guaranteeNo, dto);
+        return r is null ? Results.NotFound(new { guaranteeNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantees/{guaranteeNo}/cars", async (string guaranteeNo, AllocateCarDto dto, IPaymentGuaranteeService svc) =>
+{
+    try
+    {
+        var r = await svc.AllocateCarAsync(guaranteeNo, dto);
+        return r is null ? Results.NotFound(new { guaranteeNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/guarantees/{guaranteeNo}/cars/{detailId:long}", async (string guaranteeNo, long detailId, IPaymentGuaranteeService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(guaranteeNo, detailId);
+        return r is null ? Results.NotFound(new { guaranteeNo, detailId }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

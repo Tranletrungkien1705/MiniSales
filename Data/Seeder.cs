@@ -74,6 +74,47 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(OrderId) REFERENCES DealerOrders(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS PaymentGuarantees (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    GuaranteeNo TEXT NOT NULL,
+                    BankGuaranteeNo TEXT NOT NULL,
+                    BankCode TEXT NOT NULL,
+                    BankName TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    GuaranteeType INTEGER NOT NULL,
+                    Status INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    AllocatedAmount REAL NOT NULL,
+                    Term INTEGER NOT NULL,
+                    DateOpen TEXT NOT NULL,
+                    DateExpired TEXT NOT NULL,
+                    Fee REAL NOT NULL,
+                    BankCodeMonitor TEXT,
+                    DateRecieveGrtRoot TEXT,
+                    Remark TEXT,
+                    RemarkReject TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ApprovedAt TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentGuarantees_OrgId_GuaranteeNo ON PaymentGuarantees(OrgId, GuaranteeNo);
+
+                CREATE TABLE IF NOT EXISTS PaymentGuaranteeDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    GuaranteeId INTEGER NOT NULL,
+                    Vin TEXT,
+                    Model TEXT NOT NULL,
+                    OrderNo TEXT,
+                    GuaranteeValue REAL NOT NULL,
+                    NumberOfDaysDeferredPayment INTEGER NOT NULL,
+                    DateStart TEXT,
+                    DateEnd TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(GuaranteeId) REFERENCES PaymentGuarantees(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -277,6 +318,82 @@ public static class Seeder
             };
 
             db.DealerOrders.AddRange(ord1, ord2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.PaymentGuarantees.AnyAsync(o => o.OrgId == orgId))
+        {
+            var grt1 = new PaymentGuarantee
+            {
+                OrgId = orgId,
+                GuaranteeNo = "GRT2603010001",
+                BankGuaranteeNo = "BG2603-VCB-00128",
+                BankCode = "VCB",
+                BankName = "Vietcombank Sở Giao Dịch",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                GuaranteeType = GuaranteeType.BL,
+                Status = GuaranteeStatus.Approved,
+                TotalAmount = 10000000000m,
+                AllocatedAmount = 2250000000m,
+                Term = 12,
+                DateOpen = DateTime.Today.AddDays(-15),
+                DateExpired = DateTime.Today.AddDays(350),
+                Fee = 15000000m,
+                BankCodeMonitor = "VCB",
+                DateRecieveGrtRoot = DateTime.Today.AddDays(-14),
+                Remark = "Bảo lãnh thanh toán mua xe theo hạn mức năm 2026",
+                CreatedAt = DateTime.Now.AddDays(-15),
+                ApprovedAt = DateTime.Now.AddDays(-14),
+                Details = new List<PaymentGuaranteeDetail>
+                {
+                    new PaymentGuaranteeDetail
+                    {
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        OrderNo = "ORD2603010001",
+                        GuaranteeValue = 1350000000m,
+                        NumberOfDaysDeferredPayment = 30,
+                        DateStart = DateTime.Today.AddDays(-14),
+                        DateEnd = DateTime.Today.AddDays(16),
+                        Remark = "Bảo lãnh lô xe Santa Fe hợp đồng SO2603010001"
+                    },
+                    new PaymentGuaranteeDetail
+                    {
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        OrderNo = "ORD2603010001",
+                        GuaranteeValue = 900000000m,
+                        NumberOfDaysDeferredPayment = 45,
+                        DateStart = DateTime.Today.AddDays(-14),
+                        DateEnd = DateTime.Today.AddDays(31),
+                        Remark = "Bảo lãnh lô xe Tucson hợp đồng SO2602150002"
+                    }
+                }
+            };
+
+            var grt2 = new PaymentGuarantee
+            {
+                OrgId = orgId,
+                GuaranteeNo = "GRT2603150002",
+                BankGuaranteeNo = "LC2603-BIDV-88910",
+                BankCode = "BIDV",
+                BankName = "BIDV Thăng Long",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                GuaranteeType = GuaranteeType.LC,
+                Status = GuaranteeStatus.Pending,
+                TotalAmount = 5000000000m,
+                AllocatedAmount = 0m,
+                Term = 6,
+                DateOpen = DateTime.Today.AddDays(-2),
+                DateExpired = DateTime.Today.AddMonths(6),
+                Fee = 7500000m,
+                Remark = "Thư tín dụng (LC) nhập bổ sung xe đợt lái thử tháng 3/2026",
+                CreatedAt = DateTime.Now.AddDays(-2)
+            };
+
+            db.PaymentGuarantees.AddRange(grt1, grt2);
             await db.SaveChangesAsync();
         }
     }

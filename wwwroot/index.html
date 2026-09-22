@@ -4,6 +4,7 @@
 <ul>
 <li><strong>Đơn đặt hàng xe Đại lý (Dealer Purchase Order):</strong> <code>POST/GET /api/dealer-orders</code> · <code>GET /api/dealer-orders/{orderNo}</code> · <code>POST /api/dealer-orders/{orderNo}/approve1|approve2|reject|cancel</code> · <code>GET /api/dealer-orders/stats</code></li>
 <li><strong>Hợp đồng bán xe (Retail Sales Deal):</strong> <code>POST/GET /api/orders</code> · <code>GET /api/orders/{code}</code> · <code>POST /api/orders/{code}/deposit|pay|cancel</code> · <code>GET /api/stats</code></li>
+<li><strong>Bảo lãnh thanh toán Ngân hàng (Payment Guarantee):</strong> <code>POST/GET /api/guarantees</code> · <code>GET /api/guarantees/{guaranteeNo}</code> · <code>POST /api/guarantees/{guaranteeNo}/approve|reject|cancel</code> · <code>POST/DELETE /api/guarantees/{guaranteeNo}/cars</code> · <code>GET /api/guarantees/stats</code></li>
 <li><strong>Lệnh giao xe xuất kho (Delivery Order):</strong> <code>POST/GET /api/delivery-orders</code> · <code>GET /api/delivery-orders/{doNo}</code> · <code>POST /api/delivery-orders/{doNo}/approve|complete|cancel</code> · <code>GET /api/delivery-orders/stats</code></li>
 </ul>
 <p class="muted">SSO <code>/api/whoami</code>. Swagger <a href="/swagger">/swagger</a>.</p></body></html>

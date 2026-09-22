@@ -117,3 +117,55 @@ public sealed class DealerOrderItem
     public decimal TotalAmount { get; set; }
     public string? Remark { get; set; }
 }
+
+/// <summary>Loại bảo lãnh (DMS.Sales Pmt_Guarantee GuaranteeType: BL = Bảo lãnh thanh toán, LC = Thư tín dụng Letter of Credit).</summary>
+public enum GuaranteeType { BL = 0, LC = 1 }
+
+/// <summary>Trạng thái bảo lãnh ngân hàng (DMS.Sales Pmt_Guarantee GuaranteeStatus: Pending -> Approved / Rejected / Cancelled).</summary>
+public enum GuaranteeStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Bảo lãnh thanh toán ngân hàng cho Đại lý mua xe từ Nhà phân phối (DMS.Sales Pmt_Guarantee).</summary>
+public sealed class PaymentGuarantee
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string GuaranteeNo { get; set; } = "";
+    public string BankGuaranteeNo { get; set; } = "";
+    public string BankCode { get; set; } = "";
+    public string BankName { get; set; } = "";
+    public string DealerCode { get; set; } = "";
+    public string DealerName { get; set; } = "";
+    public GuaranteeType GuaranteeType { get; set; } = GuaranteeType.BL;
+    public GuaranteeStatus Status { get; set; } = GuaranteeStatus.Pending;
+    public decimal TotalAmount { get; set; }
+    public decimal AllocatedAmount { get; set; }
+    public int Term { get; set; }
+    public DateTime DateOpen { get; set; } = DateTime.Today;
+    public DateTime DateExpired { get; set; }
+    public decimal Fee { get; set; }
+    public string? BankCodeMonitor { get; set; } // Ngân hàng giám sát / theo dõi giải ngân
+    public DateTime? DateRecieveGrtRoot { get; set; } // Ngày nhận bản gốc bảo lãnh
+    public string? Remark { get; set; }
+    public string? RemarkReject { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<PaymentGuaranteeDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết xe / đơn hàng gắn bảo lãnh thanh toán (DMS.Sales Pmt_GuaranteeDetail).</summary>
+public sealed class PaymentGuaranteeDetail
+{
+    public long Id { get; set; }
+    public long GuaranteeId { get; set; }
+    public string? Vin { get; set; }
+    public string Model { get; set; } = "";
+    public string? OrderNo { get; set; }
+    public decimal GuaranteeValue { get; set; }
+    public int NumberOfDaysDeferredPayment { get; set; }
+    public DateTime? DateStart { get; set; }
+    public DateTime? DateEnd { get; set; }
+    public string? Remark { get; set; }
+}
+
