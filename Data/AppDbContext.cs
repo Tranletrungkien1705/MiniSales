@@ -54,6 +54,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarBodyRequest> BodyRequests => Set<CarBodyRequest>();
     public DbSet<CarBodyRequestDetail> BodyRequestDetails => Set<CarBodyRequestDetail>();
     public DbSet<DealerDriveTest> DriveTests => Set<DealerDriveTest>();
+    public DbSet<StorageRearrangeCBOrder> StorageRearrangeCBOrders => Set<StorageRearrangeCBOrder>();
+    public DbSet<StorageRearrangeCBDetail> StorageRearrangeCBDetails => Set<StorageRearrangeCBDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -170,5 +172,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerDriveTest>().Property(x => x.Status).HasConversion<int>();
         b.Entity<DealerDriveTest>().Property(x => x.DriverTestGroup).HasConversion<int>();
         b.Entity<DealerDriveTest>().Property(x => x.DriverTestType).HasConversion<int>();
+        b.Entity<StorageRearrangeCBOrder>().HasIndex(x => new { x.OrgId, x.StoRearCBNo }).IsUnique();
+        b.Entity<StorageRearrangeCBOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<StorageRearrangeCBOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.StoRearCBId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<StorageRearrangeCBDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

@@ -1198,6 +1198,60 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(CBRequestId) REFERENCES CarBodyRequests(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS StorageRearrangeCBOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    StoRearCBNo TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    StorageCodeTo TEXT NOT NULL,
+                    StorageNameTo TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    RejectDate TEXT,
+                    RejectBy TEXT,
+                    CancelReason TEXT,
+                    CancelDate TEXT,
+                    CancelBy TEXT,
+                    CreatedDate TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    ApprovedDate TEXT,
+                    ApprovedBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_StorageRearrangeCBOrders_OrgId_StoRearCBNo ON StorageRearrangeCBOrders(OrgId, StoRearCBNo);
+
+                CREATE TABLE IF NOT EXISTS StorageRearrangeCBDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    StoRearCBId INTEGER NOT NULL,
+                    StoRearCBNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    ModelCode TEXT,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    StorageCodeFrom TEXT NOT NULL,
+                    StorageNameFrom TEXT,
+                    StorageCodeTo TEXT NOT NULL,
+                    StorageNameTo TEXT,
+                    CBReqNo TEXT NOT NULL,
+                    ExpectedStartDate TEXT NOT NULL,
+                    ExpectedEndDate TEXT NOT NULL,
+                    LoaiThung TEXT NOT NULL,
+                    ActualSpec TEXT,
+                    TypeCB TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    ConfirmDate TEXT,
+                    ConfirmBy TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(StoRearCBId) REFERENCES StorageRearrangeCBOrders(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -5276,6 +5330,221 @@ public static class Seeder
             };
 
             db.DriveTests.AddRange(dt1, dt2, dt3, dt4, dt5);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.StorageRearrangeCBOrders.AnyAsync(o => o.OrgId == orgId))
+        {
+            var rcb1 = new StorageRearrangeCBOrder
+            {
+                OrgId = orgId,
+                StoRearCBNo = "2603RCB000001",
+                Status = StoRearrangeCBStatus.Approved,
+                TotalCars = 2,
+                StorageCodeTo = "KHO_DT_01",
+                StorageNameTo = "Xưởng Đóng Thùng Ô Tô Hiệp Hòa",
+                Remark = "Lệnh điều chuyển 02 xe Porter H150 chassis sang xưởng Hiệp Hòa gia công đóng thùng mui bạt và thùng kín Inox",
+                CreatedDate = DateTime.Today.AddDays(-4),
+                CreatedBy = "NPP_LOGISTICS_CV",
+                ApprovedDate = DateTime.Today.AddDays(-3),
+                ApprovedBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                LUDateTime = DateTime.Today.AddDays(-3),
+                LUBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                Details = new List<StorageRearrangeCBDetail>
+                {
+                    new StorageRearrangeCBDetail
+                    {
+                        StoRearCBNo = "2603RCB000001",
+                        CarId = "CAR2026-H150-112",
+                        Vin = "KMHEC81BBSA100112",
+                        Model = "Hyundai Porter H150",
+                        ModelCode = "H150",
+                        SpecCode = "H150-CHASSIS-01",
+                        SpecDescription = "Porter H150 Sắt xi cabin đơn",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng tuyết",
+                        EngineNo = "D4CB-100112",
+                        StorageCodeFrom = "KHO_TONG_HN",
+                        StorageNameFrom = "Kho Tổng Hà Nội - KCN Đài Tư",
+                        StorageCodeTo = "KHO_DT_01",
+                        StorageNameTo = "Xưởng Đóng Thùng Ô Tô Hiệp Hòa",
+                        CBReqNo = "2603CBR000001",
+                        ExpectedStartDate = DateTime.Today.AddDays(-3),
+                        ExpectedEndDate = DateTime.Today.AddDays(4),
+                        LoaiThung = "Thùng mui bạt",
+                        ActualSpec = "Thùng mui bạt 5 bửng mở sàn sắt 2.5mm bạt simili Hàn Quốc",
+                        TypeCB = "N",
+                        Status = StoRearrangeCBDtlStatus.Approved,
+                        ConfirmDate = DateTime.Today.AddDays(-3),
+                        ConfirmBy = "HQ_LOGISTICS",
+                        Remark = "Tiến độ đạt 60%, khung xương đã lắp xong"
+                    },
+                    new StorageRearrangeCBDetail
+                    {
+                        StoRearCBNo = "2603RCB000001",
+                        CarId = "CAR2026-H150-113",
+                        Vin = "KMHEC81BBSA100113",
+                        Model = "Hyundai Porter H150",
+                        ModelCode = "H150",
+                        SpecCode = "H150-CHASSIS-01",
+                        SpecDescription = "Porter H150 Sắt xi cabin đơn",
+                        ColorCode = "BL1",
+                        ColorName = "Xanh Hyundai",
+                        EngineNo = "D4CB-100113",
+                        StorageCodeFrom = "KHO_TONG_HN",
+                        StorageNameFrom = "Kho Tổng Hà Nội - KCN Đài Tư",
+                        StorageCodeTo = "KHO_DT_01",
+                        StorageNameTo = "Xưởng Đóng Thùng Ô Tô Hiệp Hòa",
+                        CBReqNo = "2603CBR000001",
+                        ExpectedStartDate = DateTime.Today.AddDays(-3),
+                        ExpectedEndDate = DateTime.Today.AddDays(5),
+                        LoaiThung = "Thùng kín Inox",
+                        ActualSpec = "Thùng kín vách Inox 430 dập sóng sàn dập lá me",
+                        TypeCB = "N",
+                        Status = StoRearrangeCBDtlStatus.Approved,
+                        ConfirmDate = DateTime.Today.AddDays(-3),
+                        ConfirmBy = "HQ_LOGISTICS",
+                        Remark = "Chuẩn bị lắp vách Inox và cửa hông"
+                    }
+                }
+            };
+
+            var rcb2 = new StorageRearrangeCBOrder
+            {
+                OrgId = orgId,
+                StoRearCBNo = "2603RCB000002",
+                Status = StoRearrangeCBStatus.Pending,
+                TotalCars = 1,
+                StorageCodeTo = "KHO_DT_QUYENAUTO",
+                StorageNameTo = "Xưởng Đóng Thùng Quyền Auto (Đông Lạnh)",
+                Remark = "Lệnh điều chuyển xe New Porter H150 chassis sang xưởng Quyền Auto đóng thùng đông lạnh chuyên dụng theo YCĐT 2603CBR000002",
+                CreatedDate = DateTime.Today.AddDays(-1),
+                CreatedBy = "NPP_LOGISTICS_CV",
+                LUDateTime = DateTime.Today.AddDays(-1),
+                LUBy = "NPP_LOGISTICS_CV",
+                Details = new List<StorageRearrangeCBDetail>
+                {
+                    new StorageRearrangeCBDetail
+                    {
+                        StoRearCBNo = "2603RCB000002",
+                        CarId = "CAR2026-H150-771",
+                        Vin = "KMHEB81BBSA500771",
+                        Model = "Hyundai New Porter H150",
+                        ModelCode = "H150",
+                        SpecCode = "H150-CHASSIS-02",
+                        SpecDescription = "New Porter H150 Sắt xi cabin đơn",
+                        ColorCode = "BL1",
+                        ColorName = "Xanh Hyundai",
+                        EngineNo = "D4CB-500771",
+                        StorageCodeFrom = "KHO_TONG_SG",
+                        StorageNameFrom = "Kho Tổng Nam Bộ Hiệp Phước",
+                        StorageCodeTo = "KHO_DT_QUYENAUTO",
+                        StorageNameTo = "Xưởng Đóng Thùng Quyền Auto (Đông Lạnh)",
+                        CBReqNo = "2603CBR000002",
+                        ExpectedStartDate = DateTime.Today,
+                        ExpectedEndDate = DateTime.Today.AddDays(7),
+                        LoaiThung = "Thùng đông lạnh",
+                        ActualSpec = "Thùng Composite Foam PU cách nhiệt dày 80mm máy lạnh Thermal Master T1400",
+                        TypeCB = "N",
+                        Status = StoRearrangeCBDtlStatus.Pending,
+                        Remark = "Hồ sơ mới gửi sang xưởng Quyền Auto, chờ NPP phê duyệt lệnh điều chuyển"
+                    }
+                }
+            };
+
+            var rcb3 = new StorageRearrangeCBOrder
+            {
+                OrgId = orgId,
+                StoRearCBNo = "2603RCB000003",
+                Status = StoRearrangeCBStatus.Rejected,
+                TotalCars = 1,
+                StorageCodeTo = "KHO_DT_02",
+                StorageNameTo = "Xưởng Đóng Thùng Ô Tô Nam Việt",
+                Remark = "Lệnh điều chuyển xe Mighty EX8 GTL đóng thùng kín Inox",
+                RejectReason = "Kho bãi xưởng đóng thùng Nam Việt đang quá tải đơn hàng theo tiến độ tháng 3, đề nghị chuyển lệnh sang xưởng Hiệp Hòa hoặc An Khang",
+                RejectDate = DateTime.Today.AddDays(-5),
+                RejectBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                CreatedDate = DateTime.Today.AddDays(-6),
+                CreatedBy = "NPP_LOGISTICS_CV",
+                LUDateTime = DateTime.Today.AddDays(-5),
+                LUBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                Details = new List<StorageRearrangeCBDetail>
+                {
+                    new StorageRearrangeCBDetail
+                    {
+                        StoRearCBNo = "2603RCB000003",
+                        CarId = "CAR2026-EX8L-441",
+                        Vin = "KMHEC81BBSA600441",
+                        Model = "Hyundai Mighty EX8 GTL",
+                        ModelCode = "EX8L",
+                        SpecCode = "EX8L-CHASSIS-01",
+                        SpecDescription = "Mighty EX8 GTL Sắt xi siêu dài",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng",
+                        EngineNo = "D4CC-600441",
+                        StorageCodeFrom = "KHO_TONG_HP",
+                        StorageNameFrom = "Kho Trung Chuyển Hải Phòng",
+                        StorageCodeTo = "KHO_DT_02",
+                        StorageNameTo = "Xưởng Đóng Thùng Ô Tô Nam Việt",
+                        CBReqNo = "2603CBR000005",
+                        ExpectedStartDate = DateTime.Today.AddDays(-5),
+                        ExpectedEndDate = DateTime.Today.AddDays(2),
+                        LoaiThung = "Thùng kín Inox",
+                        ActualSpec = "Thùng kín Inox tiêu chuẩn",
+                        TypeCB = "N",
+                        Status = StoRearrangeCBDtlStatus.Rejected,
+                        Remark = "Từ chối duyệt do xưởng quá tải"
+                    }
+                }
+            };
+
+            var rcb4 = new StorageRearrangeCBOrder
+            {
+                OrgId = orgId,
+                StoRearCBNo = "2603RCB000004",
+                Status = StoRearrangeCBStatus.Cancelled,
+                TotalCars = 1,
+                StorageCodeTo = "KHO_DT_01",
+                StorageNameTo = "Xưởng Đóng Thùng Ô Tô Hiệp Hòa",
+                Remark = "Lệnh điều chuyển đóng thùng lửng xe Porter H150",
+                CancelReason = "Hủy lệnh do khách hàng đại lý đổi phương án yêu cầu bàn giao xe chassis sắt xi tự đóng thùng ngoài",
+                CancelDate = DateTime.Today.AddDays(-7),
+                CancelBy = "NPP_LOGISTICS_CV",
+                CreatedDate = DateTime.Today.AddDays(-8),
+                CreatedBy = "NPP_LOGISTICS_CV",
+                LUDateTime = DateTime.Today.AddDays(-7),
+                LUBy = "NPP_LOGISTICS_CV",
+                Details = new List<StorageRearrangeCBDetail>
+                {
+                    new StorageRearrangeCBDetail
+                    {
+                        StoRearCBNo = "2603RCB000004",
+                        CarId = "CAR2026-H150-990",
+                        Vin = "KMHEC81BBSA990111",
+                        Model = "Hyundai Porter H150",
+                        ModelCode = "H150",
+                        SpecCode = "H150-CHASSIS-01",
+                        SpecDescription = "Porter H150 Sắt xi cabin đơn",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng tuyết",
+                        EngineNo = "D4CB-990111",
+                        StorageCodeFrom = "KHO_TONG_HN",
+                        StorageNameFrom = "Kho Tổng Hà Nội - KCN Đài Tư",
+                        StorageCodeTo = "KHO_DT_01",
+                        StorageNameTo = "Xưởng Đóng Thùng Ô Tô Hiệp Hòa",
+                        CBReqNo = "2603CBR000001",
+                        ExpectedStartDate = DateTime.Today.AddDays(-7),
+                        ExpectedEndDate = DateTime.Today,
+                        LoaiThung = "Thùng lửng",
+                        ActualSpec = "Thùng lửng sắt xi",
+                        TypeCB = "N",
+                        Status = StoRearrangeCBDtlStatus.Cancelled,
+                        Remark = "Đã hủy theo yêu cầu đại lý"
+                    }
+                }
+            };
+
+            db.StorageRearrangeCBOrders.AddRange(rcb1, rcb2, rcb3, rcb4);
             await db.SaveChangesAsync();
         }
     }

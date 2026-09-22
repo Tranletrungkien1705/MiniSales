@@ -1535,5 +1535,70 @@ public sealed class DealerDriveTest
     public bool FlagActive { get; set; } = true;
 }
 
+/// <summary>Trạng thái Lệnh điều chuyển đóng thùng xe (DMS.Sales Sto_RearrangeCB RearCBStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [NPP duyệt lệnh], Rejected = 'R' [Từ chối duyệt], Cancelled = 'C' [Hủy lệnh]).</summary>
+public enum StoRearrangeCBStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái từng dòng xe trong Lệnh điều chuyển đóng thùng (DMS.Sales Sto_RearrangeCBDetail RearCBDtlStatus: Pending = 'P', Approved = 'A', Rejected = 'R', Cancelled = 'C').</summary>
+public enum StoRearrangeCBDtlStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Lệnh điều chuyển đóng thùng xe ô tô thương mại (DMS.Sales Sto_RearrangeCB / StoRearrangeCBController / Storage.cs / StoRearrangeCB.txt): điều chuyển xe chassis chưa đóng thùng (TypeCB='N') đã có Yêu cầu đóng thùng (Sto_CBReq) sang kho/xưởng đóng thùng (StorageType=DT), quản lý ngày bắt đầu và ngày giao dự kiến, NPP phê duyệt lệnh (ApproveHQ), từ chối (RejectHQ), hủy lệnh (CancelHQ), cập nhật chi tiết xe (DetailUpdateHQ) và báo cáo thống kê.</summary>
+public sealed class StorageRearrangeCBOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string StoRearCBNo { get; set; } = ""; // Số lệnh điều chuyển đóng thùng (PK StoRearCBNo, format: {yyMM}RCB{seq:D6}, vd: 2603RCB000001)
+    public StoRearrangeCBStatus Status { get; set; } = StoRearrangeCBStatus.Pending; // Trạng thái: P -> A / R / C
+    public int TotalCars { get; set; } // Tổng số lượng xe điều chuyển đóng thùng
+    public string StorageCodeTo { get; set; } = ""; // Kho/Xưởng đóng thùng đích (bắt buộc StorageType = DT)
+    public string? StorageNameTo { get; set; } // Tên xưởng đóng thùng
+    public string? Remark { get; set; } // Ghi chú lệnh đóng thùng
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public DateTime? RejectDate { get; set; }
+    public string? RejectBy { get; set; }
+    public string? CancelReason { get; set; } // Lý do hủy lệnh
+    public DateTime? CancelDate { get; set; }
+    public string? CancelBy { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.Now; // Ngày tạo lệnh
+    public string? CreatedBy { get; set; }
+    public DateTime? ApprovedDate { get; set; } // Ngày NPP phê duyệt
+    public string? ApprovedBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<StorageRearrangeCBDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Lệnh điều chuyển đóng thùng (DMS.Sales Sto_RearrangeCBDetail): theo dõi từng số khung VIN xe chassis, kho xuất bốc xe (StorageCodeFrom), xưởng nhận xe đóng thùng (StorageCodeTo), số Yêu cầu đóng thùng gốc (CBReqNo), ngày bắt đầu dự kiến (ExpectedStartDate), ngày giao dự kiến (ExpectedEndDate), loại thùng và trạng thái duyệt xe.</summary>
+public sealed class StorageRearrangeCBDetail
+{
+    public long Id { get; set; }
+    public long StoRearCBId { get; set; }
+    public string StoRearCBNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung VIN (17 ký tự)
+    public string Model { get; set; } = ""; // Model xe thương mại (Mighty EX8, Porter H150...)
+    public string? ModelCode { get; set; } // Mã model
+    public string? SpecCode { get; set; } // Mã cấu hình xe chassis
+    public string? SpecDescription { get; set; } // Mô tả cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu cabin
+    public string? ColorName { get; set; } // Tên màu sơn
+    public string? EngineNo { get; set; } // Số máy
+    public string StorageCodeFrom { get; set; } = ""; // Kho hiện tại đang lưu giữ xe
+    public string? StorageNameFrom { get; set; } // Tên kho xuất xe
+    public string StorageCodeTo { get; set; } = ""; // Kho/Xưởng đóng thùng đích (StorageType = DT)
+    public string? StorageNameTo { get; set; } // Tên kho/xưởng đóng thùng
+    public string CBReqNo { get; set; } = ""; // Số Yêu cầu đóng thùng gốc đã duyệt (bắt buộc)
+    public DateTime ExpectedStartDate { get; set; } // Ngày bắt đầu vận chuyển / đóng thùng dự kiến
+    public DateTime ExpectedEndDate { get; set; } // Ngày giao dự kiến hoàn tất
+    public string LoaiThung { get; set; } = ""; // Loại thùng cần đóng
+    public string? ActualSpec { get; set; } // Cấu hình quy chuẩn thực tế
+    public string TypeCB { get; set; } = "N"; // Tình trạng xe: "N" = Chassis chưa đóng thùng
+    public StoRearrangeCBDtlStatus Status { get; set; } = StoRearrangeCBDtlStatus.Pending; // Trạng thái dòng xe
+    public DateTime? ConfirmDate { get; set; } // Ngày xác nhận lịch giao/tiến độ
+    public string? ConfirmBy { get; set; } // Người xác nhận
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
+
 
 

@@ -49,6 +49,7 @@ builder.Services.AddScoped<IBankBillMinutesService, BankBillMinutesService>();
 builder.Services.AddScoped<ICarTestCarService, CarTestCarService>();
 builder.Services.AddScoped<ICarBodyRequestService, CarBodyRequestService>();
 builder.Services.AddScoped<IDealerDriveTestService, DealerDriveTestService>();
+builder.Services.AddScoped<IStorageRearrangeCBService, StorageRearrangeCBService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2327,6 +2328,108 @@ app.MapPost("/api/drive-tests/{driveTestCode}/cancel", async (string driveTestCo
     {
         var r = await svc.CancelAsync(driveTestCode, dto);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy lượt lái thử {driveTestCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Lệnh Điều Chuyển Đóng Thùng Xe Ô Tô Thương Mại (Commercial Vehicle Storage Rearrange & Body Building Order - DMS.Sales Sto_RearrangeCB / StoRearrangeCBController / Storage.cs) =====
+app.MapPost("/api/rearrange-cb", async (CreateStoRearrangeCBDto dto, IStorageRearrangeCBService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/rearrange-cb", async (IStorageRearrangeCBService svc, string? status, string? vin, string? storageCodeTo, string? stoRearCBNo, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, vin, storageCodeTo, stoRearCBNo, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/rearrange-cb/eligible-cars", async (IStorageRearrangeCBService svc, string? storageCodeTo) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(storageCodeTo))).RequireAuthorization();
+
+app.MapGet("/api/rearrange-cb/stats", async (IStorageRearrangeCBService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/rearrange-cb/{stoRearCBNo}", async (string stoRearCBNo, IStorageRearrangeCBService svc) =>
+{
+    var r = await svc.DetailAsync(stoRearCBNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/rearrange-cb/{stoRearCBNo}", async (string stoRearCBNo, UpdateStoRearrangeCBDto dto, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(stoRearCBNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/rearrange-cb/{stoRearCBNo}", async (string stoRearCBNo, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(stoRearCBNo);
+        return !ok ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(new { success = true, stoRearCBNo });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/rearrange-cb/{stoRearCBNo}/cars/{vin}", async (string stoRearCBNo, string vin, UpdateStoRearrangeCBLineDto dto, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var r = await svc.DetailUpdateAsync(stoRearCBNo, vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-cb/{stoRearCBNo}/cars", async (string stoRearCBNo, List<StoRearrangeCBItemInputDto> items, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(stoRearCBNo, items);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/rearrange-cb/{stoRearCBNo}/cars/{vin}", async (string stoRearCBNo, string vin, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(stoRearCBNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-cb/{stoRearCBNo}/approve", async (string stoRearCBNo, ApproveStoRearrangeCBDto? dto, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(stoRearCBNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-cb/{stoRearCBNo}/reject", async (string stoRearCBNo, RejectStoRearrangeCBDto dto, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(stoRearCBNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-cb/{stoRearCBNo}/cancel", async (string stoRearCBNo, CancelStoRearrangeCBDto dto, IStorageRearrangeCBService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(stoRearCBNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
