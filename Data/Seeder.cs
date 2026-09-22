@@ -392,6 +392,107 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(ContractId) REFERENCES DealerContracts(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS RetailContracts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    ContractNoUser TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    DealerCodeBuyer TEXT,
+                    CustomerCode TEXT NOT NULL,
+                    CustomerName TEXT NOT NULL,
+                    CustomerPhone TEXT NOT NULL,
+                    CustomerIdCardType TEXT NOT NULL,
+                    CustomerIdCardNo TEXT NOT NULL,
+                    CustomerDateOfBirth TEXT,
+                    CustomerAddress TEXT,
+                    CustomerType INTEGER NOT NULL,
+                    TransactorCode TEXT,
+                    TransactorName TEXT,
+                    TransactorPhone TEXT,
+                    DriverCode TEXT,
+                    DealerSaleCode TEXT,
+                    SalesType TEXT NOT NULL,
+                    SMCode TEXT NOT NULL,
+                    SMName TEXT,
+                    ContractDate TEXT NOT NULL,
+                    PaymentType INTEGER NOT NULL,
+                    BankCode TEXT,
+                    BankName TEXT,
+                    BankLoanAmount REAL NOT NULL,
+                    DepositAmount REAL NOT NULL,
+                    PaidAmount REAL NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    FlagDealFinish INTEGER NOT NULL,
+                    VersionCount INTEGER NOT NULL,
+                    VersionDTimeCurr TEXT NOT NULL,
+                    ApprovedAt TEXT,
+                    ApprovedBy TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    CancelReason TEXT,
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_RetailContracts_OrgId_ContractNo ON RetailContracts(OrgId, ContractNo);
+
+                CREATE TABLE IF NOT EXISTS RetailContractDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ContractId INTEGER NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    ProductionYear INTEGER NOT NULL,
+                    Qty INTEGER NOT NULL,
+                    QtyDelivery INTEGER NOT NULL,
+                    QtyCancel INTEGER NOT NULL,
+                    UnitPrice REAL NOT NULL,
+                    Discount REAL NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    DlvExpectedDate TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(ContractId) REFERENCES RetailContracts(Id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS RetailContractCars (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ContractId INTEGER NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    CtrCarId TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    Vin TEXT,
+                    Status INTEGER NOT NULL,
+                    DeliveryDate TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(ContractId) REFERENCES RetailContracts(Id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS RetailContractHistories (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ContractId INTEGER NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    VersionCount INTEGER NOT NULL,
+                    VersionDTimeCurr TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    Qty INTEGER NOT NULL,
+                    UnitPrice REAL NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    DlvExpectedDate TEXT,
+                    Remark TEXT,
+                    LoggedBy TEXT,
+                    LogDateTime TEXT NOT NULL,
+                    FOREIGN KEY(ContractId) REFERENCES RetailContracts(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -1305,6 +1406,288 @@ public static class Seeder
             };
 
             db.DealerContracts.AddRange(ctr1, ctr2, ctr3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.RetailContracts.AnyAsync(o => o.OrgId == orgId))
+        {
+            var rc1 = new DlrRetailContract
+            {
+                OrgId = orgId,
+                ContractNo = "RC26090001",
+                ContractNoUser = "HDBL-2026/09-01",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                CustomerCode = "CUS00128",
+                CustomerName = "Nguyễn Thành Long",
+                CustomerPhone = "0988123456",
+                CustomerIdCardType = "CCCD",
+                CustomerIdCardNo = "001095012345",
+                CustomerDateOfBirth = new DateTime(1985, 6, 15),
+                CustomerAddress = "18 Tam Trinh, Hoàng Mai, Hà Nội",
+                CustomerType = RetailCustomerType.Individual,
+                SalesType = "RETAIL",
+                SMCode = "SM001",
+                SMName = "Trần Tuấn Anh",
+                ContractDate = DateTime.Today.AddDays(-5),
+                PaymentType = RetailPaymentType.Installment,
+                BankCode = "VCB",
+                BankName = "Vietcombank Thăng Long",
+                BankLoanAmount = 900000000m,
+                DepositAmount = 100000000m,
+                PaidAmount = 100000000m,
+                TotalCars = 1,
+                TotalAmount = 1320000000m,
+                Status = RetailContractStatus.Approved,
+                FlagDealFinish = false,
+                VersionCount = 1,
+                VersionDTimeCurr = DateTime.Now.AddDays(-5),
+                ApprovedAt = DateTime.Now.AddDays(-4),
+                ApprovedBy = "DEALER_MANAGER",
+                Remark = "Hợp đồng bán lẻ xe Santa Fe trả góp qua Vietcombank, đã đặt cọc và duyệt hồ sơ vay",
+                CreatedBy = "DEALER_USER",
+                CreatedAt = DateTime.Now.AddDays(-5),
+                Details = new List<DlrRetailContractDetail>
+                {
+                    new DlrRetailContractDetail
+                    {
+                        ContractNo = "RC26090001",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        ProductionYear = 2026,
+                        Qty = 1,
+                        QtyDelivery = 0,
+                        QtyCancel = 0,
+                        UnitPrice = 1350000000m,
+                        Discount = 30000000m,
+                        TotalAmount = 1320000000m,
+                        DlvExpectedDate = DateTime.Today.AddDays(10),
+                        Remark = "Tặng dán phim cách nhiệt và thảm lót sàn cao cấp"
+                    }
+                },
+                Cars = new List<DlrRetailContractCar>
+                {
+                    new DlrRetailContractCar
+                    {
+                        ContractNo = "RC26090001",
+                        CtrCarId = "RC26090001.01",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        Vin = "KMHE281BBSA129841",
+                        Status = RetailContractCarStatus.Pending,
+                        Remark = "Đã gán VIN chờ hoàn tất giải ngân từ Vietcombank"
+                    }
+                },
+                Histories = new List<DlrRetailContractDtlHis>
+                {
+                    new DlrRetailContractDtlHis
+                    {
+                        ContractNo = "RC26090001",
+                        VersionCount = 1,
+                        VersionDTimeCurr = DateTime.Now.AddDays(-5),
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        Qty = 1,
+                        UnitPrice = 1350000000m,
+                        TotalAmount = 1320000000m,
+                        DlvExpectedDate = DateTime.Today.AddDays(10),
+                        Remark = "Phiên bản khởi tạo hợp đồng",
+                        LoggedBy = "DEALER_USER",
+                        LogDateTime = DateTime.Now.AddDays(-5)
+                    }
+                }
+            };
+
+            var rc2 = new DlrRetailContract
+            {
+                OrgId = orgId,
+                ContractNo = "RC26090002",
+                ContractNoUser = "HDBL-2026/09-02",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                CustomerCode = "CUS00299",
+                CustomerName = "Công ty TNHH Vận tải Du lịch Sao Mai",
+                CustomerPhone = "0904888999",
+                CustomerIdCardType = "MST",
+                CustomerIdCardNo = "0108899881",
+                CustomerAddress = "120 Nguyễn Xiển, Thanh Xuân, Hà Nội",
+                CustomerType = RetailCustomerType.Corporate,
+                TransactorCode = "TRAN01",
+                TransactorName = "Nguyễn Văn Tuấn (Giám đốc)",
+                TransactorPhone = "0904888999",
+                SalesType = "FLEET",
+                SMCode = "SM002",
+                SMName = "Hoàng Thị Dung",
+                ContractDate = DateTime.Today.AddDays(-1),
+                PaymentType = RetailPaymentType.Cash,
+                BankLoanAmount = 0m,
+                DepositAmount = 200000000m,
+                PaidAmount = 200000000m,
+                TotalCars = 2,
+                TotalAmount = 1700000000m,
+                Status = RetailContractStatus.Pending,
+                FlagDealFinish = false,
+                VersionCount = 1,
+                VersionDTimeCurr = DateTime.Now.AddDays(-1),
+                Remark = "Hợp đồng mua theo lô 02 xe Custin cho doanh nghiệp, trả thẳng, chờ duyệt HĐ",
+                CreatedBy = "DEALER_USER",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                Details = new List<DlrRetailContractDetail>
+                {
+                    new DlrRetailContractDetail
+                    {
+                        ContractNo = "RC26090002",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        SpecCode = "CU15-PRE-01",
+                        ColorCode = "SL1",
+                        ProductionYear = 2026,
+                        Qty = 2,
+                        QtyDelivery = 0,
+                        QtyCancel = 0,
+                        UnitPrice = 860000000m,
+                        Discount = 20000000m,
+                        TotalAmount = 1700000000m,
+                        DlvExpectedDate = DateTime.Today.AddDays(15),
+                        Remark = "Chiết khấu bán theo lô doanh nghiệp"
+                    }
+                },
+                Cars = new List<DlrRetailContractCar>
+                {
+                    new DlrRetailContractCar
+                    {
+                        ContractNo = "RC26090002",
+                        CtrCarId = "RC26090002.01",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        SpecCode = "CU15-PRE-01",
+                        ColorCode = "SL1",
+                        Status = RetailContractCarStatus.Pending,
+                        Remark = "Xe 1/2 lô doanh nghiệp"
+                    },
+                    new DlrRetailContractCar
+                    {
+                        ContractNo = "RC26090002",
+                        CtrCarId = "RC26090002.02",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        SpecCode = "CU15-PRE-01",
+                        ColorCode = "SL1",
+                        Status = RetailContractCarStatus.Pending,
+                        Remark = "Xe 2/2 lô doanh nghiệp"
+                    }
+                },
+                Histories = new List<DlrRetailContractDtlHis>
+                {
+                    new DlrRetailContractDtlHis
+                    {
+                        ContractNo = "RC26090002",
+                        VersionCount = 1,
+                        VersionDTimeCurr = DateTime.Now.AddDays(-1),
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        SpecCode = "CU15-PRE-01",
+                        ColorCode = "SL1",
+                        Qty = 2,
+                        UnitPrice = 860000000m,
+                        TotalAmount = 1700000000m,
+                        DlvExpectedDate = DateTime.Today.AddDays(15),
+                        Remark = "Khởi tạo hợp đồng bán lô",
+                        LoggedBy = "DEALER_USER",
+                        LogDateTime = DateTime.Now.AddDays(-1)
+                    }
+                }
+            };
+
+            var rc3 = new DlrRetailContract
+            {
+                OrgId = orgId,
+                ContractNo = "RC26080003",
+                ContractNoUser = "HDBL-2026/08-03",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                CustomerCode = "CUS00311",
+                CustomerName = "Phạm Hoàng Giang",
+                CustomerPhone = "0912345678",
+                CustomerIdCardType = "CCCD",
+                CustomerIdCardNo = "031088001122",
+                CustomerDateOfBirth = new DateTime(1988, 11, 20),
+                CustomerAddress = "88 Lê Lợi, TP. Hải Phòng",
+                CustomerType = RetailCustomerType.Individual,
+                SalesType = "RETAIL",
+                SMCode = "SM001",
+                SMName = "Trần Tuấn Anh",
+                ContractDate = DateTime.Today.AddDays(-20),
+                PaymentType = RetailPaymentType.Cash,
+                BankLoanAmount = 0m,
+                DepositAmount = 50000000m,
+                PaidAmount = 940000000m,
+                TotalCars = 1,
+                TotalAmount = 940000000m,
+                Status = RetailContractStatus.Finished,
+                FlagDealFinish = true,
+                VersionCount = 1,
+                VersionDTimeCurr = DateTime.Now.AddDays(-20),
+                ApprovedAt = DateTime.Now.AddDays(-18),
+                ApprovedBy = "DEALER_MANAGER",
+                Remark = "Hợp đồng đã hoàn tất thanh toán đủ 100% và bàn giao xe cho khách hàng",
+                CreatedBy = "DEALER_USER",
+                CreatedAt = DateTime.Now.AddDays(-20),
+                Details = new List<DlrRetailContractDetail>
+                {
+                    new DlrRetailContractDetail
+                    {
+                        ContractNo = "RC26080003",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        ProductionYear = 2026,
+                        Qty = 1,
+                        QtyDelivery = 1,
+                        QtyCancel = 0,
+                        UnitPrice = 950000000m,
+                        Discount = 10000000m,
+                        TotalAmount = 940000000m,
+                        DlvExpectedDate = DateTime.Today.AddDays(-10),
+                        Remark = "Đã giao xe kèm bảo hiểm vật chất 1 năm"
+                    }
+                },
+                Cars = new List<DlrRetailContractCar>
+                {
+                    new DlrRetailContractCar
+                    {
+                        ContractNo = "RC26080003",
+                        CtrCarId = "RC26080003.01",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        Vin = "KMHE281BBSA987654",
+                        Status = RetailContractCarStatus.Delivered,
+                        DeliveryDate = DateTime.Now.AddDays(-10),
+                        Remark = "Khách hàng đã ký biên bản bàn giao xe và nhận đủ giấy tờ"
+                    }
+                },
+                Histories = new List<DlrRetailContractDtlHis>
+                {
+                    new DlrRetailContractDtlHis
+                    {
+                        ContractNo = "RC26080003",
+                        VersionCount = 1,
+                        VersionDTimeCurr = DateTime.Now.AddDays(-20),
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        Qty = 1,
+                        UnitPrice = 950000000m,
+                        TotalAmount = 940000000m,
+                        DlvExpectedDate = DateTime.Today.AddDays(-10),
+                        Remark = "Khởi tạo hợp đồng",
+                        LoggedBy = "DEALER_USER",
+                        LogDateTime = DateTime.Now.AddDays(-20)
+                    }
+                }
+            };
+
+            db.RetailContracts.AddRange(rc1, rc2, rc3);
             await db.SaveChangesAsync();
         }
     }

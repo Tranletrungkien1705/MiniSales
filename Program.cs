@@ -34,6 +34,7 @@ builder.Services.AddScoped<ICarRetrieveService, CarRetrieveService>();
 builder.Services.AddScoped<IContractCancelService, ContractCancelService>();
 builder.Services.AddScoped<ICarTransportMinutesService, CarTransportMinutesService>();
 builder.Services.AddScoped<IDealerContractService, DealerContractService>();
+builder.Services.AddScoped<IRetailContractService, RetailContractService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -805,6 +806,117 @@ app.MapDelete("/api/dealer-contracts/{contractNo}/cars/{detailId:long}", async (
         var r = await svc.RemoveCarAsync(contractNo, detailId);
         return r is null ? Results.NotFound(new { contractNo, detailId }) : Results.Ok(r);
     }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Hợp đồng Bán lẻ xe Ô tô Đại lý (Retail Contract - DMS.Sales Dlr_Contract / DlrContractController / DEALER_RETAIL_CONTRACT_FLOW.md) =====
+app.MapPost("/api/retail-contracts", async (CreateRetailContractDto dto, IRetailContractService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/retail-contracts", async (IRetailContractService svc, string? status, string? dealer, string? customer, string? paymentType, string? contractNo) =>
+    Results.Ok(await svc.ListAsync(status, dealer, customer, paymentType, contractNo))).RequireAuthorization();
+
+app.MapGet("/api/retail-contracts/stats", async (IRetailContractService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/retail-contracts/{contractNo}", async (string contractNo, IRetailContractService svc) =>
+{
+    var r = await svc.DetailAsync(contractNo);
+    return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/retail-contracts/{contractNo}", async (string contractNo, UpdateRetailContractDto dto, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/{contractNo}/bank", async (string contractNo, UpdateRetailContractBankDto dto, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateBankAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/{contractNo}/salesman", async (string contractNo, UpdateRetailContractSMDto dto, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateSalesmanAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/{contractNo}/approve", async (string contractNo, ApproveRetailContractDto? dto, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/{contractNo}/cancel", async (string contractNo, CancelRetailContractDto dto, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/retail-contracts/{contractNo}", async (string contractNo, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(contractNo);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/{contractNo}/assign-vin", async (string contractNo, AssignRetailCarVinDto dto, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.AssignVinAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/{contractNo}/deliver", async (string contractNo, DeliverRetailCarDto dto, IRetailContractService svc) =>
+{
+    try
+    {
+        var r = await svc.DeliverCarAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { contractNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/approve-multi", async (BatchApproveRetailContractDto dto, IRetailContractService svc) =>
+{
+    try { return Results.Ok(await svc.ApproveMultiAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-contracts/cancel-multi", async (BatchCancelRetailContractDto dto, IRetailContractService svc) =>
+{
+    try { return Results.Ok(await svc.CancelMultiAsync(dto)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 

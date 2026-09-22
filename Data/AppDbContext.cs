@@ -24,6 +24,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarTransportMinutesDetail> TransportMinutesDetails => Set<CarTransportMinutesDetail>();
     public DbSet<DealerContract> DealerContracts => Set<DealerContract>();
     public DbSet<DealerContractDetail> DealerContractDetails => Set<DealerContractDetail>();
+    public DbSet<DlrRetailContract> RetailContracts => Set<DlrRetailContract>();
+    public DbSet<DlrRetailContractDetail> RetailContractDetails => Set<DlrRetailContractDetail>();
+    public DbSet<DlrRetailContractCar> RetailContractCars => Set<DlrRetailContractCar>();
+    public DbSet<DlrRetailContractDtlHis> RetailContractHistories => Set<DlrRetailContractDtlHis>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -69,5 +73,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerContract>().Property(x => x.DealerSignStatus).HasConversion<int>();
         b.Entity<DealerContract>().Property(x => x.HQSignStatus).HasConversion<int>();
         b.Entity<DealerContract>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<DlrRetailContract>().HasIndex(x => new { x.OrgId, x.ContractNo }).IsUnique();
+        b.Entity<DlrRetailContract>().Property(x => x.CustomerType).HasConversion<int>();
+        b.Entity<DlrRetailContract>().Property(x => x.PaymentType).HasConversion<int>();
+        b.Entity<DlrRetailContract>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<DlrRetailContract>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<DlrRetailContract>().HasMany(x => x.Cars).WithOne().HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<DlrRetailContract>().HasMany(x => x.Histories).WithOne().HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<DlrRetailContractCar>().Property(x => x.Status).HasConversion<int>();
     }
 }

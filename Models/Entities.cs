@@ -519,3 +519,124 @@ public sealed class DealerContractDetail
     public string? OrderNo { get; set; } // Số đơn đặt hàng đại lý (SOCode)
     public string? Remark { get; set; }
 }
+
+/// <summary>Loại khách hàng mua xe bán lẻ (DMS.Sales DLS_DealerCustomer CustomerType: Individual = Cá nhân, Corporate = Doanh nghiệp/Tổ chức).</summary>
+public enum RetailCustomerType { Individual = 0, Corporate = 1 }
+
+/// <summary>Phương thức thanh toán hợp đồng bán lẻ xe (DMS.Sales Dlr_Contract PmtType: Cash = 1 [Trả thẳng], Installment = 2 [Trả góp ngân hàng]).</summary>
+public enum RetailPaymentType { Cash = 0, Installment = 1 }
+
+/// <summary>Trạng thái hợp đồng bán lẻ xe ô tô (DMS.Sales Dlr_Contract DlrCtrStatus: Pending = 'P' [Chờ duyệt/Đang lập], Approved = 'A' [Đã duyệt, hiệu lực], Finished = 'F' [Hoàn thành giao đủ xe], Cancelled = 'C' [Đã hủy]).</summary>
+public enum RetailContractStatus { Pending = 0, Approved = 1, Finished = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái từng xe trong hợp đồng bán lẻ (DMS.Sales Dlr_ContractCar Status: Pending = Chờ giao, Delivered = Đã bàn giao, Cancelled = Đã hủy).</summary>
+public enum RetailContractCarStatus { Pending = 0, Delivered = 1, Cancelled = 2 }
+
+/// <summary>Hợp đồng bán lẻ xe ô tô giữa Đại lý và Khách hàng (DMS.Sales Dlr_Contract / DlrContractController / DEALER_RETAIL_CONTRACT_FLOW.md): quản lý ký kết bán lẻ, thông tin khách hàng, tư vấn bán hàng, phương thức thanh toán trả thẳng/trả góp, lịch sử phiên bản chi tiết và tiến độ bàn giao xe.</summary>
+public sealed class DlrRetailContract
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ContractNo { get; set; } = ""; // Số HĐ bán lẻ hệ thống (PK DlrContractNo, vd: RC2026-0001)
+    public string ContractNoUser { get; set; } = ""; // Số HĐ do đại lý tự nhập (DlrContractNoUser)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string? DealerCodeBuyer { get; set; } // Mã đại lý mua nếu là bán ngang (cross-sell)
+    public string CustomerCode { get; set; } = ""; // Mã khách hàng (DLS_DealerCustomer)
+    public string CustomerName { get; set; } = ""; // Tên khách hàng sở hữu
+    public string CustomerPhone { get; set; } = ""; // SĐT khách hàng
+    public string CustomerIdCardType { get; set; } = "CCCD"; // CMND | CCCD | Hộ chiếu | MST
+    public string CustomerIdCardNo { get; set; } = ""; // Số CMND/CCCD/MST
+    public DateTime? CustomerDateOfBirth { get; set; } // Ngày sinh
+    public string? CustomerAddress { get; set; } // Địa chỉ
+    public RetailCustomerType CustomerType { get; set; } = RetailCustomerType.Individual;
+    public string? TransactorCode { get; set; } // Mã người giao dịch đại diện
+    public string? TransactorName { get; set; } // Tên người giao dịch
+    public string? TransactorPhone { get; set; } // SĐT người giao dịch
+    public string? DriverCode { get; set; } // Người lái xe (CustomerCode_Driver)
+    public string? DealerSaleCode { get; set; } // Điểm bán hàng / Showroom (DealerSaleCode)
+    public string SalesType { get; set; } = "RETAIL"; // RETAIL | FLEET | STAFF | CROSS
+    public string SMCode { get; set; } = ""; // Mã nhân viên tư vấn bán hàng (SMCode)
+    public string? SMName { get; set; } // Tên nhân viên tư vấn bán hàng
+    public DateTime ContractDate { get; set; } = DateTime.Today; // Ngày ký HĐ
+    public RetailPaymentType PaymentType { get; set; } = RetailPaymentType.Cash;
+    public string? BankCode { get; set; } // Mã ngân hàng tài trợ trả góp (Bắt buộc khi PaymentType = Installment)
+    public string? BankName { get; set; } // Tên ngân hàng tài trợ
+    public decimal BankLoanAmount { get; set; } // Số tiền vay ngân hàng
+    public decimal DepositAmount { get; set; } // Tiền đặt cọc
+    public decimal PaidAmount { get; set; } // Tiền khách đã trả
+    public int TotalCars { get; set; } // Tổng số xe
+    public decimal TotalAmount { get; set; } // Tổng giá trị hợp đồng
+    public RetailContractStatus Status { get; set; } = RetailContractStatus.Pending;
+    public bool FlagDealFinish { get; set; } // Cờ hoàn tất tất cả xe đã bàn giao (FlagDealFinish = "Y")
+    public int VersionCount { get; set; } = 1; // Số phiên bản chi tiết (tăng khi sửa detail)
+    public DateTime VersionDTimeCurr { get; set; } = DateTime.Now; // Thời điểm phiên bản hiện tại
+    public DateTime? ApprovedAt { get; set; }
+    public string? ApprovedBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public string? CancelReason { get; set; }
+    public string? Remark { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+    public List<DlrRetailContractDetail> Details { get; set; } = new();
+    public List<DlrRetailContractCar> Cars { get; set; } = new();
+    public List<DlrRetailContractDtlHis> Histories { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng cấu hình xe trong hợp đồng bán lẻ (DMS.Sales Dlr_ContractDtl - gom theo Spec/Model/Color).</summary>
+public sealed class DlrRetailContractDetail
+{
+    public long Id { get; set; }
+    public long ContractId { get; set; }
+    public string ContractNo { get; set; } = "";
+    public string Model { get; set; } = ""; // Tên dòng xe (SantaFe, Tucson, Accent...)
+    public string? SpecCode { get; set; } // Cấu hình / Bản xe
+    public string? ColorCode { get; set; } // Mã màu
+    public int ProductionYear { get; set; } = DateTime.Today.Year;
+    public int Qty { get; set; } // Số lượng xe đặt mua
+    public int QtyDelivery { get; set; } // Số xe đã giao
+    public int QtyCancel { get; set; } // Số xe đã hủy
+    public decimal UnitPrice { get; set; } // Đơn giá niêm yết
+    public decimal Discount { get; set; } // Giảm giá / Khuyến mại
+    public decimal TotalAmount { get; set; } // Thành tiền = Qty * UnitPrice - Discount
+    public DateTime? DlvExpectedDate { get; set; } // Ngày hẹn giao xe
+    public string? Remark { get; set; }
+}
+
+/// <summary>Chi tiết từng xe cụ thể được nở dòng từ hợp đồng bán lẻ (DMS.Sales Dlr_ContractCar - mã CtrCarId theo dạng &lt;SốHĐ&gt;.01, .02... gắn VIN thực tế khi bàn giao).</summary>
+public sealed class DlrRetailContractCar
+{
+    public long Id { get; set; }
+    public long ContractId { get; set; }
+    public string ContractNo { get; set; } = "";
+    public string CtrCarId { get; set; } = ""; // Mã định danh xe HĐ: <ContractNo>.01, <ContractNo>.02
+    public string Model { get; set; } = "";
+    public string? SpecCode { get; set; }
+    public string? ColorCode { get; set; }
+    public string? Vin { get; set; } // Số VIN gán khi có xe từ kho
+    public RetailContractCarStatus Status { get; set; } = RetailContractCarStatus.Pending;
+    public DateTime? DeliveryDate { get; set; } // Ngày bàn giao thực tế
+    public string? Remark { get; set; }
+}
+
+/// <summary>Lịch sử thay đổi các phiên bản chi tiết hợp đồng bán lẻ (DMS.Sales Dlr_ContractDtlHis - lưu vết mỗi lần sửa khi còn ở trạng thái Pending).</summary>
+public sealed class DlrRetailContractDtlHis
+{
+    public long Id { get; set; }
+    public long ContractId { get; set; }
+    public string ContractNo { get; set; } = "";
+    public int VersionCount { get; set; }
+    public DateTime VersionDTimeCurr { get; set; } = DateTime.Now;
+    public string Model { get; set; } = "";
+    public string? SpecCode { get; set; }
+    public string? ColorCode { get; set; }
+    public int Qty { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime? DlvExpectedDate { get; set; }
+    public string? Remark { get; set; }
+    public string? LoggedBy { get; set; }
+    public DateTime LogDateTime { get; set; } = DateTime.Now;
+}
