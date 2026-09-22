@@ -6,10 +6,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<Org> Orgs => Set<Org>();
     public DbSet<SalesOrder> Orders => Set<SalesOrder>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<DeliveryOrder> DeliveryOrders => Set<DeliveryOrder>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
         b.Entity<SalesOrder>().HasIndex(x => new { x.OrgId, x.Code }).IsUnique();
         b.Entity<SalesOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<DeliveryOrder>().HasIndex(x => new { x.OrgId, x.DeliveryOrderNo }).IsUnique();
+        b.Entity<DeliveryOrder>().Property(x => x.Status).HasConversion<int>();
     }
 }

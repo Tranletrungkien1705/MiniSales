@@ -25,6 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 });
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<ISalesService, SalesService>();
+builder.Services.AddScoped<IDeliveryOrderService, DeliveryOrderService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -118,6 +119,55 @@ app.MapPost("/api/orders/{code}/cancel", async (string code, ISalesService svc) 
 }).RequireAuthorization();
 
 app.MapGet("/api/stats", async (ISalesService svc) => Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+// ===== Lệnh xuất/giao xe (Car Delivery Order - DMS.Sales) =====
+app.MapPost("/api/delivery-orders", async (CreateDeliveryOrderDto dto, IDeliveryOrderService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/delivery-orders", async (IDeliveryOrderService svc, string? status, string? dealer, string? orderCode) =>
+    Results.Ok(await svc.ListAsync(status, dealer, orderCode))).RequireAuthorization();
+
+app.MapGet("/api/delivery-orders/stats", async (IDeliveryOrderService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/delivery-orders/{doNo}", async (string doNo, IDeliveryOrderService svc) =>
+{
+    var r = await svc.DetailAsync(doNo);
+    return r is null ? Results.NotFound(new { deliveryOrderNo = doNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/delivery-orders/{doNo}/approve", async (string doNo, IDeliveryOrderService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(doNo);
+        return r is null ? Results.NotFound(new { deliveryOrderNo = doNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/delivery-orders/{doNo}/complete", async (string doNo, CompleteDeliveryOrderDto dto, IDeliveryOrderService svc) =>
+{
+    try
+    {
+        var r = await svc.CompleteAsync(doNo, dto);
+        return r is null ? Results.NotFound(new { deliveryOrderNo = doNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/delivery-orders/{doNo}/cancel", async (string doNo, CancelDeliveryOrderDto? dto, IDeliveryOrderService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(doNo, dto?.Reason);
+        return r is null ? Results.NotFound(new { deliveryOrderNo = doNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).
 // Dedupe theo Code (DealNo). Status luôn Draft/Paid=0 — nguồn DeliveryStatus không đủ rõ nghĩa để map an toàn
