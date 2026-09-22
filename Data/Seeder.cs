@@ -155,6 +155,56 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(RequestId) REFERENCES CarDocRequests(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarInvoices (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    InvoiceCode TEXT NOT NULL,
+                    InvoiceNo TEXT,
+                    InvoiceSerial TEXT NOT NULL,
+                    LookupCode TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    Issuer TEXT NOT NULL,
+                    BankCode TEXT NOT NULL,
+                    BankName TEXT,
+                    InvoiceType INTEGER NOT NULL,
+                    AdjType INTEGER NOT NULL,
+                    RefInvoiceCode TEXT,
+                    Status INTEGER NOT NULL,
+                    VatRate REAL NOT NULL,
+                    SubTotal REAL NOT NULL,
+                    VatAmount REAL NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    BuyerTaxCode TEXT,
+                    BuyerAddress TEXT,
+                    Reason TEXT,
+                    Remark TEXT,
+                    InvoiceDate TEXT NOT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    IssuedAt TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarInvoices_OrgId_InvoiceCode ON CarInvoices(OrgId, InvoiceCode);
+
+                CREATE TABLE IF NOT EXISTS CarInvoiceDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    InvoiceId INTEGER NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    EngineNo TEXT,
+                    UnitPrice REAL NOT NULL,
+                    VatRate REAL NOT NULL,
+                    VatAmount REAL NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    OrderNo TEXT,
+                    DeliveryOrderNo TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(InvoiceId) REFERENCES CarInvoices(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -511,6 +561,118 @@ public static class Seeder
             };
 
             db.CarDocRequests.AddRange(dr1, dr2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.CarInvoices.AnyAsync(o => o.OrgId == orgId))
+        {
+            var inv1 = new CarInvoice
+            {
+                OrgId = orgId,
+                InvoiceCode = "INV2603010001",
+                InvoiceNo = "0001234",
+                InvoiceSerial = "1C26TBB",
+                LookupCode = "A7K9M2P4X1",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                Issuer = "HTC",
+                BankCode = "VCB",
+                BankName = "Vietcombank Thăng Long",
+                InvoiceType = InvoiceType.Root,
+                AdjType = InvoiceAdjType.Normal,
+                Status = InvoiceStatus.Issued,
+                VatRate = 10m,
+                SubTotal = 1910000000m,
+                VatAmount = 191000000m,
+                TotalAmount = 2101000000m,
+                TotalCars = 2,
+                BuyerTaxCode = "0102345678",
+                BuyerAddress = "98 Nguyễn Trãi, Thanh Xuân, Hà Nội",
+                Remark = "Hóa đơn VAT bán buôn lô 02 xe Santa Fe & Creta xuất theo bảo lãnh VCB",
+                InvoiceDate = DateTime.Today.AddDays(-5),
+                CreatedAt = DateTime.Now.AddDays(-5),
+                IssuedAt = DateTime.Now.AddDays(-5),
+                Details = new List<CarInvoiceDetail>
+                {
+                    new CarInvoiceDetail
+                    {
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        EngineNo = "G4KP-102941",
+                        UnitPrice = 1250000000m,
+                        VatRate = 10m,
+                        VatAmount = 125000000m,
+                        TotalAmount = 1375000000m,
+                        OrderNo = "ORD2603010001",
+                        DeliveryOrderNo = "DO2603010001",
+                        Remark = "Xe giao đợt 1 tháng 3/2026"
+                    },
+                    new CarInvoiceDetail
+                    {
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        EngineNo = "G4FL-334411",
+                        UnitPrice = 660000000m,
+                        VatRate = 10m,
+                        VatAmount = 66000000m,
+                        TotalAmount = 726000000m,
+                        OrderNo = "ORD2603010001",
+                        DeliveryOrderNo = "DO2603200003",
+                        Remark = "Xe giao đợt 2 tháng 3/2026"
+                    }
+                }
+            };
+
+            var inv2 = new CarInvoice
+            {
+                OrgId = orgId,
+                InvoiceCode = "INV2603150002",
+                InvoiceNo = null,
+                InvoiceSerial = "1C26TBB",
+                LookupCode = null,
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                Issuer = "HTC",
+                BankCode = "BIDV",
+                BankName = "BIDV Thăng Long",
+                InvoiceType = InvoiceType.Root,
+                AdjType = InvoiceAdjType.Normal,
+                Status = InvoiceStatus.Draft,
+                VatRate = 10m,
+                SubTotal = 860000000m,
+                VatAmount = 86000000m,
+                TotalAmount = 946000000m,
+                TotalCars = 1,
+                BuyerTaxCode = "0109876543",
+                BuyerAddress = "45 Lê Văn Lương, Cầu Giấy, Hà Nội",
+                Remark = "Hóa đơn VAT nháp chờ đại lý xác nhận hoàn tất hồ sơ bảo lãnh thanh toán BIDV",
+                InvoiceDate = DateTime.Today.AddDays(-1),
+                CreatedAt = DateTime.Now.AddDays(-1),
+                Details = new List<CarInvoiceDetail>
+                {
+                    new CarInvoiceDetail
+                    {
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        EngineNo = "G4NL-983102",
+                        UnitPrice = 860000000m,
+                        VatRate = 10m,
+                        VatAmount = 86000000m,
+                        TotalAmount = 946000000m,
+                        OrderNo = "ORD2603010001",
+                        DeliveryOrderNo = "DO2602150002",
+                        Remark = "Hóa đơn nháp chờ phát hành"
+                    }
+                }
+            };
+
+            db.CarInvoices.AddRange(inv1, inv2);
             await db.SaveChangesAsync();
         }
     }

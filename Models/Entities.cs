@@ -219,4 +219,68 @@ public sealed class CarDocRequestDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái hóa đơn VAT xuất đại lý (DMS.Sales VAT_HTCInvoice VatHTCStatus: Draft (P=Mới tạo/nháp) -> Issued (F=Đã phát hành điện tử) -> Cancelled (C=Đã hủy/thu hồi)).</summary>
+public enum InvoiceStatus { Draft = 0, Issued = 1, Cancelled = 2 }
+
+/// <summary>Loại hóa đơn (DMS.Sales VAT_HTCInvoice SourceInvoiceCode: Root = HĐ gốc INVOICEROOT, Adjust = HĐ điều chỉnh INVOICEADJ, Replace = HĐ thay thế INVOICEREPLACE).</summary>
+public enum InvoiceType { Root = 0, Adjust = 1, Replace = 2 }
+
+/// <summary>Kiểu điều chỉnh hóa đơn (DMS.Sales VAT_HTCInvoice InvoiceAdjType: Normal = Bình thường, Increase = Điều chỉnh tăng, Decrease = Điều chỉnh giảm).</summary>
+public enum InvoiceAdjType { Normal = 0, Increase = 1, Decrease = 2 }
+
+/// <summary>Hóa đơn VAT bán buôn xe ô tô NPP xuất cho Đại lý (DMS.Sales VAT_HTCInvoice): quản lý phát hành hóa đơn điện tử, điều chỉnh, thay thế và hủy thu hồi.</summary>
+public sealed class CarInvoice
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string InvoiceCode { get; set; } = ""; // Mã tham chiếu nội bộ (HTCInvoiceCode)
+    public string? InvoiceNo { get; set; } // Số hóa đơn điện tử VAT (HTCInvoiceNo)
+    public string InvoiceSerial { get; set; } = "1C26TBB"; // Ký hiệu mẫu hóa đơn (InvoiceIDCode)
+    public string? LookupCode { get; set; } // Mã tra cứu hóa đơn điện tử (OS_HDDT_InvoiceCode / Qinvoice)
+    public string DealerCode { get; set; } = "";
+    public string DealerName { get; set; } = "";
+    public string Issuer { get; set; } = "HTC"; // Pháp nhân xuất: HTC | HTCLD (FlagisHTC)
+    public string BankCode { get; set; } = "DEALER"; // Mã ngân hàng bảo lãnh thanh toán (nếu có, hoặc "DEALER")
+    public string? BankName { get; set; }
+    public InvoiceType InvoiceType { get; set; } = InvoiceType.Root;
+    public InvoiceAdjType AdjType { get; set; } = InvoiceAdjType.Normal;
+    public string? RefInvoiceCode { get; set; } // Tham chiếu mã HĐ gốc khi là HĐ điều chỉnh hoặc thay thế
+    public InvoiceStatus Status { get; set; } = InvoiceStatus.Draft;
+    public decimal VatRate { get; set; } = 10m; // Thuế suất VAT chung (%)
+    public decimal SubTotal { get; set; } // Cộng tiền hàng trước thuế (CongTien_Hang)
+    public decimal VatAmount { get; set; } // Tiền thuế GTGT (CongTien_ThueGTGT)
+    public decimal TotalAmount { get; set; } // Tổng tiền thanh toán gồm thuế (CongTien_TT)
+    public int TotalCars { get; set; } // Tổng số lượng xe
+    public string? BuyerTaxCode { get; set; } // MST đại lý mua hàng
+    public string? BuyerAddress { get; set; } // Địa chỉ đại lý
+    public string? Reason { get; set; } // Lý do điều chỉnh / thay thế / hủy (Adj_DeleteReason)
+    public string? Remark { get; set; }
+    public DateTime InvoiceDate { get; set; } = DateTime.Today;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? IssuedAt { get; set; } // Ngày phát hành điện tử
+    public DateTime? CancelledAt { get; set; } // Ngày hủy / thu hồi
+
+    public List<CarInvoiceDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô (VIN) trong hóa đơn VAT xuất đại lý (DMS.Sales VAT_HTCInvoiceDetail).</summary>
+public sealed class CarInvoiceDetail
+{
+    public long Id { get; set; }
+    public long InvoiceId { get; set; }
+    public string Vin { get; set; } = "";
+    public string Model { get; set; } = "";
+    public string? SpecCode { get; set; }
+    public string? ColorCode { get; set; }
+    public string? EngineNo { get; set; }
+    public decimal UnitPrice { get; set; } // Đơn giá xe trước VAT (DonGia)
+    public decimal VatRate { get; set; } = 10m; // Thuế suất (%)
+    public decimal VatAmount { get; set; } // Tiền thuế GTGT xe (TienThueGTGT)
+    public decimal TotalAmount { get; set; } // Thành tiền gồm VAT (UnitPriceNew)
+    public string? OrderNo { get; set; } // Số đơn đặt xe liên quan (OSO_SOCode)
+    public string? DeliveryOrderNo { get; set; } // Số lệnh xuất xe liên quan
+    public string? Remark { get; set; }
+}
+
+
 

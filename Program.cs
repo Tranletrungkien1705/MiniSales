@@ -29,6 +29,7 @@ builder.Services.AddScoped<IDeliveryOrderService, DeliveryOrderService>();
 builder.Services.AddScoped<IDealerOrderService, DealerOrderService>();
 builder.Services.AddScoped<IPaymentGuaranteeService, PaymentGuaranteeService>();
 builder.Services.AddScoped<ICarDocRequestService, CarDocRequestService>();
+builder.Services.AddScoped<ICarInvoiceService, CarInvoiceService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -375,6 +376,75 @@ app.MapDelete("/api/doc-requests/{drCode}/cars/{detailId:long}", async (string d
     {
         var r = await svc.RemoveCarAsync(drCode, detailId);
         return r is null ? Results.NotFound(new { drListCode = drCode, detailId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Hóa đơn VAT Bán xe NPP xuất Đại lý (VAT Car Invoice - DMS.Sales VAT_HTCInvoice) =====
+app.MapPost("/api/invoices", async (CreateCarInvoiceDto dto, ICarInvoiceService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/invoices", async (ICarInvoiceService svc, string? status, string? dealer, string? invoiceType, string? issuer) =>
+    Results.Ok(await svc.ListAsync(status, dealer, invoiceType, issuer))).RequireAuthorization();
+
+app.MapGet("/api/invoices/stats", async (ICarInvoiceService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/invoices/{invoiceCode}", async (string invoiceCode, ICarInvoiceService svc) =>
+{
+    var r = await svc.DetailAsync(invoiceCode);
+    return r is null ? Results.NotFound(new { invoiceCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/invoices/{invoiceCode}/issue", async (string invoiceCode, IssueCarInvoiceDto? dto, ICarInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.IssueAsync(invoiceCode, dto);
+        return r is null ? Results.NotFound(new { invoiceCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/invoices/{invoiceCode}/adjust", async (string invoiceCode, CreateAdjustInvoiceDto dto, ICarInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.CreateAdjustAsync(invoiceCode, dto);
+        return r is null ? Results.NotFound(new { invoiceCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/invoices/{invoiceCode}/replace", async (string invoiceCode, CreateReplaceInvoiceDto dto, ICarInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.CreateReplaceAsync(invoiceCode, dto);
+        return r is null ? Results.NotFound(new { invoiceCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/invoices/{invoiceCode}/cancel", async (string invoiceCode, CancelCarInvoiceDto dto, ICarInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(invoiceCode, dto);
+        return r is null ? Results.NotFound(new { invoiceCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/invoices/{invoiceCode}", async (string invoiceCode, ICarInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(invoiceCode);
+        return r is null ? Results.NotFound(new { invoiceCode }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
