@@ -708,3 +708,92 @@ public sealed class DealerPaymentDetail
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
+/// <summary>Trạng thái giao dịch bán lẻ xe (DMS.Sales DLS_Deal: Pending = 0 [Chờ kiểm chứng/giao xe], Verified = 1 [NPP/CSKH đã kiểm chứng], Delivered = 2 [Đã bàn giao xe], Cancelled = 3 [Đã hủy]).</summary>
+public enum RetailDealStatus { Pending = 0, Verified = 1, Delivered = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái bàn giao từng xe trong giao dịch bán lẻ (DMS.Sales DLS_DealDetail DeliveryStatus: Pending = 0, Delivered = 1).</summary>
+public enum RetailDealDeliveryStatus { Pending = 0, Delivered = 1 }
+
+/// <summary>Giao dịch bán lẻ xe ô tô Đại lý - Khách hàng (DMS.Sales DLS_Deal / DlsDealController / DLS_DEAL_CREATE_FLOW.md): quản lý hoàn tất giao dịch bán lẻ ô tô, 3 vai trò khách hàng (Buyer/Holder/Driver), phương thức thanh toán trả thẳng/trả góp ngân hàng, kiểm tra PDI trước giao xe, kiểm chứng CSKH (CtmCareFlag), cập nhật biển số xe, hóa đơn xuất khách và bàn giao xe.</summary>
+public sealed class RetailDeal
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DealNo { get; set; } = ""; // Số giao dịch hệ thống (PK DLS_Deal, vd: DEAL26090001)
+    public string DealNoUser { get; set; } = ""; // Số giao dịch do đại lý tự đặt (DealNoUser)
+    public string DealerCode { get; set; } = ""; // Mã đại lý bán
+    public string DealerName { get; set; } = ""; // Tên đại lý bán
+    public string? DealerCodeBuyer { get; set; } // Mã đại lý mua (nếu bán buôn ngang đại lý SalesType=F7)
+    public string? DlrContractNo { get; set; } // Số hợp đồng bán lẻ liên kết (nếu tạo từ HĐBL, FlagInitDeal=Y)
+    public string SalesType { get; set; } = "RETAIL"; // Kiểu bán lẻ: RETAIL, FLEET, STAFF, F7_CROSS_DEALER
+    public RetailCustomerType CustomerType { get; set; } = RetailCustomerType.Individual; // Phân loại KH
+    public DateTime DealDate { get; set; } = DateTime.Today; // Ngày giao dịch (DealDate <= Today)
+    public string CustomerCodeBuyer { get; set; } = ""; // Khách hàng chủ sở hữu (Buyer)
+    public string BuyerFullName { get; set; } = "";
+    public string BuyerPhone { get; set; } = "";
+    public string BuyerIdCardNo { get; set; } = "";
+    public string? BuyerAddress { get; set; }
+    public string? CustomerCodeHolder { get; set; } // Khách hàng đứng tên đăng ký xe (Holder, mặc định trùng Buyer)
+    public string? HolderFullName { get; set; }
+    public string? CustomerCodeDriver { get; set; } // Người lái xe chính (Driver, mặc định trùng Buyer)
+    public string? DriverFullName { get; set; }
+    public string SMCode { get; set; } = ""; // Tư vấn bán hàng (SMCode)
+    public string? SMName { get; set; }
+    public RetailPaymentType PaymentType { get; set; } = RetailPaymentType.Cash; // Phương thức thanh toán (Trả thẳng / Trả góp)
+    public string? BankCode { get; set; } // Ngân hàng tài trợ (bắt buộc khi trả góp)
+    public string? BankName { get; set; }
+    public decimal BankLoanAmount { get; set; } // Số tiền vay ngân hàng
+    public bool FlagPDI { get; set; } = true; // Cờ PDI: true = Đã PDI, false = Bỏ qua PDI (bắt buộc ReasonNotPDI)
+    public string? ReasonNotPDI { get; set; } // Lý do không làm PDI
+    public bool CtmCareFlag { get; set; } // Trạng thái kiểm chứng CSKH HQ ('1' = Đã kiểm chứng, khóa sửa)
+    public DateTime? CtmCareUpdDate { get; set; } // Ngày kiểm chứng
+    public string? CtmCareUpdBy { get; set; } // Người kiểm chứng
+    public RetailDealStatus Status { get; set; } = RetailDealStatus.Pending;
+    public int TotalCars { get; set; } // Tổng số xe
+    public decimal TotalAmount { get; set; } // Tổng giá trị giao dịch
+    public string? Remark { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelReason { get; set; }
+
+    public List<RetailDealDetail> Details { get; set; } = new();
+    public List<RetailDealAttach> Attachments { get; set; } = new();
+}
+
+/// <summary>Chi tiết xe trong giao dịch bán lẻ (DMS.Sales DLS_DealDetail): quản lý từng xe, số khung VIN, giá bán, biển số xe, số hóa đơn xuất khách và trạng thái bàn giao thực tế.</summary>
+public sealed class RetailDealDetail
+{
+    public long Id { get; set; }
+    public long DealId { get; set; }
+    public string DealNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã định danh xe kho đại lý
+    public string Vin { get; set; } = ""; // Số VIN (17 ký tự)
+    public string Model { get; set; } = ""; // Dòng xe (Santa Fe, Tucson, Accent...)
+    public string? SpecCode { get; set; } // Cấu hình / Spec
+    public string? ColorCode { get; set; } // Mã màu xe
+    public decimal Price { get; set; } // Giá bán xe (> 0)
+    public string? PlateNo { get; set; } // Biển số xe đăng ký (vd: 30K-123.45)
+    public string? CusInvoiceNo { get; set; } // Số hóa đơn GTGT xuất cho khách hàng
+    public DateTime? CusInvoiceDate { get; set; } // Ngày hóa đơn xuất khách (đi cặp với CusInvoiceNo)
+    public RetailDealDeliveryStatus DeliveryStatus { get; set; } = RetailDealDeliveryStatus.Pending;
+    public DateTime? DeliveryDate { get; set; } // Ngày bàn giao xe thực tế
+    public string? Remark { get; set; }
+}
+
+/// <summary>Chứng từ / Ảnh đính kèm giao dịch bán lẻ (DMS.Sales DLS_DealAttachFile / DLS_DealAttachFileBill / DLS_DealAttachFileInsurrance): lưu ảnh hóa đơn xuất khách, bảo hiểm, đăng kiểm.</summary>
+public sealed class RetailDealAttach
+{
+    public long Id { get; set; }
+    public long DealId { get; set; }
+    public string DealNo { get; set; } = "";
+    public string FileType { get; set; } = "BILL"; // BILL = Hóa đơn KH, INSURANCE = Bảo hiểm, REGISTRATION = Đăng kiểm, OTHER = Khác
+    public string FileName { get; set; } = ""; // Tên file
+    public string FilePath { get; set; } = ""; // Đường dẫn / URL file
+    public string? Remark { get; set; }
+    public DateTime UploadedAt { get; set; } = DateTime.Now;
+    public string? UploadedBy { get; set; }
+}
+
+

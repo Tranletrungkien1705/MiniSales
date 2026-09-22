@@ -36,6 +36,7 @@ builder.Services.AddScoped<ICarTransportMinutesService, CarTransportMinutesServi
 builder.Services.AddScoped<IDealerContractService, DealerContractService>();
 builder.Services.AddScoped<IRetailContractService, RetailContractService>();
 builder.Services.AddScoped<IDealerPaymentService, DealerPaymentService>();
+builder.Services.AddScoped<IRetailDealService, RetailDealService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1016,6 +1017,135 @@ app.MapDelete("/api/dealer-payments/{paymentNo}/cars/{detailId:long}", async (st
     {
         var r = await svc.RemoveCarAsync(paymentNo, detailId);
         return r is null ? Results.NotFound(new { paymentNo, detailId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Giao dịch bán lẻ xe Ô tô Đại lý (Retail Deal - DMS.Sales DLS_Deal / DlsDealController / DLS_DEAL_CREATE_FLOW.md) =====
+app.MapPost("/api/deals", async (CreateRetailDealDto dto, IRetailDealService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/deals", async (IRetailDealService svc, string? status, string? dealer, string? vin, string? customer, string? ctmCare, string? dealNo) =>
+    Results.Ok(await svc.ListAsync(status, dealer, vin, customer, ctmCare, dealNo))).RequireAuthorization();
+
+app.MapGet("/api/deals/stats", async (IRetailDealService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/deals/{dealNo}", async (string dealNo, IRetailDealService svc) =>
+{
+    var r = await svc.DetailAsync(dealNo);
+    return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/deals/{dealNo}", async (string dealNo, UpdateRetailDealDto dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/deals/{dealNo}/plate-no", async (string dealNo, UpdateDealPlateNoDto dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdatePlateNoAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/deals/{dealNo}/cus-invoice", async (string dealNo, UpdateDealCusInvoiceDto dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateCusInvoiceAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/deals/{dealNo}/verify-ctmcare", async (string dealNo, VerifyDealCtmCareDto? dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.VerifyCtmCareAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/deals/{dealNo}/deliver", async (string dealNo, DeliverDealCarDto dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.DeliverCarAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/deals/{dealNo}/cancel", async (string dealNo, CancelDealerDealDto dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/deals/{dealNo}", async (string dealNo, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(dealNo);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/deals/{dealNo}/cars", async (string dealNo, AddDealerDealCarDto dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/deals/{dealNo}/cars/{detailId:long}", async (string dealNo, long detailId, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(dealNo, detailId);
+        return r is null ? Results.NotFound(new { dealNo, detailId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/deals/{dealNo}/attachments", async (string dealNo, AddDealAttachDto dto, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.AddAttachmentAsync(dealNo, dto);
+        return r is null ? Results.NotFound(new { dealNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/deals/{dealNo}/attachments/{attachId:long}", async (string dealNo, long attachId, IRetailDealService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveAttachmentAsync(dealNo, attachId);
+        return r is null ? Results.NotFound(new { dealNo, attachId }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

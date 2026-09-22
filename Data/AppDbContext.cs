@@ -30,6 +30,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<DlrRetailContractDtlHis> RetailContractHistories => Set<DlrRetailContractDtlHis>();
     public DbSet<DealerPayment> DealerPayments => Set<DealerPayment>();
     public DbSet<DealerPaymentDetail> DealerPaymentDetails => Set<DealerPaymentDetail>();
+    public DbSet<RetailDeal> RetailDeals => Set<RetailDeal>();
+    public DbSet<RetailDealDetail> RetailDealDetails => Set<RetailDealDetail>();
+    public DbSet<RetailDealAttach> RetailDealAttachments => Set<RetailDealAttach>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -88,5 +91,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerPayment>().Property(x => x.PaymentMethod).HasConversion<int>();
         b.Entity<DealerPayment>().Property(x => x.Status).HasConversion<int>();
         b.Entity<DealerPayment>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PaymentId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<RetailDeal>().HasIndex(x => new { x.OrgId, x.DealNo }).IsUnique();
+        b.Entity<RetailDeal>().Property(x => x.CustomerType).HasConversion<int>();
+        b.Entity<RetailDeal>().Property(x => x.PaymentType).HasConversion<int>();
+        b.Entity<RetailDeal>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<RetailDeal>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.DealId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<RetailDeal>().HasMany(x => x.Attachments).WithOne().HasForeignKey(x => x.DealId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<RetailDealDetail>().Property(x => x.DeliveryStatus).HasConversion<int>();
     }
 }
