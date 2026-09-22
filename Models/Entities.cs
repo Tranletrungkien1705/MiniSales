@@ -1281,3 +1281,77 @@ public sealed class DealerContractCancelBankMD
     public DateTime? LUDateTime { get; set; }
     public string? LUBy { get; set; }
 }
+
+/// <summary>Trạng thái Biên bản bàn giao hóa đơn & chứng từ xe theo Hối phiếu Ngân hàng (DMS.Sales Car_BankBillMinutes Status: Draft = 'D' [Nháp/Đang lập], Handover = 'H' [Đã bàn giao chứng từ sang Ngân hàng], BankReceived = 'A' [Ngân hàng đã tiếp nhận thẩm định hồ sơ gốc], Settled = 'S' [Đã quyết toán hối phiếu / giải ngân thanh toán], Cancelled = 'C' [Đã hủy]).</summary>
+public enum BankBillMinutesStatus { Draft = 0, Handover = 1, BankReceived = 2, Settled = 3, Cancelled = 4 }
+
+/// <summary>Trạng thái xử lý dòng VIN xe trong Biên bản bàn giao hối phiếu ngân hàng (DMS.Sales Car_BankBillMinutesDtl: Pending = 'P' [Chờ tiếp nhận], Received = 'R' [Ngân hàng đã nhận hồ sơ], Settled = 'S' [Đã thanh toán quyết toán], Cancelled = 'C' [Đã hủy]).</summary>
+public enum BankBillMinutesDetailStatus { Pending = 0, Received = 1, Settled = 2, Cancelled = 3 }
+
+/// <summary>Biên bản bàn giao hóa đơn chứng từ xe ô tô theo Hối phiếu Ngân hàng (DMS.Sales Car_BankBillMinutes / CarBankBillMinutesController / PaymentGrtExt.cs / HTC.QuanLyBienBanBanGiaoTheoHoiPhieu.xlsx): tập hợp bộ chứng từ xe gốc (Hóa đơn GTGT HTC/TCG, Phiếu kiểm tra chất lượng xuất xưởng CO/CQ, Tờ khai Hải quan, BBBG vận tải) kèm Hối phiếu thương mại đòi tiền gửi Ngân hàng thụ lý bảo lãnh thanh toán bán buôn xe, quy trình bàn giao hồ sơ, ngân hàng tiếp nhận và thẩm định, quyết toán giải ngân hối phiếu.</summary>
+public sealed class BankBillMinutes
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string BankBillMnNo { get; set; } = ""; // Số biên bản bàn giao hối phiếu (PK BankBillMnNo: format {yyMM}BBM{seq:D5}, vd: 2603BBM00001)
+    public string BankCode { get; set; } = ""; // Mã ngân hàng nhận hối phiếu (VCB, BIDV, TCB, VPB...)
+    public string? BankName { get; set; } // Tên ngân hàng nhận hối phiếu
+    public string DealerCode { get; set; } = ""; // Mã đại lý ký phát hối phiếu
+    public string DealerName { get; set; } = ""; // Tên đại lý ký phát hối phiếu
+    public DateTime BankBillDate { get; set; } = DateTime.Today; // Ngày lập hối phiếu
+    public DateTime? BankBillReceiveDate { get; set; } // Ngày ngân hàng tiếp nhận hồ sơ hối phiếu
+    public DateTime? BankBillPrintDate { get; set; } // Ngày in / xuất trình hối phiếu
+    public BankBillMinutesStatus Status { get; set; } = BankBillMinutesStatus.Draft; // Trạng thái biên bản: Draft -> Handover -> BankReceived -> Settled / Cancelled
+    public int TotalCars { get; set; } // Tổng số lượng xe trong biên bản bàn giao
+    public decimal TotalClaimAmount { get; set; } // Tổng số tiền hối phiếu đòi ngân hàng thanh toán (VNĐ)
+    public string? BankOfficer { get; set; } // Cán bộ đại diện ngân hàng tiếp nhận hồ sơ
+    public string? HTCOfficer { get; set; } // Cán bộ NPP phụ trách bàn giao chứng từ
+    public string? Remark { get; set; } // Ghi chú nội dung bàn giao hối phiếu
+    public string? CancelReason { get; set; } // Lý do hủy biên bản
+    public DateTime? CancelledAt { get; set; } // Thời điểm hủy biên bản
+    public string? CancelledBy { get; set; } // Người thực hiện hủy
+    public DateTime? HandoverAt { get; set; } // Thời điểm bàn giao sang ngân hàng
+    public string? HandoverBy { get; set; } // Người bàn giao sang ngân hàng
+    public DateTime? BankReceivedAt { get; set; } // Thời điểm ngân hàng ký nhận hồ sơ
+    public string? BankReceivedBy { get; set; } // Đại diện ngân hàng tiếp nhận
+    public DateTime? SettledAt { get; set; } // Thời điểm quyết toán / giải ngân hối phiếu hoàn tất
+    public string? SettledBy { get; set; } // Cán bộ kế toán xác nhận quyết toán
+    public string? CreatedBy { get; set; } // Người tạo biên bản
+    public DateTime CreatedAt { get; set; } = DateTime.Now; // Ngày giờ tạo
+    public DateTime? LUDateTime { get; set; } // Ngày cập nhật cuối
+    public string? LUBy { get; set; } // Người cập nhật cuối
+
+    public List<BankBillMinutesDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe trong Biên bản bàn giao hối phiếu ngân hàng (DMS.Sales Car_BankBillMinutesDtl): quản lý số khung VIN, thông tin xe, số hợp đồng mua buôn, số thư bảo lãnh ngân hàng, số hóa đơn VAT NPP xuất, số BBBG vận chuyển, chứng từ gốc CO/CQ và số tiền hối phiếu đòi ngân hàng theo xe.</summary>
+public sealed class BankBillMinutesDetail
+{
+    public long Id { get; set; }
+    public long BankBillMinutesId { get; set; }
+    public string BankBillMnNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung VIN (17 ký tự)
+    public string Model { get; set; } = ""; // Tên model xe (Santa Fe, Tucson, Creta, Accent...)
+    public string? ModelCode { get; set; } // Mã model
+    public string? SpecCode { get; set; } // Mã cấu hình xe (spec)
+    public string? SpecDescription { get; set; } // Mô tả bản xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public string? ContractNo { get; set; } // Số hợp đồng mua buôn đại lý (DlrCtrNo)
+    public string? BankGuaranteeNo { get; set; } // Số thư bảo lãnh ngân hàng / Số LC
+    public string? GuaranteeBankCode { get; set; } // Ngân hàng phát hành bảo lãnh
+    public DateTime? GuaranteeDateOpen { get; set; } // Ngày phát hành BL/LC
+    public string? HTCInvoiceNo { get; set; } // Số hóa đơn VAT HTC xuất cho đại lý
+    public string? TCGInvoiceNo { get; set; } // Số hóa đơn TCG
+    public string? InvoiceNoFactory { get; set; } // Hóa đơn nhà máy
+    public string? TransportMinutesNo { get; set; } // Số biên bản bàn giao xe vận chuyển (BBBG)
+    public string? CQNo { get; set; } // Số đăng kiểm / Phiếu kiểm tra chất lượng xuất xưởng
+    public string? CONo { get; set; } // Số chứng nhận nguồn gốc xuất xứ CO
+    public string? CabinCONo { get; set; } // Số nguồn gốc thùng (xe tải)
+    public string? DeclarationNo { get; set; } // Số tờ khai hải quan (xe nhập khẩu)
+    public decimal ClaimAmount { get; set; } // Số tiền hối phiếu đòi ngân hàng chiết khấu/thanh toán theo xe (VNĐ)
+    public BankBillMinutesDetailStatus Status { get; set; } = BankBillMinutesDetailStatus.Pending;
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+

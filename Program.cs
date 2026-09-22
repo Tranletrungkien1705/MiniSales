@@ -45,6 +45,7 @@ builder.Services.AddScoped<IPaymentDiscountService, PaymentDiscountService>();
 builder.Services.AddScoped<IDealerContractCancelMinutesService, DealerContractCancelMinutesService>();
 builder.Services.AddScoped<IDealerContractCancelBankMDService, DealerContractCancelBankMDService>();
 builder.Services.AddScoped<IPaymentGuaranteeClaimService, PaymentGuaranteeClaimService>();
+builder.Services.AddScoped<IBankBillMinutesService, BankBillMinutesService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1915,6 +1916,108 @@ app.MapPost("/api/dealer-contract-cancel-banks/{cancelBankMDNo}/cancel-dl", asyn
     {
         var r = await svc.CancelDealerAsync(cancelBankMDNo, dto);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Biên bản bàn giao hóa đơn & chứng từ xe theo Hối phiếu Ngân hàng (Car Bank Bill Minutes - DMS.Sales Car_BankBillMinutes / CarBankBillMinutesController / PaymentGrtExt.cs) =====
+app.MapPost("/api/bank-bill-minutes", async (CreateBankBillMinutesDto dto, IBankBillMinutesService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/bank-bill-minutes", async (IBankBillMinutesService svc, string? status, string? bankCode, string? dealerCode, string? guaranteeNo, string? vin, string? bankBillMnNo, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, bankCode, dealerCode, guaranteeNo, vin, bankBillMnNo, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/bank-bill-minutes/eligible-cars", async (IBankBillMinutesService svc, string? dealerCode, string? bankCode) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealerCode, bankCode))).RequireAuthorization();
+
+app.MapGet("/api/bank-bill-minutes/stats", async (IBankBillMinutesService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/bank-bill-minutes/{bankBillMnNo}", async (string bankBillMnNo, IBankBillMinutesService svc) =>
+{
+    var r = await svc.DetailAsync(bankBillMnNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/bank-bill-minutes/{bankBillMnNo}", async (string bankBillMnNo, UpdateBankBillMinutesDto dto, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(bankBillMnNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/bank-bill-minutes/{bankBillMnNo}", async (string bankBillMnNo, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(bankBillMnNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/bank-bill-minutes/{bankBillMnNo}/handover", async (string bankBillMnNo, HandoverBankBillMinutesDto? dto, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.HandoverAsync(bankBillMnNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/bank-bill-minutes/{bankBillMnNo}/bank-receive", async (string bankBillMnNo, BankReceiveBankBillMinutesDto? dto, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.BankReceiveAsync(bankBillMnNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/bank-bill-minutes/{bankBillMnNo}/settle", async (string bankBillMnNo, SettleBankBillMinutesDto? dto, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.SettleAsync(bankBillMnNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/bank-bill-minutes/{bankBillMnNo}/cancel", async (string bankBillMnNo, CancelBankBillMinutesDto dto, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(bankBillMnNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/bank-bill-minutes/{bankBillMnNo}/cars", async (string bankBillMnNo, List<AddBankBillCarDto> items, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(bankBillMnNo, items);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/bank-bill-minutes/{bankBillMnNo}/cars/{vin}", async (string bankBillMnNo, string vin, IBankBillMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(bankBillMnNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

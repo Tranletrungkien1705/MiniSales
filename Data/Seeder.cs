@@ -1032,6 +1032,69 @@ public static class Seeder
                     LUBy TEXT
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerContractCancelBankMDs_OrgId_CancelBankMDNo ON DealerContractCancelBankMDs(OrgId, CancelBankMDNo);
+
+                CREATE TABLE IF NOT EXISTS BankBillMinutes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    BankBillMnNo TEXT NOT NULL,
+                    BankCode TEXT NOT NULL,
+                    BankName TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    BankBillDate TEXT NOT NULL,
+                    BankBillReceiveDate TEXT,
+                    BankBillPrintDate TEXT,
+                    Status INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    TotalClaimAmount REAL NOT NULL,
+                    BankOfficer TEXT,
+                    HTCOfficer TEXT,
+                    Remark TEXT,
+                    CancelReason TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    HandoverAt TEXT,
+                    HandoverBy TEXT,
+                    BankReceivedAt TEXT,
+                    BankReceivedBy TEXT,
+                    SettledAt TEXT,
+                    SettledBy TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_BankBillMinutes_OrgId_BankBillMnNo ON BankBillMinutes(OrgId, BankBillMnNo);
+
+                CREATE TABLE IF NOT EXISTS BankBillMinutesDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    BankBillMinutesId INTEGER NOT NULL,
+                    BankBillMnNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    ModelCode TEXT,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    EngineNo TEXT,
+                    ContractNo TEXT,
+                    BankGuaranteeNo TEXT,
+                    GuaranteeBankCode TEXT,
+                    GuaranteeDateOpen TEXT,
+                    HTCInvoiceNo TEXT,
+                    TCGInvoiceNo TEXT,
+                    InvoiceNoFactory TEXT,
+                    TransportMinutesNo TEXT,
+                    CQNo TEXT,
+                    CONo TEXT,
+                    CabinCONo TEXT,
+                    DeclarationNo TEXT,
+                    ClaimAmount REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(BankBillMinutesId) REFERENCES BankBillMinutes(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -4166,6 +4229,269 @@ public static class Seeder
             };
 
             db.DealerContractCancelBankMDs.AddRange(cb1, cb2, cb3, cb4, cb5);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.BankBillMinutes.AnyAsync(o => o.OrgId == orgId))
+        {
+            var bbm1 = new BankBillMinutes
+            {
+                OrgId = orgId,
+                BankBillMnNo = "2603BBM00001",
+                BankCode = "VCB",
+                BankName = "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank Thăng Long)",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                BankBillDate = DateTime.Today.AddDays(-12),
+                BankBillReceiveDate = DateTime.Today.AddDays(-10),
+                BankBillPrintDate = DateTime.Today.AddDays(-12),
+                Status = BankBillMinutesStatus.Settled,
+                TotalCars = 2,
+                TotalClaimAmount = 2060000000m,
+                BankOfficer = "Nguyễn Thu Hà (Chuyên viên Tín dụng VCB Thăng Long)",
+                HTCOfficer = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                Remark = "Biên bản bàn giao bộ chứng từ hối phiếu gốc lô xe Santa Fe & Creta đòi tiền theo bảo lãnh Vietcombank đã giải ngân hoàn tất",
+                HandoverAt = DateTime.Now.AddDays(-11),
+                HandoverBy = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                BankReceivedAt = DateTime.Now.AddDays(-10),
+                BankReceivedBy = "Nguyễn Thu Hà (Chuyên viên Tín dụng VCB Thăng Long)",
+                SettledAt = DateTime.Now.AddDays(-8),
+                SettledBy = "Lê Thị Thu Thủy (Trưởng phòng Tài vụ HTC)",
+                CreatedBy = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                CreatedAt = DateTime.Now.AddDays(-12),
+                Details = new List<BankBillMinutesDetail>
+                {
+                    new BankBillMinutesDetail
+                    {
+                        BankBillMnNo = "2603BBM00001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 xăng cao cấp 2 cầu",
+                        ColorCode = "WW2",
+                        EngineNo = "G4KP-102941",
+                        ContractNo = "2603DRC00001",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        GuaranteeBankCode = "VCB",
+                        GuaranteeDateOpen = DateTime.Today.AddDays(-30),
+                        HTCInvoiceNo = "HD-HTC-2603-0012",
+                        TransportMinutesNo = "BBBG-2603-0001",
+                        CQNo = "CQ2026-SF-012984",
+                        CONo = "CO2026-VN-98412",
+                        ClaimAmount = 1320000000m,
+                        Status = BankBillMinutesDetailStatus.Settled,
+                        Remark = "Đã nhận tiền giải ngân hối phiếu ngân hàng"
+                    },
+                    new BankBillMinutesDetail
+                    {
+                        BankBillMnNo = "2603BBM00001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        SpecDescription = "Creta 1.5 CVT bản cao cấp",
+                        ColorCode = "R3R",
+                        EngineNo = "G4FL-334455",
+                        ContractNo = "2603DRC00001",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        GuaranteeBankCode = "VCB",
+                        GuaranteeDateOpen = DateTime.Today.AddDays(-30),
+                        HTCInvoiceNo = "HD-HTC-2603-0013",
+                        TransportMinutesNo = "BBBG-2603-0002",
+                        CQNo = "CQ2026-CR-033445",
+                        CONo = "CO2026-VN-33445",
+                        ClaimAmount = 740000000m,
+                        Status = BankBillMinutesDetailStatus.Settled,
+                        Remark = "Đã nhận tiền giải ngân hối phiếu ngân hàng"
+                    }
+                }
+            };
+
+            var bbm2 = new BankBillMinutes
+            {
+                OrgId = orgId,
+                BankBillMnNo = "2603BBM00002",
+                BankCode = "BIDV",
+                BankName = "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV Cầu Giấy)",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                BankBillDate = DateTime.Today.AddDays(-4),
+                BankBillReceiveDate = DateTime.Today.AddDays(-2),
+                BankBillPrintDate = DateTime.Today.AddDays(-4),
+                Status = BankBillMinutesStatus.BankReceived,
+                TotalCars = 1,
+                TotalClaimAmount = 620000000m,
+                BankOfficer = "Trần Mạnh Cường (Trưởng phòng KHDN BIDV Cầu Giấy)",
+                HTCOfficer = "Đỗ Thị Quỳnh (Chuyên viên QLHĐ & Hồ sơ HTC)",
+                Remark = "Ngân hàng BIDV đã tiếp nhận đầy đủ bộ hồ sơ xe gốc kèm hối phiếu xe Stargazer X, đang làm thủ tục giải ngân tất toán",
+                HandoverAt = DateTime.Now.AddDays(-3),
+                HandoverBy = "Đỗ Thị Quỳnh (Chuyên viên QLHĐ & Hồ sơ HTC)",
+                BankReceivedAt = DateTime.Now.AddDays(-2),
+                BankReceivedBy = "Trần Mạnh Cường (Trưởng phòng KHDN BIDV Cầu Giấy)",
+                CreatedBy = "Đỗ Thị Quỳnh (Chuyên viên QLHĐ & Hồ sơ HTC)",
+                CreatedAt = DateTime.Now.AddDays(-4),
+                Details = new List<BankBillMinutesDetail>
+                {
+                    new BankBillMinutesDetail
+                    {
+                        BankBillMnNo = "2603BBM00002",
+                        CarId = "CAR2026-SG0109",
+                        Vin = "KMHE281BBSA778899",
+                        Model = "Stargazer X 1.5 Cao Cấp",
+                        SpecCode = "SG15-PRE-01",
+                        SpecDescription = "Stargazer X 1.5 IVT bản cao cấp",
+                        ColorCode = "MB1",
+                        EngineNo = "G4FL-778899",
+                        ContractNo = "2603DRC00004",
+                        BankGuaranteeNo = "BL-BIDV-20260305-12",
+                        GuaranteeBankCode = "BIDV",
+                        GuaranteeDateOpen = DateTime.Today.AddDays(-20),
+                        HTCInvoiceNo = "HD-HTC-2603-0021",
+                        TransportMinutesNo = "BBBG-2603-0005",
+                        CQNo = "CQ2026-SG-077889",
+                        CONo = "CO2026-VN-77889",
+                        ClaimAmount = 620000000m,
+                        Status = BankBillMinutesDetailStatus.Received,
+                        Remark = "Ngân hàng đã ký tiếp nhận hồ sơ gốc"
+                    }
+                }
+            };
+
+            var bbm3 = new BankBillMinutes
+            {
+                OrgId = orgId,
+                BankBillMnNo = "2603BBM00003",
+                BankCode = "TCB",
+                BankName = "Ngân hàng TMCP Kỹ thương Việt Nam (Techcombank Hoàn Kiếm)",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                BankBillDate = DateTime.Today.AddDays(-2),
+                BankBillPrintDate = DateTime.Today.AddDays(-2),
+                Status = BankBillMinutesStatus.Handover,
+                TotalCars = 1,
+                TotalClaimAmount = 850000000m,
+                BankOfficer = "Hoàng Văn Tuấn (Cán bộ QHKH TCB)",
+                HTCOfficer = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                Remark = "Đã bàn giao bộ chứng từ hối phiếu xe Custin sang Techcombank Hoàn Kiếm, đang chờ cán bộ ngân hàng kiểm đếm và ký xác nhận tiếp nhận",
+                HandoverAt = DateTime.Now.AddDays(-1),
+                HandoverBy = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                CreatedBy = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                CreatedAt = DateTime.Now.AddDays(-2),
+                Details = new List<BankBillMinutesDetail>
+                {
+                    new BankBillMinutesDetail
+                    {
+                        BankBillMnNo = "2603BBM00003",
+                        CarId = "CAR2026-CU0211",
+                        Vin = "KMHE281BBSA556677",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        SpecCode = "CU15-PRE-01",
+                        SpecDescription = "Custin 1.5T máy xăng tăng áp cao cấp",
+                        ColorCode = "GY1",
+                        EngineNo = "G4FS-556677",
+                        ContractNo = "2603DRC00002",
+                        BankGuaranteeNo = "BL-TCB-20260310-09",
+                        GuaranteeBankCode = "TCB",
+                        GuaranteeDateOpen = DateTime.Today.AddDays(-28),
+                        HTCInvoiceNo = "HD-HTC-2603-0025",
+                        TransportMinutesNo = "BBBG-2603-0008",
+                        CQNo = "CQ2026-CU-055667",
+                        CONo = "CO2026-VN-55667",
+                        ClaimAmount = 850000000m,
+                        Status = BankBillMinutesDetailStatus.Pending,
+                        Remark = "Hồ sơ đã chuyển giao sang phòng giao dịch Techcombank"
+                    }
+                }
+            };
+
+            var bbm4 = new BankBillMinutes
+            {
+                OrgId = orgId,
+                BankBillMnNo = "2603BBM00004",
+                BankCode = "VPB",
+                BankName = "Ngân hàng TMCP Việt Nam Thịnh Vượng (VPBank Thăng Long)",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                BankBillDate = DateTime.Today,
+                Status = BankBillMinutesStatus.Draft,
+                TotalCars = 1,
+                TotalClaimAmount = 740000000m,
+                Remark = "Biên bản bàn giao hối phiếu nháp xe Creta Cao Cấp, đang rà soát chứng từ hóa đơn và phiếu kiểm tra chất lượng xuất xưởng",
+                CreatedBy = "Đỗ Thị Quỳnh (Chuyên viên QLHĐ & Hồ sơ HTC)",
+                CreatedAt = DateTime.Now,
+                Details = new List<BankBillMinutesDetail>
+                {
+                    new BankBillMinutesDetail
+                    {
+                        BankBillMnNo = "2603BBM00004",
+                        CarId = "CAR2026-CR0195",
+                        Vin = "KMHE281BBSA990022",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        SpecDescription = "Creta 1.5 CVT bản cao cấp",
+                        ColorCode = "BK1",
+                        EngineNo = "G4FL-990022",
+                        ContractNo = "2603DRC00009",
+                        BankGuaranteeNo = "BL-VPB-20260318-03",
+                        GuaranteeBankCode = "VPB",
+                        GuaranteeDateOpen = DateTime.Today.AddDays(-5),
+                        HTCInvoiceNo = "HD-HTC-2603-0030",
+                        TransportMinutesNo = "BBBG-2603-0011",
+                        CQNo = "CQ2026-CR-099002",
+                        CONo = "CO2026-VN-99002",
+                        ClaimAmount = 740000000m,
+                        Status = BankBillMinutesDetailStatus.Pending,
+                        Remark = "Hồ sơ nháp đang hoàn thiện"
+                    }
+                }
+            };
+
+            var bbm5 = new BankBillMinutes
+            {
+                OrgId = orgId,
+                BankBillMnNo = "2603BBM00005",
+                BankCode = "BIDV",
+                BankName = "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV Hà Nội)",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                BankBillDate = DateTime.Today.AddDays(-10),
+                Status = BankBillMinutesStatus.Cancelled,
+                TotalCars = 1,
+                TotalClaimAmount = 860000000m,
+                CancelReason = "Đại lý Nam Trung đã chuyển khoản thanh toán trực tiếp 100% tiền mua xe Tucson qua tài khoản ngân hàng, không xuất trình hối phiếu đòi tiền ngân hàng bảo lãnh",
+                CancelledAt = DateTime.Now.AddDays(-8),
+                CancelledBy = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                CreatedBy = "Trần Văn Bình (Chuyên viên Tài vụ HTC)",
+                CreatedAt = DateTime.Now.AddDays(-10),
+                Details = new List<BankBillMinutesDetail>
+                {
+                    new BankBillMinutesDetail
+                    {
+                        BankBillMnNo = "2603BBM00005",
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        SpecDescription = "Tucson 2.0 số tự động tiêu chuẩn",
+                        ColorCode = "NKA",
+                        EngineNo = "G4NL-987654",
+                        ContractNo = "2603DRC00002",
+                        BankGuaranteeNo = "BL-BIDV-20260302-05",
+                        GuaranteeBankCode = "BIDV",
+                        GuaranteeDateOpen = DateTime.Today.AddDays(-25),
+                        HTCInvoiceNo = "HD-HTC-2603-0008",
+                        TransportMinutesNo = "BBBG-2603-0003",
+                        CQNo = "CQ2026-TU-098765",
+                        CONo = "CO2026-VN-98765",
+                        ClaimAmount = 860000000m,
+                        Status = BankBillMinutesDetailStatus.Cancelled,
+                        Remark = "Đã hủy do đại lý thanh toán chuyển khoản trực tiếp"
+                    }
+                }
+            };
+
+            db.BankBillMinutes.AddRange(bbm1, bbm2, bbm3, bbm4, bbm5);
             await db.SaveChangesAsync();
         }
     }
