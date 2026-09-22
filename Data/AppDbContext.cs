@@ -15,6 +15,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarDocRequestDetail> CarDocRequestDetails => Set<CarDocRequestDetail>();
     public DbSet<CarInvoice> CarInvoices => Set<CarInvoice>();
     public DbSet<CarInvoiceDetail> CarInvoiceDetails => Set<CarInvoiceDetail>();
+    public DbSet<CarRetrieveOrder> CarRetrieveOrders => Set<CarRetrieveOrder>();
+    public DbSet<CarRetrieveOrderDetail> CarRetrieveOrderDetails => Set<CarRetrieveOrderDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -39,5 +41,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CarInvoice>().Property(x => x.AdjType).HasConversion<int>();
         b.Entity<CarInvoice>().Property(x => x.Status).HasConversion<int>();
         b.Entity<CarInvoice>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CarRetrieveOrder>().HasIndex(x => new { x.OrgId, x.RetrieveOrderNo }).IsUnique();
+        b.Entity<CarRetrieveOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarRetrieveOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RetrieveOrderId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CarRetrieveOrderDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

@@ -282,5 +282,56 @@ public sealed class CarInvoiceDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái Lệnh thu hồi xe (DMS.Sales Sto_CarRetrieve RetrieveStatus: Pending (P=chờ duyệt) -> Approved (A=đã duyệt) / Rejected (R=từ chối) -> Completed (F=hoàn tất về kho), Cancelled (C=hủy)).</summary>
+public enum CarRetrieveStatus { Pending = 0, Approved = 1, Rejected = 2, Completed = 3, Cancelled = 4 }
+
+/// <summary>Trạng thái dòng xe trong lệnh thu hồi (DMS.Sales Sto_CarRetrieveDetail RetrieveDtlStatus: Pending -> Approved -> Completed / Rejected).</summary>
+public enum CarRetrieveDtlStatus { Pending = 0, Approved = 1, Rejected = 2, Completed = 3 }
+
+/// <summary>Lệnh thu hồi xe từ Đại lý về kho Nhà phân phối (DMS.Sales Sto_CarRetrieve): quản lý quy trình thu hồi xe do vi phạm bảo lãnh, đổi lô hoặc điều phối lại nguồn xe.</summary>
+public sealed class CarRetrieveOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string RetrieveOrderNo { get; set; } = ""; // Số lệnh thu hồi (PK Sto_CarRetrieve)
+    public string DealerCode { get; set; } = ""; // Mã đại lý bị thu hồi
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public CarRetrieveStatus Status { get; set; } = CarRetrieveStatus.Pending;
+    public string StorageCode { get; set; } = "OTHER"; // Kho nhận xe thu hồi (mặc định OTHER)
+    public string StorageName { get; set; } = "Kho Trung Tâm Phân Phối";
+    public int TotalCars { get; set; } // Tổng số lượng xe thu hồi
+    public string? Remark { get; set; } // Ghi chú lệnh
+    public string? RejectReason { get; set; } // Lý do từ chối thu hồi
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<CarRetrieveOrderDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Lệnh thu hồi (DMS.Sales Sto_CarRetrieveDetail).</summary>
+public sealed class CarRetrieveOrderDetail
+{
+    public long Id { get; set; }
+    public long RetrieveOrderId { get; set; }
+    public string CarId { get; set; } = ""; // Mã xe hệ thống
+    public string Vin { get; set; } = ""; // Số VIN
+    public string Model { get; set; } = ""; // Dòng xe / Model
+    public string? DeliveryOrderNo { get; set; } // Số lệnh xuất xe đã giao trước đó
+    public string StorageCode { get; set; } = "OTHER"; // Kho thu hồi
+    public CarRetrieveDtlStatus Status { get; set; } = CarRetrieveDtlStatus.Pending;
+    public DateTime? ExpectedStartDate { get; set; } // Ngày dự kiến bắt đầu thu hồi
+    public DateTime? ExpectedEndDate { get; set; } // Ngày dự kiến kết thúc thu hồi
+    public DateTime? ActualOutDate { get; set; } // Ngày xuất xe khỏi kho đại lý (RetrieveOutDate)
+    public DateTime? ActualEndDate { get; set; } // Ngày nhập xe vào kho NPP (RetrieveEndDate)
+    public string? EngineNo { get; set; } // Số máy
+    public string? Color { get; set; } // Màu xe
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
+
 
 

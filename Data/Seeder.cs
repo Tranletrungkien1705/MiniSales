@@ -205,6 +205,46 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(InvoiceId) REFERENCES CarInvoices(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarRetrieveOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    RetrieveOrderNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    StorageCode TEXT NOT NULL,
+                    StorageName TEXT NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ApprovedBy TEXT,
+                    ApprovedAt TEXT,
+                    CompletedAt TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarRetrieveOrders_OrgId_RetrieveOrderNo ON CarRetrieveOrders(OrgId, RetrieveOrderNo);
+
+                CREATE TABLE IF NOT EXISTS CarRetrieveOrderDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    RetrieveOrderId INTEGER NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    DeliveryOrderNo TEXT,
+                    StorageCode TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    ExpectedStartDate TEXT,
+                    ExpectedEndDate TEXT,
+                    ActualOutDate TEXT,
+                    ActualEndDate TEXT,
+                    EngineNo TEXT,
+                    Color TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(RetrieveOrderId) REFERENCES CarRetrieveOrders(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -673,6 +713,81 @@ public static class Seeder
             };
 
             db.CarInvoices.AddRange(inv1, inv2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.CarRetrieveOrders.AnyAsync(o => o.OrgId == orgId))
+        {
+            var ro1 = new CarRetrieveOrder
+            {
+                OrgId = orgId,
+                RetrieveOrderNo = "RO2603100001",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                Status = CarRetrieveStatus.Completed,
+                StorageCode = "OTHER",
+                StorageName = "Kho Trung Tâm Phân Phối Hà Nam",
+                TotalCars = 1,
+                Remark = "Thu hồi xe Creta đổi lô điều phối phục vụ đại lý khu vực miền Bắc",
+                CreatedBy = "NPP_DISPATCHER",
+                CreatedAt = DateTime.Now.AddDays(-10),
+                ApprovedBy = "NPP_HQ_DIRECTOR",
+                ApprovedAt = DateTime.Now.AddDays(-9),
+                CompletedAt = DateTime.Now.AddDays(-6),
+                Details = new List<CarRetrieveOrderDetail>
+                {
+                    new CarRetrieveOrderDetail
+                    {
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA556677",
+                        Model = "Creta 1.5 Cao Cấp",
+                        DeliveryOrderNo = "DO2602150002",
+                        StorageCode = "OTHER",
+                        Status = CarRetrieveDtlStatus.Completed,
+                        ExpectedStartDate = DateTime.Today.AddDays(-8),
+                        ExpectedEndDate = DateTime.Today.AddDays(-5),
+                        ActualOutDate = DateTime.Today.AddDays(-7),
+                        ActualEndDate = DateTime.Today.AddDays(-6),
+                        EngineNo = "G4FL-881920",
+                        Color = "Trắng",
+                        Remark = "Xe đã kiểm tra nguyên trạng bàn giao về kho an toàn"
+                    }
+                }
+            };
+
+            var ro2 = new CarRetrieveOrder
+            {
+                OrgId = orgId,
+                RetrieveOrderNo = "RO2603200002",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                Status = CarRetrieveStatus.Pending,
+                StorageCode = "OTHER",
+                StorageName = "Kho Trung Tâm Phân Phối Hà Nam",
+                TotalCars = 1,
+                Remark = "Thu hồi xe Santa Fe do đại lý quá hạn giải ngân bảo lãnh ngân hàng",
+                CreatedBy = "NPP_FINANCE",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                Details = new List<CarRetrieveOrderDetail>
+                {
+                    new CarRetrieveOrderDetail
+                    {
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        DeliveryOrderNo = "DO2603010001",
+                        StorageCode = "OTHER",
+                        Status = CarRetrieveDtlStatus.Pending,
+                        ExpectedStartDate = DateTime.Today.AddDays(1),
+                        ExpectedEndDate = DateTime.Today.AddDays(5),
+                        EngineNo = "G4NL-983102",
+                        Color = "Đen",
+                        Remark = "Chờ ban lãnh đạo NPP duyệt lệnh thu hồi vận chuyển"
+                    }
+                }
+            };
+
+            db.CarRetrieveOrders.AddRange(ro1, ro2);
             await db.SaveChangesAsync();
         }
     }

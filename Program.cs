@@ -30,6 +30,7 @@ builder.Services.AddScoped<IDealerOrderService, DealerOrderService>();
 builder.Services.AddScoped<IPaymentGuaranteeService, PaymentGuaranteeService>();
 builder.Services.AddScoped<ICarDocRequestService, CarDocRequestService>();
 builder.Services.AddScoped<ICarInvoiceService, CarInvoiceService>();
+builder.Services.AddScoped<ICarRetrieveService, CarRetrieveService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -445,6 +446,85 @@ app.MapDelete("/api/invoices/{invoiceCode}", async (string invoiceCode, ICarInvo
     {
         var r = await svc.DeleteDraftAsync(invoiceCode);
         return r is null ? Results.NotFound(new { invoiceCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Lệnh thu hồi xe (Car Retrieve Order - DMS.Sales Sto_CarRetrieve) =====
+app.MapPost("/api/retrievals", async (CreateCarRetrieveDto dto, ICarRetrieveService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/retrievals", async (ICarRetrieveService svc, string? status, string? dealer, string? vin, string? carId) =>
+    Results.Ok(await svc.ListAsync(status, dealer, vin, carId))).RequireAuthorization();
+
+app.MapGet("/api/retrievals/stats", async (ICarRetrieveService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/retrievals/{orderNo}", async (string orderNo, ICarRetrieveService svc) =>
+{
+    var r = await svc.DetailAsync(orderNo);
+    return r is null ? Results.NotFound(new { retrieveOrderNo = orderNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/retrievals/{orderNo}/approve", async (string orderNo, ApproveCarRetrieveDto? dto, ICarRetrieveService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(orderNo, dto);
+        return r is null ? Results.NotFound(new { retrieveOrderNo = orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retrievals/{orderNo}/reject", async (string orderNo, RejectCarRetrieveDto dto, ICarRetrieveService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(orderNo, dto);
+        return r is null ? Results.NotFound(new { retrieveOrderNo = orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retrievals/{orderNo}/cancel", async (string orderNo, CancelCarRetrieveDto? dto, ICarRetrieveService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(orderNo, dto);
+        return r is null ? Results.NotFound(new { retrieveOrderNo = orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retrievals/{orderNo}/complete", async (string orderNo, CompleteCarRetrieveDto? dto, ICarRetrieveService svc) =>
+{
+    try
+    {
+        var r = await svc.CompleteAsync(orderNo, dto);
+        return r is null ? Results.NotFound(new { retrieveOrderNo = orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retrievals/{orderNo}/cars", async (string orderNo, AddCarRetrieveDetailDto dto, ICarRetrieveService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(orderNo, dto);
+        return r is null ? Results.NotFound(new { retrieveOrderNo = orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/retrievals/{orderNo}/cars/{detailId:long}", async (string orderNo, long detailId, ICarRetrieveService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(orderNo, detailId);
+        return r is null ? Results.NotFound(new { retrieveOrderNo = orderNo, detailId }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
