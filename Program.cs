@@ -48,6 +48,7 @@ builder.Services.AddScoped<IPaymentGuaranteeClaimService, PaymentGuaranteeClaimS
 builder.Services.AddScoped<IBankBillMinutesService, BankBillMinutesService>();
 builder.Services.AddScoped<ICarTestCarService, CarTestCarService>();
 builder.Services.AddScoped<ICarBodyRequestService, CarBodyRequestService>();
+builder.Services.AddScoped<IDealerDriveTestService, DealerDriveTestService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2234,6 +2235,98 @@ app.MapPost("/api/body-requests/{cbReqNo}/complete", async (string cbReqNo, Comp
     {
         var r = await svc.CompleteAsync(cbReqNo, dto);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ---- Quản lý Lượt lái thử xe Khách hàng Đại lý (DMS.Sales Dlr_DriveTest / DlrDriveTestController / DealerRetail.cs) ----
+app.MapPost("/api/drive-tests", async (CreateDealerDriveTestDto dto, IDealerDriveTestService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/drive-tests", async (IDealerDriveTestService svc, string? status, string? dealerCode, string? modelCode, string? plateNo, string? driveTestGroup, string? driveTestType, string? customerPhone, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, dealerCode, modelCode, plateNo, driveTestGroup, driveTestType, customerPhone, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/drive-tests/eligible-test-cars", async (IDealerDriveTestService svc, string? dealerCode) =>
+    Results.Ok(await svc.GetEligibleTestCarsAsync(dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/drive-tests/stats", async (IDealerDriveTestService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/drive-tests/{driveTestCode}", async (string driveTestCode, IDealerDriveTestService svc) =>
+{
+    var r = await svc.DetailAsync(driveTestCode);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy lượt lái thử {driveTestCode}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/drive-tests/{driveTestCode}", async (string driveTestCode, UpdateDealerDriveTestDto dto, IDealerDriveTestService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(driveTestCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lượt lái thử {driveTestCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/drive-tests/{driveTestCode}", async (string driveTestCode, IDealerDriveTestService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(driveTestCode);
+        return ok ? Results.Ok(new { message = $"Đã xóa nháp lượt lái thử {driveTestCode} thành công." }) : Results.NotFound(new { error = $"Không tìm thấy lượt lái thử {driveTestCode}." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/drive-tests/{driveTestCode}/approve-hq", async (string driveTestCode, ApproveDealerDriveTestDto? dto, IDealerDriveTestService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveHqAsync(driveTestCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lượt lái thử {driveTestCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/drive-tests/approve-multiple", async (BatchDriveTestCodeDto dto, IDealerDriveTestService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveMultipleHqAsync(dto.DriveTestCodes, new ApproveDealerDriveTestDto(dto.ApprovedAmount, dto.ActionBy, null));
+        return Results.Ok(new { message = $"Đã duyệt thành công {r.Count} lượt lái thử.", items = r });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/drive-tests/{driveTestCode}/reject-hq", async (string driveTestCode, RejectDealerDriveTestDto dto, IDealerDriveTestService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectHqAsync(driveTestCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lượt lái thử {driveTestCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/drive-tests/reject-multiple", async (BatchDriveTestCodeDto dto, IDealerDriveTestService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectMultipleHqAsync(dto.DriveTestCodes, new RejectDealerDriveTestDto(dto.RejectReason ?? "NPP từ chối duyệt hàng loạt.", dto.ActionBy));
+        return Results.Ok(new { message = $"Đã từ chối duyệt {r.Count} lượt lái thử.", items = r });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/drive-tests/{driveTestCode}/cancel", async (string driveTestCode, CancelDealerDriveTestDto dto, IDealerDriveTestService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(driveTestCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lượt lái thử {driveTestCode}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

@@ -1478,5 +1478,62 @@ public sealed class CarBodyRequestDetail
     public string? Remark { get; set; } // Ghi chú chi tiết dòng xe
 }
 
+/// <summary>Trạng thái lượt lái thử xe của khách hàng tại đại lý (DMS.Sales Dlr_DriveTest DriverTestStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [NPP duyệt chấp thuận], Rejected = 'R' [Từ chối duyệt], Cancelled = 'C' [Hủy]).</summary>
+public enum DriveTestStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Hình thức nhóm sự kiện lái thử xe (DMS.Sales Dlr_DriveTest DriverTestGroup: Showroom = 'SHOWROOM' [Tại Showroom đại lý], Event = 'EVENT' [Sự kiện / Roadshow lái thử ngoài trời]).</summary>
+public enum DriveTestGroup { Showroom = 0, Event = 1 }
+
+/// <summary>Loại hình nguồn kinh phí tài trợ lái thử (DMS.Sales Dlr_DriveTest DriverTestType: HTV = 'HTV' [NPP tài trợ / hỗ trợ kinh phí], Dealer = 'Dealer' [Đại lý tự túc kinh phí]).</summary>
+public enum DriveTestType { HTV = 0, Dealer = 1 }
+
+/// <summary>Quản lý Lượt lái thử xe của Khách hàng tại Đại lý (DMS.Sales Dlr_DriveTest / DlrDriveTestController / DealerRetail.cs): ghi nhận lịch trình, thông tin khách hàng, bằng lái GPLX, xe lái thử demo (DrvTestPlateNo), kết quả trải nghiệm, ý định mua xe và phê duyệt hỗ trợ kinh phí từ NPP.</summary>
+public sealed class DealerDriveTest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DriveTestCode { get; set; } = ""; // Mã lượt lái thử dạng {yyMM}DT{seq:D4} (DMS40 SequenceType: DRIVETEST)
+    public string DealerCode { get; set; } = ""; // Mã đại lý tổ chức lái thử
+    public string? DealerName { get; set; } // Tên đại lý
+    public DriveTestGroup DriverTestGroup { get; set; } = DriveTestGroup.Showroom; // SHOWROOM hoặc EVENT
+    public DriveTestType DriverTestType { get; set; } = DriveTestType.HTV; // HTV (NPP tài trợ) hoặc Dealer (Đại lý tự túc)
+    public DateTime DriveDTime { get; set; } = DateTime.Today; // Ngày giờ thực hiện lái thử xe
+    public string CustomerCode { get; set; } = ""; // Mã khách hàng đại lý (DLS_DealerCustomer)
+    public string FullName { get; set; } = ""; // Họ và tên khách hàng
+    public string Gender { get; set; } = "M"; // Giới tính khách hàng: "M" = Nam, "F" = Nữ
+    public string RangeAgeCode { get; set; } = "1990"; // Năm sinh của khách hàng (chuẩn 4 số năm sinh từ 1940 đến 2010 theo rule DMS.Sales)
+    public string DriverLicenseNo { get; set; } = ""; // Số Giấy phép lái xe (GPLX bắt buộc đối với khách lái thử)
+    public string? IDCardNo { get; set; } // Số CCCD / CMND khách hàng
+    public string PhoneNo { get; set; } = ""; // Số điện thoại liên hệ của khách hàng
+    public string? Email { get; set; } // Địa chỉ email khách hàng
+    public string? Address { get; set; } // Địa chỉ liên hệ của khách hàng
+    public string? ProvinceCode { get; set; } // Mã tỉnh thành cư trú
+    public string? ProvinceName { get; set; } // Tên tỉnh thành
+    public string ModelCode { get; set; } = ""; // Mã model dòng xe khách đăng ký trải nghiệm (Santa Fe, Tucson, Creta, Accent...)
+    public string? ModelName { get; set; } // Tên thương mại dòng xe
+    public string DrvTestPlateNo { get; set; } = ""; // Biển số xe lái thử Demo của đại lý (liên kết đội xe Mst_CarDriverTest / CarTestCar)
+    public string? DrvTestVIN { get; set; } // Số khung VIN của xe lái thử
+    public string? SalesManCode { get; set; } // Mã tư vấn bán hàng (TVBH) đồng hành lái thử
+    public string? SalesManName { get; set; } // Tên tư vấn bán hàng
+    public string? Evaluation { get; set; } // Đánh giá trải nghiệm của khách: Rất hài lòng, Hài lòng, Bình thường, Không hài lòng
+    public string? CustomerIntent { get; set; } // Ý định mua xe: WillBuy (Sắp ký HĐ), Considering (Cân nhắc đối thủ), Consulting (Cần tư vấn thêm), NoDemand (Chưa có nhu cầu)
+    public DateTime? EstimatedContractDate { get; set; } // Ngày dự kiến ký hợp đồng bán lẻ nếu khách có ý định mua
+    public decimal SupportAmount { get; set; } // Số tiền đề nghị NPP hỗ trợ/tài trợ chi phí lái thử (VNĐ)
+    public decimal ApprovedAmount { get; set; } // Số tiền NPP thực tế duyệt tài trợ (VNĐ)
+    public DriveTestStatus Status { get; set; } = DriveTestStatus.Pending; // Trạng thái xử lý lượt lái thử: P -> A / R / C
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    public string? CreatedBy { get; set; }
+    public DateTime? ApprovedDate { get; set; }
+    public string? ApprovedBy { get; set; }
+    public DateTime? RejectDate { get; set; }
+    public string? RejectBy { get; set; }
+    public string? RejectRemark { get; set; } // Lý do NPP từ chối duyệt chi phí
+    public DateTime? CancelledDate { get; set; }
+    public string? CancelledBy { get; set; }
+    public string? CancelRemark { get; set; } // Lý do đại lý hủy lượt lái thử
+    public string? Remark { get; set; } // Ghi chú bổ sung
+    public bool FlagActive { get; set; } = true;
+}
+
 
 

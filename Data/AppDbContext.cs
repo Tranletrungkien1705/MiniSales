@@ -53,6 +53,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarTestCarDetail> TestCarDetails => Set<CarTestCarDetail>();
     public DbSet<CarBodyRequest> BodyRequests => Set<CarBodyRequest>();
     public DbSet<CarBodyRequestDetail> BodyRequestDetails => Set<CarBodyRequestDetail>();
+    public DbSet<DealerDriveTest> DriveTests => Set<DealerDriveTest>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -165,5 +166,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CarBodyRequest>().Property(x => x.Status).HasConversion<int>();
         b.Entity<CarBodyRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.CBRequestId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<CarBodyRequestDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<DealerDriveTest>().HasIndex(x => new { x.OrgId, x.DriveTestCode }).IsUnique();
+        b.Entity<DealerDriveTest>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<DealerDriveTest>().Property(x => x.DriverTestGroup).HasConversion<int>();
+        b.Entity<DealerDriveTest>().Property(x => x.DriverTestType).HasConversion<int>();
     }
 }
