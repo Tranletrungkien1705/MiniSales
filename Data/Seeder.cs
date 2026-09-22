@@ -727,7 +727,7 @@ public static class Seeder
                     FOREIGN KEY(TranspRequestId) REFERENCES TransportRequests(Id) ON DELETE CASCADE
                 );
 
-                CREATE TABLE IF NOT EXISTS PaymentGuaranteeExts (
+                CREATE TABLE IF NOT EXISTS GuaranteeExts (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
                     GrtClaimExtNo TEXT NOT NULL,
@@ -750,9 +750,9 @@ public static class Seeder
                     LUDateTime TEXT,
                     LUBy TEXT
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentGuaranteeExts_OrgId_GrtClaimExtNo ON PaymentGuaranteeExts(OrgId, GrtClaimExtNo);
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_GuaranteeExts_OrgId_GrtClaimExtNo ON GuaranteeExts(OrgId, GrtClaimExtNo);
 
-                CREATE TABLE IF NOT EXISTS PaymentGuaranteeExtDetails (
+                CREATE TABLE IF NOT EXISTS GuaranteeExtDetails (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     GrtClaimExtId INTEGER NOT NULL,
                     GrtClaimExtNo TEXT NOT NULL,
@@ -775,7 +775,7 @@ public static class Seeder
                     UnitPriceActual REAL NOT NULL,
                     Status INTEGER NOT NULL,
                     Remark TEXT,
-                    FOREIGN KEY(GrtClaimExtId) REFERENCES PaymentGuaranteeExts(Id) ON DELETE CASCADE
+                    FOREIGN KEY(GrtClaimExtId) REFERENCES GuaranteeExts(Id) ON DELETE CASCADE
                 );
 
                 CREATE TABLE IF NOT EXISTS PdiRequests (
@@ -825,6 +825,115 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(PdiRequestId) REFERENCES PdiRequests(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS PaymentDiscounts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PaymentDiscountNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    CompanyName TEXT,
+                    DateEndFrom TEXT,
+                    DateEndTo TEXT,
+                    QtyCar INTEGER NOT NULL,
+                    SumTotalDiscountPrice REAL NOT NULL,
+                    DiscountPercent REAL NOT NULL,
+                    PenaltyPercent REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    DealerSignStatus INTEGER NOT NULL,
+                    DealerSignDate TEXT,
+                    DealerSignBy TEXT,
+                    DealerSignFile TEXT,
+                    HQSignStatus INTEGER NOT NULL,
+                    HQApproveDate TEXT,
+                    HQApproveBy TEXT,
+                    HQSignDate TEXT,
+                    HQSignBy TEXT,
+                    HQSignFile TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentDiscounts_OrgId_PaymentDiscountNo ON PaymentDiscounts(OrgId, PaymentDiscountNo);
+
+                CREATE TABLE IF NOT EXISTS PaymentDiscountDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PaymentDiscountId INTEGER NOT NULL,
+                    PaymentDiscountNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    SOCode TEXT,
+                    GuaranteeNo TEXT NOT NULL,
+                    BankGuaranteeNo TEXT,
+                    BankCode TEXT,
+                    DateOpen TEXT,
+                    Term INTEGER NOT NULL,
+                    DateStart TEXT,
+                    DateEnd TEXT,
+                    UnitPrice REAL NOT NULL,
+                    UnitPriceActual REAL NOT NULL,
+                    GuaranteeValue REAL NOT NULL,
+                    PaymentEndDatePhase1 TEXT,
+                    AmountPhase1 REAL NOT NULL,
+                    DiscountDateNumberPhase1 INTEGER NOT NULL,
+                    DiscountPercentPhase1 REAL NOT NULL,
+                    DiscountPricePhase1 REAL NOT NULL,
+                    PaymentEndDatePhase2 TEXT,
+                    AmountPhase2 REAL NOT NULL,
+                    DiscountDateNumberPhase2 INTEGER NOT NULL,
+                    DiscountPercentPhase2 REAL NOT NULL,
+                    DiscountPricePhase2 REAL NOT NULL,
+                    PaymentEndDatePhase3 TEXT,
+                    AmountPhase3 REAL NOT NULL,
+                    DiscountDateNumberPhase3 INTEGER NOT NULL,
+                    DiscountPercentPhase3 REAL NOT NULL,
+                    DiscountPricePhase3 REAL NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    TotalDiscountPrice REAL NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(PaymentDiscountId) REFERENCES PaymentDiscounts(Id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS DealerContractCancelMinutes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CancelMinutesNo TEXT NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    ContractDate TEXT NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    Remark TEXT,
+                    CancelMinutesStatus INTEGER NOT NULL,
+                    DealerSignStatus INTEGER NOT NULL,
+                    HQSignStatus INTEGER NOT NULL,
+                    DealerSignedAt TEXT,
+                    DealerSignedBy TEXT,
+                    HQAppr1At TEXT,
+                    HQAppr1By TEXT,
+                    HQAppr2At TEXT,
+                    HQAppr2By TEXT,
+                    RejectAt TEXT,
+                    RejectBy TEXT,
+                    RejectReason TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    CancelReason TEXT,
+                    SignedFilePath TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerContractCancelMinutes_OrgId_CancelMinutesNo ON DealerContractCancelMinutes(OrgId, CancelMinutesNo);
             ");
         }
         catch
@@ -3206,6 +3315,224 @@ public static class Seeder
             };
 
             db.PaymentDiscounts.AddRange(pd1, pd2, pd3, pd4);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.DealerContractCancelMinutes.AnyAsync(o => o.OrgId == orgId))
+        {
+            // Đảm bảo tồn tại các DealerContract liên quan phục vụ demo và test
+            if (!await db.DealerContracts.AnyAsync(o => o.OrgId == orgId && o.ContractNo == "2603DRC00004"))
+            {
+                db.DealerContracts.Add(new DealerContract
+                {
+                    OrgId = orgId,
+                    ContractNo = "2603DRC00004",
+                    DealerCode = "VN002",
+                    DealerName = "Hyundai Nam Trung",
+                    ContractDate = DateTime.Today.AddDays(-6),
+                    ContractType = DealerContractType.Standard,
+                    PaymentType = DealerContractPaymentType.Cash,
+                    BankCode = "DEALER",
+                    DepositPercent = 10m,
+                    TotalCars = 1,
+                    TotalAmount = 620000000m,
+                    Status = DealerContractStatus.Signed,
+                    DealerSignStatus = DealerContractSignStatus.Signed,
+                    HQSignStatus = DealerContractSignStatus.Signed,
+                    DealerSignedBy = "Lê Hồng Quân (Đại diện Nam Trung)",
+                    DealerSignedAt = DateTime.Now.AddDays(-5),
+                    HQSignedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                    HQSignedAt = DateTime.Now.AddDays(-5),
+                    Remark = "Hợp đồng mua buôn 01 xe Stargazer X",
+                    CreatedBy = "DEALER_SALES_ADMIN",
+                    CreatedAt = DateTime.Now.AddDays(-6),
+                    Details = new List<DealerContractDetail>
+                    {
+                        new DealerContractDetail
+                        {
+                            CarId = "CAR2026-SG0109",
+                            Vin = "KMHE281BBSA778899",
+                            Model = "Stargazer X 1.5 Cao Cấp",
+                            SpecCode = "SG15-PRE-01",
+                            ColorCode = "MB1",
+                            ProductionYear = 2026,
+                            UnitPrice = 563636364m,
+                            VatRate = 10m,
+                            TotalAmount = 620000000m,
+                            OrderNo = "ORD2603150002",
+                            Remark = "Xe phân bổ tháng 3"
+                        }
+                    }
+                });
+            }
+
+            if (!await db.DealerContracts.AnyAsync(o => o.OrgId == orgId && o.ContractNo == "2603DRC00005"))
+            {
+                db.DealerContracts.Add(new DealerContract
+                {
+                    OrgId = orgId,
+                    ContractNo = "2603DRC00005",
+                    DealerCode = "VN001",
+                    DealerName = "Hyundai Đông Đô",
+                    ContractDate = DateTime.Today.AddDays(-14),
+                    ContractType = DealerContractType.Standard,
+                    PaymentType = DealerContractPaymentType.Guarantee,
+                    BankCode = "VCB",
+                    BankName = "Vietcombank Thăng Long",
+                    DepositPercent = 10m,
+                    TotalCars = 1,
+                    TotalAmount = 769000000m,
+                    Status = DealerContractStatus.Cancelled,
+                    DealerSignStatus = DealerContractSignStatus.Signed,
+                    HQSignStatus = DealerContractSignStatus.Signed,
+                    DealerSignedBy = "Nguyễn Văn Hưng (Giám đốc Đại lý Đông Đô)",
+                    DealerSignedAt = DateTime.Now.AddDays(-13),
+                    HQSignedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                    HQSignedAt = DateTime.Now.AddDays(-12),
+                    CancelledAt = DateTime.Now.AddDays(-5),
+                    CancelReason = "Hủy theo Biên bản thanh lý / hủy HĐ số 2603DRC00005.CM01 đã ký hoàn tất 2 bên. Lý do: Hai bên thỏa thuận thanh lý chấm dứt hợp đồng do nhà máy tạm ngừng phiên bản sản xuất",
+                    Remark = "Hợp đồng mua buôn xe Elantra đã được thanh lý theo biên bản hủy",
+                    CreatedBy = "DEALER_SALES_ADMIN",
+                    CreatedAt = DateTime.Now.AddDays(-14),
+                    Details = new List<DealerContractDetail>
+                    {
+                        new DealerContractDetail
+                        {
+                            CarId = "CAR2026-EL0402",
+                            Vin = "KMHE281BBSA445566",
+                            Model = "Elantra 2.0 AT Cao Cấp",
+                            SpecCode = "EL20-PRE-01",
+                            ColorCode = "BK1",
+                            ProductionYear = 2026,
+                            UnitPrice = 699090909m,
+                            VatRate = 10m,
+                            TotalAmount = 769000000m,
+                            OrderNo = "ORD2603010001",
+                            Remark = "Xe thuộc hợp đồng đã thanh lý"
+                        }
+                    }
+                });
+            }
+
+            if (!await db.DealerContracts.AnyAsync(o => o.OrgId == orgId && o.ContractNo == "2603DRC00006"))
+            {
+                db.DealerContracts.Add(new DealerContract
+                {
+                    OrgId = orgId,
+                    ContractNo = "2603DRC00006",
+                    DealerCode = "VN001",
+                    DealerName = "Hyundai Đông Đô",
+                    ContractDate = DateTime.Today.AddDays(-2),
+                    ContractType = DealerContractType.Standard,
+                    PaymentType = DealerContractPaymentType.Cash,
+                    BankCode = "DEALER",
+                    DepositPercent = 10m,
+                    TotalCars = 1,
+                    TotalAmount = 1589000000m,
+                    Status = DealerContractStatus.Signed,
+                    DealerSignStatus = DealerContractSignStatus.Signed,
+                    HQSignStatus = DealerContractSignStatus.Signed,
+                    DealerSignedBy = "Nguyễn Văn Hưng (Giám đốc Đại lý Đông Đô)",
+                    DealerSignedAt = DateTime.Now.AddDays(-1),
+                    HQSignedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                    HQSignedAt = DateTime.Now.AddDays(-1),
+                    Remark = "Hợp đồng mua buôn 01 xe Palisade Exclusive 7 chỗ",
+                    CreatedBy = "DEALER_SALES_ADMIN",
+                    CreatedAt = DateTime.Now.AddDays(-2),
+                    Details = new List<DealerContractDetail>
+                    {
+                        new DealerContractDetail
+                        {
+                            CarId = "CAR2026-PL0991",
+                            Vin = "KMHE281BBSA998877",
+                            Model = "Palisade 2.2D Exclusive",
+                            SpecCode = "PL22-EXC-01",
+                            ColorCode = "WH1",
+                            ProductionYear = 2026,
+                            UnitPrice = 1444545455m,
+                            VatRate = 10m,
+                            TotalAmount = 1589000000m,
+                            OrderNo = "ORD2603010001",
+                            Remark = "Xe kế hoạch phân bổ tháng 3"
+                        }
+                    }
+                });
+            }
+
+            await db.SaveChangesAsync();
+
+            // Seed Biên bản thanh lý / hủy hợp đồng bán buôn
+            var cm1 = new DealerContractCancelMinutes
+            {
+                OrgId = orgId,
+                CancelMinutesNo = "2603DRC00005.CM01",
+                ContractNo = "2603DRC00005",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ContractDate = DateTime.Today.AddDays(-14),
+                TotalCars = 1,
+                TotalAmount = 769000000m,
+                Remark = "Hai bên thỏa thuận thanh lý chấm dứt hợp đồng do nhà máy tạm ngừng phiên bản sản xuất",
+                CancelMinutesStatus = DealerContractCancelMinutesStatus.Signed,
+                DealerSignStatus = DealerContractCancelMinutesSignStatus.Approved,
+                HQSignStatus = DealerContractCancelMinutesSignStatus.Approved2,
+                DealerSignedAt = DateTime.Now.AddDays(-7),
+                DealerSignedBy = "Nguyễn Văn Hưng (Giám đốc Đại lý Đông Đô)",
+                HQAppr1At = DateTime.Now.AddDays(-6),
+                HQAppr1By = "Trần Tuấn Kiệt (Chuyên viên Thẩm định NPP)",
+                HQAppr2At = DateTime.Now.AddDays(-5),
+                HQAppr2By = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                SignedFilePath = "/storage/cancel_minutes/2603DRC00005.CM01_Full_Signed.pdf",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-8),
+                LUDateTime = DateTime.Now.AddDays(-5),
+                LUBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)"
+            };
+
+            var cm2 = new DealerContractCancelMinutes
+            {
+                OrgId = orgId,
+                CancelMinutesNo = "2603DRC00004.CM01",
+                ContractNo = "2603DRC00004",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                ContractDate = DateTime.Today.AddDays(-6),
+                TotalCars = 1,
+                TotalAmount = 620000000m,
+                Remark = "Đại lý xin rút hợp đồng xe Stargazer do đối tác dừng dự án kinh doanh dịch vụ vận tải, NPP chuyên viên đã thẩm tra chuyển Lãnh đạo ký số",
+                CancelMinutesStatus = DealerContractCancelMinutesStatus.Draft,
+                DealerSignStatus = DealerContractCancelMinutesSignStatus.Approved,
+                HQSignStatus = DealerContractCancelMinutesSignStatus.Approved1,
+                DealerSignedAt = DateTime.Now.AddDays(-2),
+                DealerSignedBy = "Lê Hồng Quân (Đại diện Nam Trung)",
+                HQAppr1At = DateTime.Now.AddDays(-1),
+                HQAppr1By = "Trần Tuấn Kiệt (Chuyên viên Thẩm định NPP)",
+                SignedFilePath = "/storage/cancel_minutes/2603DRC00004.CM01_DL_Signed.pdf",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-3),
+                LUDateTime = DateTime.Now.AddDays(-1),
+                LUBy = "Trần Tuấn Kiệt (Chuyên viên Thẩm định NPP)"
+            };
+
+            var cm3 = new DealerContractCancelMinutes
+            {
+                OrgId = orgId,
+                CancelMinutesNo = "2603DRC00006.CM01",
+                ContractNo = "2603DRC00006",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ContractDate = DateTime.Today.AddDays(-2),
+                TotalCars = 1,
+                TotalAmount = 1589000000m,
+                Remark = "Đại lý lập dự thảo biên bản thanh lý hợp đồng bán buôn xe Palisade đang hoàn thiện hồ sơ trình ký",
+                CancelMinutesStatus = DealerContractCancelMinutesStatus.Draft,
+                DealerSignStatus = DealerContractCancelMinutesSignStatus.Pending,
+                HQSignStatus = DealerContractCancelMinutesSignStatus.Pending,
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now
+            };
+
+            db.DealerContractCancelMinutes.AddRange(cm1, cm2, cm3);
             await db.SaveChangesAsync();
         }
     }

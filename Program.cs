@@ -42,6 +42,7 @@ builder.Services.AddScoped<ITransportRequestService, TransportRequestService>();
 builder.Services.AddScoped<IPaymentGuaranteeExtService, PaymentGuaranteeExtService>();
 builder.Services.AddScoped<IPdiRequestService, PdiRequestService>();
 builder.Services.AddScoped<IPaymentDiscountService, PaymentDiscountService>();
+builder.Services.AddScoped<IDealerContractCancelMinutesService, DealerContractCancelMinutesService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1652,6 +1653,95 @@ app.MapPut("/api/payment-discounts/{discountNo}/cars/{vin}", async (string disco
     {
         var r = await svc.UpdateLineAsync(discountNo, vin, dto);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Biên bản thanh lý / Hủy Hợp đồng mua bán buôn xe Đại lý - NPP (Wholesale Dealer Contract Cancellation Minutes - DMS.Sales DMS40_DlrCtr_CancelMinutes / DlrCtrCancelMinutesController / DMS40.0.34.Contract.cs) =====
+app.MapPost("/api/dealer-contract-cancels", async (CreateDealerContractCancelMinutesDto dto, IDealerContractCancelMinutesService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-contract-cancels", async (IDealerContractCancelMinutesService svc, string? status, string? dealer, string? contractNo, string? minutesNo, string? dlrSignStatus, string? hqSignStatus) =>
+    Results.Ok(await svc.ListAsync(status, dealer, contractNo, minutesNo, dlrSignStatus, hqSignStatus))).RequireAuthorization();
+
+app.MapGet("/api/dealer-contract-cancels/stats", async (IDealerContractCancelMinutesService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/dealer-contract-cancels/{minutesNo}", async (string minutesNo, IDealerContractCancelMinutesService svc) =>
+{
+    var r = await svc.DetailAsync(minutesNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-contract-cancels/{minutesNo}", async (string minutesNo, UpdateDealerContractCancelMinutesDto dto, IDealerContractCancelMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-contract-cancels/{minutesNo}", async (string minutesNo, IDealerContractCancelMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(minutesNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancels/{minutesNo}/approve-dl", async (string minutesNo, ApproveDealerContractCancelMinutesDto dto, IDealerContractCancelMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveDealerAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancels/{minutesNo}/approve1-hq", async (string minutesNo, Approve1HqDealerContractCancelMinutesDto? dto, IDealerContractCancelMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1HqAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancels/{minutesNo}/approve2-hq", async (string minutesNo, Approve2HqDealerContractCancelMinutesDto dto, IDealerContractCancelMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2HqAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancels/{minutesNo}/reject-hq", async (string minutesNo, RejectDealerContractCancelMinutesDto dto, IDealerContractCancelMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectHqAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancels/{minutesNo}/cancel-dl", async (string minutesNo, CancelDealerContractCancelMinutesDto dto, IDealerContractCancelMinutesService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelDealerAsync(minutesNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản hủy hợp đồng {minutesNo}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

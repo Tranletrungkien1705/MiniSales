@@ -1128,3 +1128,44 @@ public sealed class PaymentDiscountDetail
     public decimal TotalDiscountPrice { get; set; } // Tổng tiền chiết khấu được hưởng = Phase1 + Phase2 + Phase3
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
+
+/// <summary>Trạng thái Biên bản hủy Hợp đồng bán buôn xe Đại lý - NPP (DMS.Sales DMS40_DlrCtr_CancelMinutes CancelMinutesStatus: Draft = 'NS' [Chưa ký/Đang lập], Signed = 'S' [Hai bên đã ký số hoàn tất thanh lý], Cancelled = 'C' [Biên bản đã hủy]).</summary>
+public enum DealerContractCancelMinutesStatus { Draft = 0, Signed = 1, Cancelled = 2 }
+
+/// <summary>Trạng thái ký số Biên bản hủy HĐ bán buôn của Đại lý và NPP (DMS.Sales DMS40_DlrCtr_CancelMinutes DlrSignCcMnStatus / HTCSignCcMnStatus: Pending = 'P' [Chờ ký], Approved = 'A' [Đại lý đã duyệt/ký số], Approved1 = 'A1' [NPP thẩm tra cấp 1], Approved2 = 'A2' [Lãnh đạo NPP ký số hoàn tất], Rejected = 'R' [Từ chối]).</summary>
+public enum DealerContractCancelMinutesSignStatus { Pending = 0, Approved = 1, Approved1 = 2, Approved2 = 3, Rejected = 4 }
+
+/// <summary>Biên bản thanh lý / Hủy hợp đồng mua bán buôn xe ô tô Đại lý - NPP (DMS.Sales DMS40_DlrCtr_CancelMinutes / DlrCtrCancelMinutesController / DMS40.0.34.Contract.cs): quy trình thanh lý hợp đồng bán buôn theo lô đã ký kết, kiểm tra điều kiện ràng buộc không vướng Lệnh xuất xe (DeliveryOrder) hay Bảo lãnh ngân hàng (PaymentGuarantee), quy trình phê duyệt ký số điện tử 2 bên (Đại lý ký số ApproveDL, NPP thẩm tra Approve1HQ, Lãnh đạo NPP ký số hoàn tất Approve2HQ và tự động cập nhật DealerContract sang Cancelled).</summary>
+public sealed class DealerContractCancelMinutes
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CancelMinutesNo { get; set; } = ""; // Số biên bản hủy (PK CancelMinutesNo, format: {ContractNo}.CM{seq:D2}, vd: 2603DRC00001.CM01)
+    public string ContractNo { get; set; } = ""; // Số hợp đồng mua buôn đại lý (DlrCtrNo)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public DateTime ContractDate { get; set; } // Ngày hợp đồng gốc
+    public int TotalCars { get; set; } // Tổng số xe theo hợp đồng gốc
+    public decimal TotalAmount { get; set; } // Tổng giá trị hợp đồng gốc (VNĐ)
+    public string? Remark { get; set; } // Ghi chú / Lý do hủy hợp đồng
+    public DealerContractCancelMinutesStatus CancelMinutesStatus { get; set; } = DealerContractCancelMinutesStatus.Draft;
+    public DealerContractCancelMinutesSignStatus DealerSignStatus { get; set; } = DealerContractCancelMinutesSignStatus.Pending;
+    public DealerContractCancelMinutesSignStatus HQSignStatus { get; set; } = DealerContractCancelMinutesSignStatus.Pending;
+    public DateTime? DealerSignedAt { get; set; } // Ngày Đại lý ký số
+    public string? DealerSignedBy { get; set; } // Người đại diện Đại lý ký số
+    public DateTime? HQAppr1At { get; set; } // Ngày NPP thẩm định duyệt cấp 1
+    public string? HQAppr1By { get; set; } // Chuyên viên thẩm định NPP
+    public DateTime? HQAppr2At { get; set; } // Ngày Lãnh đạo NPP ký số hoàn tất cấp 2
+    public string? HQAppr2By { get; set; } // Lãnh đạo NPP ký số
+    public DateTime? RejectAt { get; set; } // Ngày NPP từ chối
+    public string? RejectBy { get; set; }
+    public string? RejectReason { get; set; } // Lý do NPP từ chối
+    public DateTime? CancelledAt { get; set; } // Ngày hủy biên bản
+    public string? CancelledBy { get; set; }
+    public string? CancelReason { get; set; } // Lý do hủy biên bản
+    public string? SignedFilePath { get; set; } // Đường dẫn / URL file PDF biên bản đã ký số (FilePath / FileName)
+    public string? CreatedBy { get; set; } // Người lập biên bản
+    public DateTime CreatedAt { get; set; } = DateTime.Now; // Ngày lập
+    public DateTime? LUDateTime { get; set; } // Ngày cập nhật cuối
+    public string? LUBy { get; set; } // Người cập nhật cuối
+}
