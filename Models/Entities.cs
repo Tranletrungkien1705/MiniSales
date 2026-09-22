@@ -796,4 +796,70 @@ public sealed class RetailDealAttach
     public string? UploadedBy { get; set; }
 }
 
+/// <summary>Loại điều chuyển kho xe ô tô (DMS.Sales Sto_StorageRearrange RearrangeType: Normal = Điều chuyển thông thường / phân bổ, Urgent = Điều chuyển khẩn cấp, Showroom = Trưng bày showroom, Maintenance = Bảo quản / chuyển bãi).</summary>
+public enum StorageRearrangeType { Normal = 0, Urgent = 1, Showroom = 2, Maintenance = 3 }
+
+/// <summary>Trạng thái Lệnh điều chuyển kho xe (DMS.Sales Sto_StorageRearrange RearrangeStatus: Pending = 'P' [Chờ duyệt cấp 1], Approved1 = 'A1' [NPP duyệt kế hoạch điều chuyển], Approved2 = 'A2' [NPP duyệt cấp 2 / Xuất kho thực tế hoàn tất], Rejected = 'R' [Từ chối], Cancelled = 'C' [Đã hủy]).</summary>
+public enum StorageRearrangeStatus { Pending = 0, Approved1 = 1, Approved2 = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Trạng thái từng dòng xe trong lệnh điều chuyển kho (DMS.Sales Sto_StorageRearrangeDetail RearrangeDtlStatus: Pending = Chờ duyệt, Approved1 = Đã duyệt kế hoạch, InTransit = Đang vận chuyển xuất kho, Completed = Đã nhập kho đích, Rejected = Từ chối).</summary>
+public enum StorageRearrangeDtlStatus { Pending = 0, Approved1 = 1, InTransit = 2, Completed = 3, Rejected = 4 }
+
+/// <summary>Lệnh điều chuyển kho xe ô tô Nhà phân phối & Đại lý (DMS.Sales Sto_StorageRearrange / StoStorageRearrangeController / Storage.1.cs): quản lý điều phối di chuyển lô xe giữa các tổng kho (Kho nhà máy, Kho cảng, Kho trung chuyển, Kho đại lý), quy trình phê duyệt 2 cấp (Approve1 duyệt kế hoạch, Approve2 xuất - nhập kho thực tế hoàn tất), quản lý lịch trình và kiểm đếm xe.</summary>
+public sealed class StorageRearrangeOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string RearrangeNo { get; set; } = ""; // Mã lệnh điều chuyển (PK StorageRearrangeNo, vd: SR26090001)
+    public string StorageCodeFrom { get; set; } = ""; // Mã kho xuất phát (StorageCodeFrom)
+    public string StorageNameFrom { get; set; } = ""; // Tên kho xuất phát
+    public string StorageCodeTo { get; set; } = ""; // Mã kho đích đến (StorageCodeTo)
+    public string StorageNameTo { get; set; } = ""; // Tên kho đích đến
+    public StorageRearrangeType RearrangeType { get; set; } = StorageRearrangeType.Normal; // Loại chuyển kho
+    public StorageRearrangeStatus Status { get; set; } = StorageRearrangeStatus.Pending; // Trạng thái lệnh (P -> A1 -> A2 / R / C)
+    public int TotalCars { get; set; } // Tổng số lượng xe điều chuyển
+    public string? TransporterName { get; set; } // Đơn vị phụ trách vận chuyển điều chuyển
+    public string? PlateNo { get; set; } // Biển số xe chuyên chở (xe lồng)
+    public string? DriverName { get; set; } // Tên tài xế phụ trách
+    public string? DriverPhone { get; set; } // SĐT tài xế
+    public string? Remark { get; set; } // Ghi chú lệnh điều chuyển
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt (Reject1HQ/Reject2HQ)
+    public string? CancelReason { get; set; } // Lý do hủy lệnh
+    public string? CreatedBy { get; set; } // Người lập lệnh
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? Approved1By { get; set; } // Người duyệt cấp 1 (Duyệt kế hoạch)
+    public DateTime? Approved1At { get; set; } // Ngày duyệt cấp 1
+    public string? Approved2By { get; set; } // Người duyệt cấp 2 (Hoàn tất xuất kho)
+    public DateTime? Approved2At { get; set; } // Ngày duyệt cấp 2
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<StorageRearrangeDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Lệnh điều chuyển kho (DMS.Sales Sto_StorageRearrangeDetail): theo dõi từng số khung VIN, dòng xe, kho xuất, kho đến, ngày dự kiến và ngày thực tế xuất/nhập kho.</summary>
+public sealed class StorageRearrangeDetail
+{
+    public long Id { get; set; }
+    public long RearrangeId { get; set; }
+    public string RearrangeNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung xe (17 ký tự)
+    public string Model { get; set; } = ""; // Dòng xe (Santa Fe, Tucson, Creta, Accent, Custin...)
+    public string? SpecCode { get; set; } // Mã cấu hình
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public string StorageCodeFrom { get; set; } = ""; // Kho xuất xe
+    public string StorageCodeTo { get; set; } = ""; // Kho nhận xe
+    public DateTime? ExpectedStartDate { get; set; } // Ngày dự kiến xuất kho vận chuyển
+    public DateTime? ExpectedEndDate { get; set; } // Ngày dự kiến nhận xe tại kho đích
+    public DateTime? ActualOutDate { get; set; } // Ngày thực tế xuất kho (RearrangeOutDate)
+    public DateTime? ActualInDate { get; set; } // Ngày thực tế nhận vào kho đích (RearrangeEndDate)
+    public StorageRearrangeDtlStatus Status { get; set; } = StorageRearrangeDtlStatus.Pending;
+    public DateTime? ConfirmDate { get; set; } // Ngày xác nhận kiểm đếm xe
+    public string? ConfirmBy { get; set; } // Người xác nhận kiểm đếm xe
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
+
 

@@ -37,6 +37,7 @@ builder.Services.AddScoped<IDealerContractService, DealerContractService>();
 builder.Services.AddScoped<IRetailContractService, RetailContractService>();
 builder.Services.AddScoped<IDealerPaymentService, DealerPaymentService>();
 builder.Services.AddScoped<IRetailDealService, RetailDealService>();
+builder.Services.AddScoped<IStorageRearrangeService, StorageRearrangeService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1146,6 +1147,115 @@ app.MapDelete("/api/deals/{dealNo}/attachments/{attachId:long}", async (string d
     {
         var r = await svc.RemoveAttachmentAsync(dealNo, attachId);
         return r is null ? Results.NotFound(new { dealNo, attachId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Lệnh điều chuyển kho xe ô tô (Storage Rearrange - DMS.Sales Sto_StorageRearrange / StoStorageRearrangeController / Storage.1.cs) =====
+app.MapPost("/api/storage-rearranges", async (CreateStorageRearrangeDto dto, IStorageRearrangeService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/storage-rearranges", async (IStorageRearrangeService svc, string? status, string? storageFrom, string? storageTo, string? vin, string? carId) =>
+    Results.Ok(await svc.ListAsync(status, storageFrom, storageTo, vin, carId))).RequireAuthorization();
+
+app.MapGet("/api/storage-rearranges/stats", async (IStorageRearrangeService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/storage-rearranges/{rearrangeNo}", async (string rearrangeNo, IStorageRearrangeService svc) =>
+{
+    var r = await svc.DetailAsync(rearrangeNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/storage-rearranges/{rearrangeNo}", async (string rearrangeNo, UpdateStorageRearrangeDto dto, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(rearrangeNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/storage-rearranges/{rearrangeNo}", async (string rearrangeNo, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteAsync(rearrangeNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/storage-rearranges/{rearrangeNo}/approve1", async (string rearrangeNo, Approve1RearrangeDto? dto, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(rearrangeNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/storage-rearranges/{rearrangeNo}/approve2", async (string rearrangeNo, Approve2RearrangeDto? dto, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(rearrangeNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/storage-rearranges/{rearrangeNo}/reject", async (string rearrangeNo, RejectRearrangeDto dto, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(rearrangeNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/storage-rearranges/{rearrangeNo}/cancel", async (string rearrangeNo, CancelRearrangeDto dto, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(rearrangeNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/storage-rearranges/{rearrangeNo}/cars/{vin}", async (string rearrangeNo, string vin, UpdateRearrangeDetailDto dto, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateDetailAsync(rearrangeNo, vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/storage-rearranges/{rearrangeNo}/cars", async (string rearrangeNo, AddRearrangeDetailDto dto, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(rearrangeNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/storage-rearranges/{rearrangeNo}/cars/{vin}", async (string rearrangeNo, string vin, IStorageRearrangeService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(rearrangeNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

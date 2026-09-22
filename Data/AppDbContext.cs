@@ -33,6 +33,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<RetailDeal> RetailDeals => Set<RetailDeal>();
     public DbSet<RetailDealDetail> RetailDealDetails => Set<RetailDealDetail>();
     public DbSet<RetailDealAttach> RetailDealAttachments => Set<RetailDealAttach>();
+    public DbSet<StorageRearrangeOrder> StorageRearranges => Set<StorageRearrangeOrder>();
+    public DbSet<StorageRearrangeDetail> StorageRearrangeDetails => Set<StorageRearrangeDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -98,5 +100,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<RetailDeal>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.DealId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<RetailDeal>().HasMany(x => x.Attachments).WithOne().HasForeignKey(x => x.DealId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<RetailDealDetail>().Property(x => x.DeliveryStatus).HasConversion<int>();
+        b.Entity<StorageRearrangeOrder>().HasIndex(x => new { x.OrgId, x.RearrangeNo }).IsUnique();
+        b.Entity<StorageRearrangeOrder>().Property(x => x.RearrangeType).HasConversion<int>();
+        b.Entity<StorageRearrangeOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<StorageRearrangeOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RearrangeId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<StorageRearrangeDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

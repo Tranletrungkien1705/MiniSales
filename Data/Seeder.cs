@@ -623,6 +623,58 @@ public static class Seeder
                     UploadedBy TEXT,
                     FOREIGN KEY(DealId) REFERENCES RetailDeals(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS StorageRearranges (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    RearrangeNo TEXT NOT NULL,
+                    StorageCodeFrom TEXT NOT NULL,
+                    StorageNameFrom TEXT NOT NULL,
+                    StorageCodeTo TEXT NOT NULL,
+                    StorageNameTo TEXT NOT NULL,
+                    RearrangeType INTEGER NOT NULL,
+                    Status INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    TransporterName TEXT,
+                    PlateNo TEXT,
+                    DriverName TEXT,
+                    DriverPhone TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    Approved1By TEXT,
+                    Approved1At TEXT,
+                    Approved2By TEXT,
+                    Approved2At TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_StorageRearranges_OrgId_RearrangeNo ON StorageRearranges(OrgId, RearrangeNo);
+
+                CREATE TABLE IF NOT EXISTS StorageRearrangeDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    RearrangeId INTEGER NOT NULL,
+                    RearrangeNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    EngineNo TEXT,
+                    StorageCodeFrom TEXT NOT NULL,
+                    StorageCodeTo TEXT NOT NULL,
+                    ExpectedStartDate TEXT,
+                    ExpectedEndDate TEXT,
+                    ActualOutDate TEXT,
+                    ActualInDate TEXT,
+                    Status INTEGER NOT NULL,
+                    ConfirmDate TEXT,
+                    ConfirmBy TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(RearrangeId) REFERENCES StorageRearranges(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -2162,6 +2214,155 @@ public static class Seeder
             };
 
             db.RetailDeals.AddRange(dl1, dl2, dl3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.StorageRearranges.AnyAsync(o => o.OrgId == orgId))
+        {
+            var sr1 = new StorageRearrangeOrder
+            {
+                OrgId = orgId,
+                RearrangeNo = "SR26090001",
+                StorageCodeFrom = "KHO_NINHBINH",
+                StorageNameFrom = "Tổng kho Nhà máy Hyundai Ninh Bình",
+                StorageCodeTo = "KHO_HANOI",
+                StorageNameTo = "Tổng kho Phân phối Miền Bắc - Hà Nội",
+                RearrangeType = StorageRearrangeType.Normal,
+                Status = StorageRearrangeStatus.Approved2,
+                TotalCars = 2,
+                TransporterName = "Công ty CP Vận tải Ô tô Nam Trung",
+                PlateNo = "29C-992.88",
+                DriverName = "Phạm Tuấn Vũ",
+                DriverPhone = "0912348888",
+                CreatedBy = "NPP_DISPATCHER",
+                CreatedAt = DateTime.Now.AddDays(-5),
+                Approved1By = "NPP_DISPATCH_LEAD",
+                Approved1At = DateTime.Now.AddDays(-4),
+                Approved2By = "NPP_WAREHOUSE_DIRECTOR",
+                Approved2At = DateTime.Now.AddDays(-3),
+                Remark = "Điều chuyển lô 02 xe Santa Fe & Creta bổ sung tồn kho trung tâm Hà Nội phục vụ kế hoạch giao xe tháng 9/2026",
+                Details = new List<StorageRearrangeDetail>
+                {
+                    new StorageRearrangeDetail
+                    {
+                        RearrangeNo = "SR26090001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        EngineNo = "G4KP-102941",
+                        StorageCodeFrom = "KHO_NINHBINH",
+                        StorageCodeTo = "KHO_HANOI",
+                        ExpectedStartDate = DateTime.Today.AddDays(-4),
+                        ExpectedEndDate = DateTime.Today.AddDays(-3),
+                        ActualOutDate = DateTime.Today.AddDays(-4),
+                        ActualInDate = DateTime.Today.AddDays(-3),
+                        Status = StorageRearrangeDtlStatus.Completed,
+                        ConfirmBy = "KHO_HANOI_LEAD",
+                        ConfirmDate = DateTime.Now.AddDays(-3),
+                        Remark = "Đã nhập bãi xe Hà Nội, tình trạng hoàn hảo"
+                    },
+                    new StorageRearrangeDetail
+                    {
+                        RearrangeNo = "SR26090001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        EngineNo = "G4FL-334411",
+                        StorageCodeFrom = "KHO_NINHBINH",
+                        StorageCodeTo = "KHO_HANOI",
+                        ExpectedStartDate = DateTime.Today.AddDays(-4),
+                        ExpectedEndDate = DateTime.Today.AddDays(-3),
+                        ActualOutDate = DateTime.Today.AddDays(-4),
+                        ActualInDate = DateTime.Today.AddDays(-3),
+                        Status = StorageRearrangeDtlStatus.Completed,
+                        ConfirmBy = "KHO_HANOI_LEAD",
+                        ConfirmDate = DateTime.Now.AddDays(-3),
+                        Remark = "Đã nhập bãi xe Hà Nội"
+                    }
+                }
+            };
+
+            var sr2 = new StorageRearrangeOrder
+            {
+                OrgId = orgId,
+                RearrangeNo = "SR26090002",
+                StorageCodeFrom = "KHO_HAIPHONG",
+                StorageNameFrom = "Kho Cảng Tân Vũ - Hải Phòng",
+                StorageCodeTo = "KHO_DANANG",
+                StorageNameTo = "Tổng kho Phân phối Miền Trung - Đà Nẵng",
+                RearrangeType = StorageRearrangeType.Urgent,
+                Status = StorageRearrangeStatus.Approved1,
+                TotalCars = 1,
+                TransporterName = "Đội xe Chuyên dùng Đường bộ HTC",
+                PlateNo = "15C-778.66",
+                DriverName = "Nguyễn Thành Chung",
+                DriverPhone = "0987112233",
+                CreatedBy = "NPP_DISPATCHER",
+                CreatedAt = DateTime.Now.AddDays(-2),
+                Approved1By = "NPP_DISPATCH_LEAD",
+                Approved1At = DateTime.Now.AddDays(-1),
+                Remark = "Điều chuyển khẩn cấp 01 xe Tucson chi viện cho thị trường miền Trung theo hợp đồng bán buôn",
+                Details = new List<StorageRearrangeDetail>
+                {
+                    new StorageRearrangeDetail
+                    {
+                        RearrangeNo = "SR26090002",
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        EngineNo = "G4NL-983102",
+                        StorageCodeFrom = "KHO_HAIPHONG",
+                        StorageCodeTo = "KHO_DANANG",
+                        ExpectedStartDate = DateTime.Today.AddDays(-1),
+                        ExpectedEndDate = DateTime.Today.AddDays(2),
+                        Status = StorageRearrangeDtlStatus.Approved1,
+                        Remark = "Xe đang làm thủ tục xuất bãi cảng Tân Vũ"
+                    }
+                }
+            };
+
+            var sr3 = new StorageRearrangeOrder
+            {
+                OrgId = orgId,
+                RearrangeNo = "SR26090003",
+                StorageCodeFrom = "KHO_NINHBINH",
+                StorageNameFrom = "Tổng kho Nhà máy Hyundai Ninh Bình",
+                StorageCodeTo = "SHOWROOM_VN001",
+                StorageNameTo = "Showroom Trưng bày Đại lý Đông Đô",
+                RearrangeType = StorageRearrangeType.Showroom,
+                Status = StorageRearrangeStatus.Pending,
+                TotalCars = 1,
+                CreatedBy = "NPP_DISPATCHER",
+                CreatedAt = DateTime.Now,
+                Remark = "Lập kế hoạch chuyển 01 xe Custin trưng bày sự kiện ra mắt showroom mới đại lý Đông Đô",
+                Details = new List<StorageRearrangeDetail>
+                {
+                    new StorageRearrangeDetail
+                    {
+                        RearrangeNo = "SR26090003",
+                        CarId = "CAR2026-CU0211",
+                        Vin = "KMHE281BBSA556677",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        SpecCode = "CU15-PRE-01",
+                        ColorCode = "SL1",
+                        EngineNo = "G4FS-881920",
+                        StorageCodeFrom = "KHO_NINHBINH",
+                        StorageCodeTo = "SHOWROOM_VN001",
+                        ExpectedStartDate = DateTime.Today.AddDays(1),
+                        ExpectedEndDate = DateTime.Today.AddDays(3),
+                        Status = StorageRearrangeDtlStatus.Pending,
+                        Remark = "Chờ phê duyệt điều chuyển trưng bày"
+                    }
+                }
+            };
+
+            db.StorageRearranges.AddRange(sr1, sr2, sr3);
             await db.SaveChangesAsync();
         }
     }
