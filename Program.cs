@@ -26,6 +26,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IDeliveryOrderService, DeliveryOrderService>();
+builder.Services.AddScoped<IDealerOrderService, DealerOrderService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -165,6 +166,65 @@ app.MapPost("/api/delivery-orders/{doNo}/cancel", async (string doNo, CancelDeli
     {
         var r = await svc.CancelAsync(doNo, dto?.Reason);
         return r is null ? Results.NotFound(new { deliveryOrderNo = doNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Đơn đặt hàng xe Đại lý (Dealer Purchase Order - DMS.Sales Ord_SalesOrderRoot) =====
+app.MapPost("/api/dealer-orders", async (CreateDealerOrderDto dto, IDealerOrderService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-orders", async (IDealerOrderService svc, string? status, string? dealer, string? orderType, string? month) =>
+    Results.Ok(await svc.ListAsync(status, dealer, orderType, month))).RequireAuthorization();
+
+app.MapGet("/api/dealer-orders/stats", async (IDealerOrderService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/dealer-orders/{orderNo}", async (string orderNo, IDealerOrderService svc) =>
+{
+    var r = await svc.DetailAsync(orderNo);
+    return r is null ? Results.NotFound(new { orderNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-orders/{orderNo}/approve1", async (string orderNo, ApproveDealerOrderDto? dto, IDealerOrderService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(orderNo, dto);
+        return r is null ? Results.NotFound(new { orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-orders/{orderNo}/approve2", async (string orderNo, IDealerOrderService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(orderNo);
+        return r is null ? Results.NotFound(new { orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-orders/{orderNo}/reject", async (string orderNo, RejectDealerOrderDto dto, IDealerOrderService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(orderNo, dto);
+        return r is null ? Results.NotFound(new { orderNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-orders/{orderNo}/cancel", async (string orderNo, CancelDealerOrderDto? dto, IDealerOrderService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(orderNo, dto);
+        return r is null ? Results.NotFound(new { orderNo }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

@@ -39,6 +39,41 @@ public static class Seeder
                     CancelledAt TEXT
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_DeliveryOrders_OrgId_DeliveryOrderNo ON DeliveryOrders(OrgId, DeliveryOrderNo);
+
+                CREATE TABLE IF NOT EXISTS DealerOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    OrderNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    OrderType INTEGER NOT NULL,
+                    OrderMonth TEXT NOT NULL,
+                    SalesPolicyCode TEXT,
+                    Status INTEGER NOT NULL,
+                    TotalQuantity INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    Approved1At TEXT,
+                    Approved2At TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerOrders_OrgId_OrderNo ON DealerOrders(OrgId, OrderNo);
+
+                CREATE TABLE IF NOT EXISTS DealerOrderItems (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrderId INTEGER NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    RequestedQuantity INTEGER NOT NULL,
+                    ApprovedQuantity INTEGER NOT NULL,
+                    UnitPrice REAL NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(OrderId) REFERENCES DealerOrders(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -163,6 +198,85 @@ public static class Seeder
             };
 
             db.DeliveryOrders.AddRange(do1, do2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.DealerOrders.AnyAsync(o => o.OrgId == orgId))
+        {
+            var ord1 = new DealerOrder
+            {
+                OrgId = orgId,
+                OrderNo = "ORD2603010001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                OrderType = DealerOrderType.Plan,
+                OrderMonth = "2026-03",
+                SalesPolicyCode = "CSC",
+                Status = DealerOrderStatus.Approved2,
+                TotalQuantity = 8,
+                TotalAmount = 9450000000m,
+                Remark = "Đơn đặt xe kế hoạch định kỳ tháng 3/2026 - Đại lý phân phối khu vực Miền Bắc",
+                CreatedAt = DateTime.Now.AddDays(-10),
+                Approved1At = DateTime.Now.AddDays(-8),
+                Approved2At = DateTime.Now.AddDays(-6),
+                Items = new List<DealerOrderItem>
+                {
+                    new DealerOrderItem
+                    {
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE",
+                        ColorCode = "Trắng",
+                        RequestedQuantity = 5,
+                        ApprovedQuantity = 5,
+                        UnitPrice = 1350000000m,
+                        TotalAmount = 6750000000m,
+                        Remark = "Bản Premium nội thất nâu"
+                    },
+                    new DealerOrderItem
+                    {
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD",
+                        ColorCode = "Đen",
+                        RequestedQuantity = 3,
+                        ApprovedQuantity = 3,
+                        UnitPrice = 900000000m,
+                        TotalAmount = 2700000000m,
+                        Remark = "Bản xăng tiêu chuẩn"
+                    }
+                }
+            };
+
+            var ord2 = new DealerOrder
+            {
+                OrgId = orgId,
+                OrderNo = "ORD2603150002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                OrderType = DealerOrderType.Unplan,
+                OrderMonth = "2026-03",
+                SalesPolicyCode = "STANDARD",
+                Status = DealerOrderStatus.Pending,
+                TotalQuantity = 2,
+                TotalAmount = 1480000000m,
+                Remark = "Đơn đặt bổ sung xe Creta phục vụ sự kiện lái thử",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                Items = new List<DealerOrderItem>
+                {
+                    new DealerOrderItem
+                    {
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE",
+                        ColorCode = "Đỏ",
+                        RequestedQuantity = 2,
+                        ApprovedQuantity = 0,
+                        UnitPrice = 740000000m,
+                        TotalAmount = 1480000000m,
+                        Remark = "Xe trưng bày showroom"
+                    }
+                }
+            };
+
+            db.DealerOrders.AddRange(ord1, ord2);
             await db.SaveChangesAsync();
         }
     }

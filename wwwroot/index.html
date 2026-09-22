@@ -1,8 +1,9 @@
 <!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MiniSales</title><style>:root{color-scheme:light dark}body{font-family:system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6}code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px}.muted{opacity:.7}</style></head>
-<body><h1>MiniSales</h1><p class="muted">Hợp đồng bán xe &amp; Quản lý Giao xe (DMS.Sales): tạo HĐ → đặt cọc → thanh toán đủ → lập lệnh giao xe → duyệt xuất kho → bàn giao xe thực tế. Nối Vehicle/Pricing/Pay.</p>
+<body><h1>MiniSales</h1><p class="muted">Hệ thống Quản lý Bán xe (DMS.Sales): Đơn đặt hàng xe Đại lý (Plan/Unplan) → Duyệt 2 cấp NPP → Hợp đồng bán lẻ → Đặt cọc / Thanh toán → Lệnh giao xe xuất kho → Bàn giao xe thực tế. Nối Vehicle/Pricing/Pay.</p>
 <ul>
-<li><strong>Hợp đồng bán xe:</strong> <code>POST/GET /api/orders</code> · <code>GET /api/orders/{code}</code> · <code>POST /api/orders/{code}/deposit|pay|cancel</code> · <code>GET /api/stats</code></li>
-<li><strong>Lệnh giao xe (Delivery Order):</strong> <code>POST/GET /api/delivery-orders</code> · <code>GET /api/delivery-orders/{doNo}</code> · <code>POST /api/delivery-orders/{doNo}/approve|complete|cancel</code> · <code>GET /api/delivery-orders/stats</code></li>
+<li><strong>Đơn đặt hàng xe Đại lý (Dealer Purchase Order):</strong> <code>POST/GET /api/dealer-orders</code> · <code>GET /api/dealer-orders/{orderNo}</code> · <code>POST /api/dealer-orders/{orderNo}/approve1|approve2|reject|cancel</code> · <code>GET /api/dealer-orders/stats</code></li>
+<li><strong>Hợp đồng bán xe (Retail Sales Deal):</strong> <code>POST/GET /api/orders</code> · <code>GET /api/orders/{code}</code> · <code>POST /api/orders/{code}/deposit|pay|cancel</code> · <code>GET /api/stats</code></li>
+<li><strong>Lệnh giao xe xuất kho (Delivery Order):</strong> <code>POST/GET /api/delivery-orders</code> · <code>GET /api/delivery-orders/{doNo}</code> · <code>POST /api/delivery-orders/{doNo}/approve|complete|cancel</code> · <code>GET /api/delivery-orders/stats</code></li>
 </ul>
 <p class="muted">SSO <code>/api/whoami</code>. Swagger <a href="/swagger">/swagger</a>.</p></body></html>

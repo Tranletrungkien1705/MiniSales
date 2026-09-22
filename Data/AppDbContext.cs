@@ -7,6 +7,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<SalesOrder> Orders => Set<SalesOrder>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<DeliveryOrder> DeliveryOrders => Set<DeliveryOrder>();
+    public DbSet<DealerOrder> DealerOrders => Set<DealerOrder>();
+    public DbSet<DealerOrderItem> DealerOrderItems => Set<DealerOrderItem>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -14,5 +16,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<SalesOrder>().Property(x => x.Status).HasConversion<int>();
         b.Entity<DeliveryOrder>().HasIndex(x => new { x.OrgId, x.DeliveryOrderNo }).IsUnique();
         b.Entity<DeliveryOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<DealerOrder>().HasIndex(x => new { x.OrgId, x.OrderNo }).IsUnique();
+        b.Entity<DealerOrder>().Property(x => x.OrderType).HasConversion<int>();
+        b.Entity<DealerOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<DealerOrder>().HasMany(x => x.Items).WithOne().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
     }
 }
