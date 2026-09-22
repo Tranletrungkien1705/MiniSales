@@ -35,6 +35,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<RetailDealAttach> RetailDealAttachments => Set<RetailDealAttach>();
     public DbSet<StorageRearrangeOrder> StorageRearranges => Set<StorageRearrangeOrder>();
     public DbSet<StorageRearrangeDetail> StorageRearrangeDetails => Set<StorageRearrangeDetail>();
+    public DbSet<TransportRequest> TransportRequests => Set<TransportRequest>();
+    public DbSet<TransportRequestDetail> TransportRequestDetails => Set<TransportRequestDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -105,5 +107,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<StorageRearrangeOrder>().Property(x => x.Status).HasConversion<int>();
         b.Entity<StorageRearrangeOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RearrangeId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<StorageRearrangeDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<TransportRequest>().HasIndex(x => new { x.OrgId, x.TranspReqNo }).IsUnique();
+        b.Entity<TransportRequest>().Property(x => x.TranspReqType).HasConversion<int>();
+        b.Entity<TransportRequest>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<TransportRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.TranspRequestId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<TransportRequestDetail>().Property(x => x.TranspReqType).HasConversion<int>();
+        b.Entity<TransportRequestDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

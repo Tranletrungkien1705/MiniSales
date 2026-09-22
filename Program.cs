@@ -38,6 +38,7 @@ builder.Services.AddScoped<IRetailContractService, RetailContractService>();
 builder.Services.AddScoped<IDealerPaymentService, DealerPaymentService>();
 builder.Services.AddScoped<IRetailDealService, RetailDealService>();
 builder.Services.AddScoped<IStorageRearrangeService, StorageRearrangeService>();
+builder.Services.AddScoped<ITransportRequestService, TransportRequestService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1256,6 +1257,105 @@ app.MapDelete("/api/storage-rearranges/{rearrangeNo}/cars/{vin}", async (string 
     {
         var r = await svc.RemoveCarAsync(rearrangeNo, vin);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển kho {rearrangeNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Yêu cầu Vận tải xe (Transportation Request - DMS.Sales Sto_TranspReq / StoTranspReqController / Storage.cs) =====
+app.MapPost("/api/transport-requests", async (CreateTransportRequestDto dto, ITransportRequestService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-requests", async (ITransportRequestService svc, string? status, string? transporterCode, string? dealerCode, string? vin, string? refOrdNo, string? transpReqNo) =>
+    Results.Ok(await svc.ListAsync(status, transporterCode, dealerCode, vin, refOrdNo, transpReqNo))).RequireAuthorization();
+
+app.MapGet("/api/transport-requests/stats", async (ITransportRequestService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/transport-requests/{transpReqNo}", async (string transpReqNo, ITransportRequestService svc) =>
+{
+    var r = await svc.DetailAsync(transpReqNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/transport-requests/{transpReqNo}", async (string transpReqNo, UpdateTransportRequestDto dto, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(transpReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transport-requests/{transpReqNo}", async (string transpReqNo, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteAsync(transpReqNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-requests/{transpReqNo}/approve", async (string transpReqNo, ApproveTransportRequestDto? dto, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(transpReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-requests/{transpReqNo}/reject", async (string transpReqNo, RejectTransportRequestDto dto, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(transpReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-requests/{transpReqNo}/cancel", async (string transpReqNo, CancelTransportRequestDto dto, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(transpReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-requests/{transpReqNo}/complete", async (string transpReqNo, CompleteTransportRequestDto? dto, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.CompleteAsync(transpReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-requests/{transpReqNo}/cars", async (string transpReqNo, AddTransportRequestCarDto dto, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(transpReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transport-requests/{transpReqNo}/cars/{vin}", async (string transpReqNo, string vin, ITransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(transpReqNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

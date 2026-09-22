@@ -675,6 +675,57 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(RearrangeId) REFERENCES StorageRearranges(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS TransportRequests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TranspReqNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    TransporterCode TEXT NOT NULL,
+                    TransporterName TEXT NOT NULL,
+                    TransportContractNo TEXT,
+                    TranspReqType INTEGER NOT NULL,
+                    Status INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    PlateNo TEXT,
+                    DriverName TEXT,
+                    DriverPhone TEXT,
+                    ExpectedStartDate TEXT,
+                    ExpectedEndDate TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ApprovedBy TEXT,
+                    ApprovedAt TEXT,
+                    CompletedAt TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_TransportRequests_OrgId_TranspReqNo ON TransportRequests(OrgId, TranspReqNo);
+
+                CREATE TABLE IF NOT EXISTS TransportRequestDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TranspRequestId INTEGER NOT NULL,
+                    TranspReqNo TEXT NOT NULL,
+                    TranspReqType INTEGER NOT NULL,
+                    RefOrdNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    EngineNo TEXT,
+                    StorageCodeFrom TEXT,
+                    StorageCodeTo TEXT,
+                    Status INTEGER NOT NULL,
+                    ActualOutDate TEXT,
+                    ActualInDate TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(TranspRequestId) REFERENCES TransportRequests(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -2363,6 +2414,143 @@ public static class Seeder
             };
 
             db.StorageRearranges.AddRange(sr1, sr2, sr3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.TransportRequests.AnyAsync(o => o.OrgId == orgId))
+        {
+            var tr1 = new TransportRequest
+            {
+                OrgId = orgId,
+                TranspReqNo = "TR26090001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                TransporterCode = "TRANS_NAMTRUNG",
+                TransporterName = "Công ty CP Vận tải Nam Trung",
+                TransportContractNo = "HDVC-2026/08-NT",
+                TranspReqType = TransportRequestType.CarTransport,
+                Status = TransportRequestStatus.Completed,
+                TotalCars = 1,
+                PlateNo = "29C-888.99",
+                DriverName = "Trần Văn An",
+                DriverPhone = "0912888999",
+                ExpectedStartDate = DateTime.Today.AddDays(-3),
+                ExpectedEndDate = DateTime.Today.AddDays(-2),
+                Remark = "Yêu cầu vận tải giao xe Santa Fe về kho đại lý Đông Đô theo Lệnh xuất xe DO2603010001",
+                CreatedBy = "NPP_LOGISTICS",
+                CreatedAt = DateTime.Now.AddDays(-4),
+                ApprovedBy = "TP_DIEUPHOI_LOGISTICS",
+                ApprovedAt = DateTime.Now.AddDays(-3),
+                CompletedAt = DateTime.Now.AddDays(-2),
+                Details = new List<TransportRequestDetail>
+                {
+                    new TransportRequestDetail
+                    {
+                        TranspReqNo = "TR26090001",
+                        TranspReqType = TransportRequestType.CarTransport,
+                        RefOrdNo = "DO2603010001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        EngineNo = "G4KP-102941",
+                        StorageCodeFrom = "KHO_HANOI",
+                        StorageCodeTo = "KHO_VN001_DONGDO",
+                        Status = TransportRequestDtlStatus.Completed,
+                        ActualOutDate = DateTime.Today.AddDays(-3),
+                        ActualInDate = DateTime.Today.AddDays(-2),
+                        Remark = "Xe đã giao đến đại lý và ký nhận BBBG2603010001"
+                    }
+                }
+            };
+
+            var tr2 = new TransportRequest
+            {
+                OrgId = orgId,
+                TranspReqNo = "TR26090002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                TransporterCode = "TRANS_CHUYENDUNG",
+                TransporterName = "Đội xe Chuyên dùng Đường bộ HTC",
+                TransportContractNo = "HDVC-2026/09-NB",
+                TranspReqType = TransportRequestType.StorageRearrange,
+                Status = TransportRequestStatus.InTransit,
+                TotalCars = 1,
+                PlateNo = "15C-778.66",
+                DriverName = "Nguyễn Thành Chung",
+                DriverPhone = "0987112233",
+                ExpectedStartDate = DateTime.Today.AddDays(-1),
+                ExpectedEndDate = DateTime.Today.AddDays(2),
+                Remark = "Yêu cầu vận tải điều chuyển xe Tucson từ Cảng Hải Phòng về Tổng kho Đà Nẵng",
+                CreatedBy = "NPP_LOGISTICS",
+                CreatedAt = DateTime.Now.AddDays(-2),
+                ApprovedBy = "TP_DIEUPHOI_LOGISTICS",
+                ApprovedAt = DateTime.Now.AddDays(-1),
+                Details = new List<TransportRequestDetail>
+                {
+                    new TransportRequestDetail
+                    {
+                        TranspReqNo = "TR26090002",
+                        TranspReqType = TransportRequestType.StorageRearrange,
+                        RefOrdNo = "SR26090002",
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        EngineNo = "G4NL-983102",
+                        StorageCodeFrom = "KHO_HAIPHONG",
+                        StorageCodeTo = "KHO_DANANG",
+                        Status = TransportRequestDtlStatus.InTransit,
+                        ActualOutDate = DateTime.Today.AddDays(-1),
+                        Remark = "Xe đang trên đường vận chuyển dọc tuyến Quốc lộ 1A"
+                    }
+                }
+            };
+
+            var tr3 = new TransportRequest
+            {
+                OrgId = orgId,
+                TranspReqNo = "TR26090003",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                TransporterCode = "TRANS_NAMTRUNG",
+                TransporterName = "Công ty CP Vận tải Nam Trung",
+                TransportContractNo = "HDVC-2026/08-NT",
+                TranspReqType = TransportRequestType.CarRetrieve,
+                Status = TransportRequestStatus.Pending,
+                TotalCars = 1,
+                PlateNo = "29C-665.55",
+                DriverName = "Hoàng Quốc Việt",
+                DriverPhone = "0915334455",
+                ExpectedStartDate = DateTime.Today.AddDays(1),
+                ExpectedEndDate = DateTime.Today.AddDays(2),
+                Remark = "Yêu cầu vận tải chở xe thu hồi từ kho đại lý Đông Đô về kho trung tâm NPP",
+                CreatedBy = "NPP_LOGISTICS",
+                CreatedAt = DateTime.Now,
+                Details = new List<TransportRequestDetail>
+                {
+                    new TransportRequestDetail
+                    {
+                        TranspReqNo = "TR26090003",
+                        TranspReqType = TransportRequestType.CarRetrieve,
+                        RefOrdNo = "CR26090001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        EngineNo = "G4FL-334411",
+                        StorageCodeFrom = "KHO_VN001_DONGDO",
+                        StorageCodeTo = "KHO_HANOI",
+                        Status = TransportRequestDtlStatus.Pending,
+                        Remark = "Chờ ban điều phối NPP phê duyệt lệnh điều xe"
+                    }
+                }
+            };
+
+            db.TransportRequests.AddRange(tr1, tr2, tr3);
             await db.SaveChangesAsync();
         }
     }

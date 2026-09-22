@@ -861,5 +861,70 @@ public sealed class StorageRearrangeDetail
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
+/// <summary>Loại yêu cầu vận tải xe (DMS.Sales Sto_TranspReqType: CARTRANSPORT = Vận chuyển theo lệnh xuất xe, CARRETRIEVE = Vận chuyển thu hồi xe, STORAGEREARRANGE = Vận chuyển điều chuyển kho nội bộ, STORAGEREARRCB = Vận chuyển điều chuyển đóng thùng).</summary>
+public enum TransportRequestType { CarTransport = 0, CarRetrieve = 1, StorageRearrange = 2, StorageRearrCB = 3 }
+
+/// <summary>Trạng thái yêu cầu vận tải xe (DMS.Sales Sto_TranspReq TranspReqStatus: Pending = 'P' [Chờ duyệt HQ / điều phối xe], Approved = 'A' [HQ đã duyệt lệnh vận chuyển], InTransit = 'T' [Đang vận chuyển trên đường], Completed = 'F' [Đã hoàn tất vận chuyển / giao nhận], Rejected = 'R' [Từ chối], Cancelled = 'C' [Đã hủy]).</summary>
+public enum TransportRequestStatus { Pending = 0, Approved = 1, InTransit = 2, Completed = 3, Rejected = 4, Cancelled = 5 }
+
+/// <summary>Trạng thái từng dòng xe trong yêu cầu vận tải (DMS.Sales Sto_TranspReqDtl TranspReqDtlStatus: Pending = Chờ duyệt, Approved = Đã duyệt, InTransit = Đang vận chuyển, Completed = Hoàn tất, Rejected = Từ chối).</summary>
+public enum TransportRequestDtlStatus { Pending = 0, Approved = 1, InTransit = 2, Completed = 3, Rejected = 4 }
+
+/// <summary>Yêu cầu vận tải xe ô tô / Lệnh vận chuyển xe từ Kho NPP tới Đại lý hoặc giữa các điểm giao nhận (DMS.Sales Sto_TranspReq / StoTranspReqController / Storage.cs): điều động đơn vị vận tải, hợp đồng vận tải, xe chuyên dụng chở xe, quy trình phê duyệt điều phối, từ chối (chặn khi đã có BBGN), gỡ xe (tự động xóa lệnh khi hết xe) và xác nhận hoàn tất giao nhận.</summary>
+public sealed class TransportRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TranspReqNo { get; set; } = ""; // Mã YCVT (PK TranspReqNo, vd: TR26090001, YCVT2609-0001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý nhận xe / liên quan
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string TransporterCode { get; set; } = ""; // Mã đơn vị vận tải (Mst_Transporter)
+    public string TransporterName { get; set; } = ""; // Tên công ty / đội xe vận tải
+    public string? TransportContractNo { get; set; } // Số hợp đồng vận tải
+    public TransportRequestType TranspReqType { get; set; } = TransportRequestType.CarTransport; // Phân loại vận tải
+    public TransportRequestStatus Status { get; set; } = TransportRequestStatus.Pending; // Trạng thái YCVT (P -> A -> T -> F / R / C)
+    public int TotalCars { get; set; } // Tổng số xe chuyên chở
+    public string? PlateNo { get; set; } // Biển số xe lồng / xe chở xe
+    public string? DriverName { get; set; } // Tài xế lái xe chuyên chở
+    public string? DriverPhone { get; set; } // SĐT tài xế
+    public DateTime? ExpectedStartDate { get; set; } // Ngày dự kiến bốc xe xuất bãi
+    public DateTime? ExpectedEndDate { get; set; } // Ngày dự kiến giao xe đến nơi
+    public string? Remark { get; set; } // Ghi chú yêu cầu
+    public string? RejectReason { get; set; } // Lý do từ chối (RejectHQ)
+    public string? CancelReason { get; set; } // Lý do hủy yêu cầu
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<TransportRequestDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Yêu cầu vận tải (DMS.Sales Sto_TranspReqDtl): liên kết số khung VIN, mã xe, lệnh nguồn tham chiếu (RefOrdNo: Lệnh xuất xe, Thu hồi, Điều chuyển kho), kho xuất và kho nhận.</summary>
+public sealed class TransportRequestDetail
+{
+    public long Id { get; set; }
+    public long TranspRequestId { get; set; }
+    public string TranspReqNo { get; set; } = "";
+    public TransportRequestType TranspReqType { get; set; } = TransportRequestType.CarTransport; // Loại YCVT dòng xe
+    public string RefOrdNo { get; set; } = ""; // Số lệnh nguồn (Lệnh xuất xe DO, Lệnh thu hồi, Lệnh điều chuyển)
+    public string CarId { get; set; } = ""; // Mã xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung VIN (17 ký tự)
+    public string Model { get; set; } = ""; // Dòng xe (Santa Fe, Tucson, Creta, Accent...)
+    public string? SpecCode { get; set; } // Mã spec / phiên bản
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public string? StorageCodeFrom { get; set; } // Kho bốc xe đi
+    public string? StorageCodeTo { get; set; } // Kho nhận xe đến
+    public TransportRequestDtlStatus Status { get; set; } = TransportRequestDtlStatus.Pending;
+    public DateTime? ActualOutDate { get; set; } // Ngày thực tế xe rời kho
+    public DateTime? ActualInDate { get; set; } // Ngày thực tế xe nhập bãi đích
+    public string? Remark { get; set; }
+}
+
+
 
 
