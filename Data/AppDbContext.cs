@@ -41,6 +41,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentGuaranteeExtDetail> GuaranteeExtDetails => Set<PaymentGuaranteeExtDetail>();
     public DbSet<PdiRequest> PdiRequests => Set<PdiRequest>();
     public DbSet<PdiRequestDetail> PdiRequestDetails => Set<PdiRequestDetail>();
+    public DbSet<PaymentDiscount> PaymentDiscounts => Set<PaymentDiscount>();
+    public DbSet<PaymentDiscountDetail> PaymentDiscountDetails => Set<PaymentDiscountDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -125,5 +127,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PdiRequest>().Property(x => x.Status).HasConversion<int>();
         b.Entity<PdiRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PdiRequestId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<PdiRequestDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentDiscount>().HasIndex(x => new { x.OrgId, x.PaymentDiscountNo }).IsUnique();
+        b.Entity<PaymentDiscount>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentDiscount>().Property(x => x.DealerSignStatus).HasConversion<int>();
+        b.Entity<PaymentDiscount>().Property(x => x.HQSignStatus).HasConversion<int>();
+        b.Entity<PaymentDiscount>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PaymentDiscountId).OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1043,3 +1043,88 @@ public sealed class PdiRequestDetail
     public string? InspectionResult { get; set; } // Kết quả kiểm tra: PASSED (Đạt chuẩn), PENDING_FIX (Cần khắc phục), FAILED
     public string? Remark { get; set; } // Ghi chú chi tiết hạng mục / phụ kiện cần lắp
 }
+
+/// <summary>Trạng thái Đề nghị chiết khấu thanh toán mua buôn xe (DMS.Sales Req_PaymentDiscount PmtDctStatus: Draft = 'NotSign' [Đang lập/Chưa ký duyệt], Approved = 'Approved' [NPP duyệt chiết khấu], Signed = 'Sign' [Hai bên đã ký số hoàn tất], Rejected = 'Reject' [NPP từ chối duyệt], Cancelled = 'Cancel' [NPP/Đại lý đã hủy]).</summary>
+public enum PaymentDiscountStatus { Draft = 0, Approved = 1, Signed = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Trạng thái ký số điện tử của Đại lý và NPP (DMS.Sales Req_PaymentDiscount DlrSignStatus / HTCSignStatus: Pending = 'Pending' [Chờ ký], Signed = 'Signed' / 'Approved1' / 'Approved2' [Đã ký số], Rejected = 'Reject', Cancelled = 'Cancel').</summary>
+public enum PaymentDiscountSignStatus { Pending = 0, Signed = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Đề nghị chiết khấu thanh toán mua buôn xe ô tô Đại lý - NPP (DMS.Sales Req_PaymentDiscount / ReqPaymentDiscountController / ReqPaymentDiscount.cs): chính sách khuyến khích đại lý thanh toán sớm tiền mua xe theo các đợt tất toán bảo lãnh ngân hàng (Phase 1/2/3), quản lý tính toán số ngày thanh toán sớm, tỷ lệ chiết khấu, số tiền chiết khấu được duyệt, luồng phê duyệt NPP và ký số điện tử 2 bên.</summary>
+public sealed class PaymentDiscount
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PaymentDiscountNo { get; set; } = ""; // Số hiệu đề nghị (PK PaymentDiscountNo: format {yyyyMMdd}-{seq:D3}/DNCK/{DealerCode}, vd: 20260922-001/DNCK/VN001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string? CompanyName { get; set; } // Tên pháp nhân công ty đại lý
+    public DateTime? DateEndFrom { get; set; } // Ngày tất toán bảo lãnh từ
+    public DateTime? DateEndTo { get; set; } // Ngày tất toán bảo lãnh đến
+    public int QtyCar { get; set; } // Tổng số lượng xe đề nghị hưởng chiết khấu
+    public decimal SumTotalDiscountPrice { get; set; } // Tổng tiền chiết khấu thanh toán được hưởng (VNĐ)
+    public decimal DiscountPercent { get; set; } = 0.5m; // Tỷ lệ chiết khấu thanh toán chuẩn (%)
+    public decimal PenaltyPercent { get; set; } = 0.05m; // Tỷ lệ phạt chậm nộp (%)
+    public PaymentDiscountStatus Status { get; set; } = PaymentDiscountStatus.Draft; // Trạng thái đề nghị: Draft -> Approved -> Signed / Rejected / Cancelled
+    public PaymentDiscountSignStatus DealerSignStatus { get; set; } = PaymentDiscountSignStatus.Pending; // Trạng thái ký số ĐL
+    public DateTime? DealerSignDate { get; set; } // Ngày giờ ĐL ký số
+    public string? DealerSignBy { get; set; } // Người đại diện ĐL ký số
+    public string? DealerSignFile { get; set; } // Tệp PDF văn bản đề nghị ĐL đã ký số
+    public PaymentDiscountSignStatus HQSignStatus { get; set; } = PaymentDiscountSignStatus.Pending; // Trạng thái ký số NPP
+    public DateTime? HQApproveDate { get; set; } // Ngày NPP phê duyệt hồ sơ chiết khấu
+    public string? HQApproveBy { get; set; } // Cán bộ thẩm định NPP duyệt
+    public DateTime? HQSignDate { get; set; } // Ngày Lãnh đạo NPP ký số hoàn tất quyết toán chiết khấu
+    public string? HQSignBy { get; set; } // Lãnh đạo NPP ký số
+    public string? HQSignFile { get; set; } // Tệp PDF văn bản quyết toán chiết khấu đã hoàn tất ký số 2 bên
+    public string? RejectReason { get; set; } // Lý do NPP từ chối duyệt
+    public string? CancelReason { get; set; } // Lý do hủy đề nghị
+    public string? Remark { get; set; } // Ghi chú nội dung đề nghị
+    public string? CreatedBy { get; set; } // Người lập đề nghị
+    public DateTime CreatedAt { get; set; } = DateTime.Now; // Ngày tạo đề nghị
+    public DateTime? LUDateTime { get; set; } // Ngày cập nhật cuối
+    public string? LUBy { get; set; } // Người cập nhật cuối
+
+    public List<PaymentDiscountDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Đề nghị chiết khấu thanh toán (DMS.Sales Req_PaymentDiscountDtl): theo dõi từng số khung VIN, dòng xe, mã bảo lãnh ngân hàng (Pmt_Guarantee), thời hạn thanh toán và tính toán chiết khấu thanh toán sớm 3 đợt (Phase 1, 2, 3).</summary>
+public sealed class PaymentDiscountDetail
+{
+    public long Id { get; set; }
+    public long PaymentDiscountId { get; set; }
+    public string PaymentDiscountNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung xe (17 ký tự)
+    public string Model { get; set; } = ""; // Tên model xe (Santa Fe, Tucson, Creta, Accent, Custin...)
+    public string? SpecCode { get; set; } // Mã phiên bản xe
+    public string? SpecDescription { get; set; } // Mô tả bản xe
+    public string? SOCode { get; set; } // Số đơn đặt hàng buôn liên quan (Ord_SalesOrderRoot)
+    public string GuaranteeNo { get; set; } = ""; // Mã bảo lãnh ngân hàng liên quan (Pmt_Guarantee)
+    public string? BankGuaranteeNo { get; set; } // Số thư bảo lãnh phía ngân hàng phát hành
+    public string? BankCode { get; set; } // Ngân hàng phát hành thư bảo lãnh (VCB, BIDV, TCB...)
+    public DateTime? DateOpen { get; set; } // Ngày mở thư bảo lãnh
+    public int Term { get; set; } = 30; // Thời hạn bảo lãnh (ngày)
+    public DateTime? DateStart { get; set; } // Ngày hiệu lực bảo lãnh / Ngày giao hồ sơ xe
+    public DateTime? DateEnd { get; set; } // Ngày đến hạn tất toán bảo lãnh xe
+    public decimal UnitPrice { get; set; } // Đơn giá niêm yết xe
+    public decimal UnitPriceActual { get; set; } // Đơn giá thực tế xe bán cho đại lý
+    public decimal GuaranteeValue { get; set; } // Giá trị bảo lãnh xe tại ngân hàng
+    public DateTime? PaymentEndDatePhase1 { get; set; } // Ngày thanh toán đợt 1
+    public decimal AmountPhase1 { get; set; } // Số tiền đại lý thanh toán đợt 1
+    public int DiscountDateNumberPhase1 { get; set; } // Số ngày thanh toán sớm đợt 1
+    public decimal DiscountPercentPhase1 { get; set; } // Tỷ lệ chiết khấu đợt 1 (%)
+    public decimal DiscountPricePhase1 { get; set; } // Số tiền chiết khấu hưởng đợt 1
+    public DateTime? PaymentEndDatePhase2 { get; set; } // Ngày thanh toán đợt 2
+    public decimal AmountPhase2 { get; set; } // Số tiền đại lý thanh toán đợt 2
+    public int DiscountDateNumberPhase2 { get; set; } // Số ngày thanh toán sớm đợt 2
+    public decimal DiscountPercentPhase2 { get; set; } // Tỷ lệ chiết khấu đợt 2 (%)
+    public decimal DiscountPricePhase2 { get; set; } // Số tiền chiết khấu hưởng đợt 2
+    public DateTime? PaymentEndDatePhase3 { get; set; } // Ngày thanh toán đợt 3
+    public decimal AmountPhase3 { get; set; } // Số tiền đại lý thanh toán đợt 3
+    public int DiscountDateNumberPhase3 { get; set; } // Số ngày thanh toán sớm đợt 3
+    public decimal DiscountPercentPhase3 { get; set; } // Tỷ lệ chiết khấu đợt 3 (%)
+    public decimal DiscountPricePhase3 { get; set; } // Số tiền chiết khấu hưởng đợt 3
+    public decimal TotalAmount { get; set; } // Tổng tiền thanh toán xe = Phase1 + Phase2 + Phase3
+    public decimal TotalDiscountPrice { get; set; } // Tổng tiền chiết khấu được hưởng = Phase1 + Phase2 + Phase3
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}

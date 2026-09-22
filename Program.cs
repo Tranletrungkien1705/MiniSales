@@ -41,6 +41,7 @@ builder.Services.AddScoped<IStorageRearrangeService, StorageRearrangeService>();
 builder.Services.AddScoped<ITransportRequestService, TransportRequestService>();
 builder.Services.AddScoped<IPaymentGuaranteeExtService, PaymentGuaranteeExtService>();
 builder.Services.AddScoped<IPdiRequestService, PdiRequestService>();
+builder.Services.AddScoped<IPaymentDiscountService, PaymentDiscountService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1529,6 +1530,128 @@ app.MapDelete("/api/pdi-requests/{reqNo}/cars/{vin}", async (string reqNo, strin
     {
         var r = await svc.RemoveCarAsync(reqNo, vin);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Đề nghị Chiết khấu Thanh toán Mua xe Ô tô (Payment Discount Request - DMS.Sales Req_PaymentDiscount + Req_PaymentDiscountDtl) =====
+app.MapPost("/api/payment-discounts", async (CreatePaymentDiscountDto dto, IPaymentDiscountService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-discounts", async (IPaymentDiscountService svc, string? status, string? dealer, string? discountNo, string? vin, string? guaranteeNo, DateTime? fromDate, DateTime? toDate) =>
+    Results.Ok(await svc.ListAsync(status, dealer, discountNo, vin, guaranteeNo, fromDate, toDate))).RequireAuthorization();
+
+app.MapGet("/api/payment-discounts/stats", async (IPaymentDiscountService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/payment-discounts/eligible-cars", async (IPaymentDiscountService svc, string? dealer, string? guaranteeNo, string? vin) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealer, guaranteeNo, vin))).RequireAuthorization();
+
+app.MapGet("/api/payment-discounts/{discountNo}", async (string discountNo, IPaymentDiscountService svc) =>
+{
+    var r = await svc.DetailAsync(discountNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/payment-discounts/{discountNo}", async (string discountNo, UpdatePaymentDiscountDto dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(discountNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-discounts/{discountNo}/sign-dl", async (string discountNo, SignDealerPaymentDiscountDto dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.SignDealerAsync(discountNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-discounts/{discountNo}/approve", async (string discountNo, ApproveHqPaymentDiscountDto? dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveHqAsync(discountNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-discounts/{discountNo}/sign-hq", async (string discountNo, SignHqPaymentDiscountDto dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.SignHqAsync(discountNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-discounts/{discountNo}/reject", async (string discountNo, RejectPaymentDiscountDto dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectHqAsync(discountNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-discounts/{discountNo}/cancel", async (string discountNo, CancelPaymentDiscountDto dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(discountNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-discounts/{discountNo}", async (string discountNo, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(discountNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-discounts/{discountNo}/cars", async (string discountNo, AddCarToPaymentDiscountDto dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(discountNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-discounts/{discountNo}/cars/{vin}", async (string discountNo, string vin, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(discountNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/payment-discounts/{discountNo}/cars/{vin}", async (string discountNo, string vin, UpdatePaymentDiscountLineDto dto, IPaymentDiscountService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateLineAsync(discountNo, vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị chiết khấu {discountNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

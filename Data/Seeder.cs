@@ -2949,5 +2949,264 @@ public static class Seeder
             db.PdiRequests.AddRange(pdi1, pdi2, pdi3);
             await db.SaveChangesAsync();
         }
+
+        if (!await db.PaymentDiscounts.AnyAsync(o => o.OrgId == orgId))
+        {
+            var pd1 = new PaymentDiscount
+            {
+                OrgId = orgId,
+                PaymentDiscountNo = "20260901-001/DNCK/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                CompanyName = "Công ty Cổ phần Ô tô Đông Đô",
+                DateEndFrom = DateTime.Today.AddDays(-25),
+                DateEndTo = DateTime.Today.AddDays(10),
+                QtyCar = 2,
+                SumTotalDiscountPrice = 10450000m,
+                DiscountPercent = 0.5m,
+                PenaltyPercent = 0.05m,
+                Status = PaymentDiscountStatus.Signed,
+                DealerSignStatus = PaymentDiscountSignStatus.Signed,
+                DealerSignDate = DateTime.Now.AddDays(-6),
+                DealerSignBy = "Nguyễn Văn Hùng (Tổng Giám Đốc ĐL)",
+                DealerSignFile = "DNCK_SIGNED_DL_20260901-001_DNCK_VN001.pdf",
+                HQSignStatus = PaymentDiscountSignStatus.Signed,
+                HQApproveDate = DateTime.Now.AddDays(-5),
+                HQApproveBy = "Trần Trọng Nghĩa (Trưởng phòng Tài chính NPP)",
+                HQSignDate = DateTime.Now.AddDays(-4),
+                HQSignBy = "Lê Hoàng Quân (Tổng Giám Đốc NPP)",
+                HQSignFile = "DNCK_FINAL_SIGNED_20260901-001_DNCK_VN001.pdf",
+                Remark = "Quyết toán chiết khấu thanh toán đợt tháng 9/2026 cho 02 xe Santa Fe & Creta thanh toán sớm 15 ngày so với hạn bảo lãnh ngân hàng Vietcombank",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Now.AddDays(-8),
+                LUDateTime = DateTime.Now.AddDays(-4),
+                LUBy = "Lê Hoàng Quân (Tổng Giám Đốc NPP)",
+                Details = new List<PaymentDiscountDetail>
+                {
+                    new PaymentDiscountDetail
+                    {
+                        PaymentDiscountNo = "20260901-001/DNCK/VN001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 xăng cao cấp HTRAC",
+                        SOCode = "ORD2603010001",
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        DateOpen = DateTime.Today.AddDays(-30),
+                        Term = 30,
+                        DateStart = DateTime.Today.AddDays(-25),
+                        DateEnd = DateTime.Today.AddDays(5),
+                        UnitPrice = 1350000000m,
+                        UnitPriceActual = 1350000000m,
+                        GuaranteeValue = 1350000000m,
+                        PaymentEndDatePhase1 = DateTime.Today.AddDays(-10),
+                        AmountPhase1 = 1350000000m,
+                        DiscountDateNumberPhase1 = 15,
+                        DiscountPercentPhase1 = 0.5m,
+                        DiscountPricePhase1 = 6750000m,
+                        TotalAmount = 1350000000m,
+                        TotalDiscountPrice = 6750000m,
+                        Remark = "Thanh toán đợt 1 toàn bộ 100% trước hạn bảo lãnh 15 ngày"
+                    },
+                    new PaymentDiscountDetail
+                    {
+                        PaymentDiscountNo = "20260901-001/DNCK/VN001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        SpecDescription = "Creta 1.5 CVT bản cao cấp",
+                        SOCode = "ORD2603010001",
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        DateOpen = DateTime.Today.AddDays(-30),
+                        Term = 30,
+                        DateStart = DateTime.Today.AddDays(-25),
+                        DateEnd = DateTime.Today.AddDays(5),
+                        UnitPrice = 740000000m,
+                        UnitPriceActual = 740000000m,
+                        GuaranteeValue = 740000000m,
+                        PaymentEndDatePhase1 = DateTime.Today.AddDays(-10),
+                        AmountPhase1 = 740000000m,
+                        DiscountDateNumberPhase1 = 15,
+                        DiscountPercentPhase1 = 0.5m,
+                        DiscountPricePhase1 = 3700000m,
+                        TotalAmount = 740000000m,
+                        TotalDiscountPrice = 3700000m,
+                        Remark = "Thanh toán sớm đủ điều kiện hưởng mức chiết khấu tối đa"
+                    }
+                }
+            };
+
+            var pd2 = new PaymentDiscount
+            {
+                OrgId = orgId,
+                PaymentDiscountNo = "20260915-001/DNCK/VN002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                CompanyName = "Công ty Cổ phần Ô tô Nam Trung",
+                DateEndFrom = DateTime.Today.AddDays(-10),
+                DateEndTo = DateTime.Today.AddDays(20),
+                QtyCar = 1,
+                SumTotalDiscountPrice = 4300000m,
+                DiscountPercent = 0.5m,
+                PenaltyPercent = 0.05m,
+                Status = PaymentDiscountStatus.Approved,
+                DealerSignStatus = PaymentDiscountSignStatus.Signed,
+                DealerSignDate = DateTime.Now.AddDays(-2),
+                DealerSignBy = "Phạm Tuấn Vũ (Giám đốc ĐL Nam Trung)",
+                DealerSignFile = "DNCK_SIGNED_DL_20260915-001_DNCK_VN002.pdf",
+                HQSignStatus = PaymentDiscountSignStatus.Pending,
+                HQApproveDate = DateTime.Now.AddDays(-1),
+                HQApproveBy = "Nguyễn Thị Phương (Phòng Tài chính NPP)",
+                Remark = "Đề nghị chiết khấu thanh toán xe Tucson 2.0 AT mở bảo lãnh LC ngân hàng BIDV, NPP đã thẩm tra đạt tiêu chuẩn, chờ Lãnh đạo ký số phê duyệt",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Now.AddDays(-3),
+                LUDateTime = DateTime.Now.AddDays(-1),
+                LUBy = "Nguyễn Thị Phương (Phòng Tài chính NPP)",
+                Details = new List<PaymentDiscountDetail>
+                {
+                    new PaymentDiscountDetail
+                    {
+                        PaymentDiscountNo = "20260915-001/DNCK/VN002",
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        SpecDescription = "Tucson 2.0 xăng tiêu chuẩn",
+                        SOCode = "ORD2603010002",
+                        GuaranteeNo = "LC2603-BIDV-0099",
+                        BankGuaranteeNo = "LC-BIDV-20260315",
+                        BankCode = "BIDV",
+                        DateOpen = DateTime.Today.AddDays(-15),
+                        Term = 30,
+                        DateStart = DateTime.Today.AddDays(-10),
+                        DateEnd = DateTime.Today.AddDays(20),
+                        UnitPrice = 860000000m,
+                        UnitPriceActual = 860000000m,
+                        GuaranteeValue = 860000000m,
+                        PaymentEndDatePhase1 = DateTime.Today.AddDays(-3),
+                        AmountPhase1 = 860000000m,
+                        DiscountDateNumberPhase1 = 12,
+                        DiscountPercentPhase1 = 0.5m,
+                        DiscountPricePhase1 = 4300000m,
+                        TotalAmount = 860000000m,
+                        TotalDiscountPrice = 4300000m,
+                        Remark = "Thanh toán đợt 1 toàn bộ số tiền xe Tucson"
+                    }
+                }
+            };
+
+            var pd3 = new PaymentDiscount
+            {
+                OrgId = orgId,
+                PaymentDiscountNo = "20260922-002/DNCK/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                CompanyName = "Công ty Cổ phần Ô tô Đông Đô",
+                DateEndFrom = DateTime.Today,
+                DateEndTo = DateTime.Today.AddDays(28),
+                QtyCar = 1,
+                SumTotalDiscountPrice = 2450000m,
+                DiscountPercent = 0.5m,
+                PenaltyPercent = 0.05m,
+                Status = PaymentDiscountStatus.Draft,
+                DealerSignStatus = PaymentDiscountSignStatus.Pending,
+                HQSignStatus = PaymentDiscountSignStatus.Pending,
+                Remark = "Đại lý lập dự thảo đề nghị chiết khấu thanh toán xe Accent mở bảo lãnh MB Bank, đang đối chiếu chứng từ trước khi trình ký số",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Now,
+                Details = new List<PaymentDiscountDetail>
+                {
+                    new PaymentDiscountDetail
+                    {
+                        PaymentDiscountNo = "20260922-002/DNCK/VN001",
+                        CarId = "CAR2026-AC0088",
+                        Vin = "KMHE281BBSA667788",
+                        Model = "Accent 1.4 AT",
+                        SpecCode = "AC14-AT-01",
+                        SpecDescription = "Accent 1.4 AT bản đặc biệt",
+                        SOCode = "ORD2603010003",
+                        GuaranteeNo = "BG2609-MB-00331",
+                        BankGuaranteeNo = "BL-MB-20260920-12",
+                        BankCode = "MB",
+                        DateOpen = DateTime.Today.AddDays(-5),
+                        Term = 30,
+                        DateStart = DateTime.Today.AddDays(-2),
+                        DateEnd = DateTime.Today.AddDays(28),
+                        UnitPrice = 490000000m,
+                        UnitPriceActual = 490000000m,
+                        GuaranteeValue = 490000000m,
+                        PaymentEndDatePhase1 = DateTime.Today,
+                        AmountPhase1 = 490000000m,
+                        DiscountDateNumberPhase1 = 28,
+                        DiscountPercentPhase1 = 0.5m,
+                        DiscountPricePhase1 = 2450000m,
+                        TotalAmount = 490000000m,
+                        TotalDiscountPrice = 2450000m,
+                        Remark = "Thanh toán ngay trong tuần đầu sau khi phát hành bảo lãnh"
+                    }
+                }
+            };
+
+            var pd4 = new PaymentDiscount
+            {
+                OrgId = orgId,
+                PaymentDiscountNo = "20260910-001/DNCK/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                CompanyName = "Công ty Cổ phần Ô tô Đông Đô",
+                DateEndFrom = DateTime.Today.AddDays(-20),
+                DateEndTo = DateTime.Today.AddDays(5),
+                QtyCar = 1,
+                SumTotalDiscountPrice = 0m,
+                DiscountPercent = 0.5m,
+                PenaltyPercent = 0.05m,
+                Status = PaymentDiscountStatus.Cancelled,
+                CancelReason = "Đại lý phát sinh chậm thanh toán đợt 2 quá thời hạn quy định, không đủ điều kiện hưởng chiết khấu thanh toán sớm",
+                Remark = "Đề nghị bị hủy do quá hạn thanh toán bảo lãnh ngân hàng",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Now.AddDays(-12),
+                LUDateTime = DateTime.Now.AddDays(-7),
+                LUBy = "NPP_FINANCE_DIRECTOR",
+                Details = new List<PaymentDiscountDetail>
+                {
+                    new PaymentDiscountDetail
+                    {
+                        PaymentDiscountNo = "20260910-001/DNCK/VN001",
+                        CarId = "CAR2026-CU0211",
+                        Vin = "KMHE281BBSA556677",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        SpecCode = "CU15-PRE-01",
+                        SpecDescription = "Custin 1.5T cao cấp",
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        DateOpen = DateTime.Today.AddDays(-30),
+                        Term = 30,
+                        DateStart = DateTime.Today.AddDays(-25),
+                        DateEnd = DateTime.Today.AddDays(5),
+                        UnitPrice = 850000000m,
+                        UnitPriceActual = 850000000m,
+                        GuaranteeValue = 850000000m,
+                        PaymentEndDatePhase1 = DateTime.Today.AddDays(-5),
+                        AmountPhase1 = 850000000m,
+                        DiscountDateNumberPhase1 = 0,
+                        DiscountPercentPhase1 = 0m,
+                        DiscountPricePhase1 = 0m,
+                        TotalAmount = 850000000m,
+                        TotalDiscountPrice = 0m,
+                        Remark = "Đã quá hạn ngày thanh toán đợt hưởng ưu đãi"
+                    }
+                }
+            };
+
+            db.PaymentDiscounts.AddRange(pd1, pd2, pd3, pd4);
+            await db.SaveChangesAsync();
+        }
     }
 }
