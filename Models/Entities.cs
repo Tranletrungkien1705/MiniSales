@@ -1245,3 +1245,39 @@ public sealed class PaymentGuaranteeClaimDetail
     public ClaimVinSignStatus Status { get; set; } = ClaimVinSignStatus.Pending; // Trạng thái xử lý VIN: P / A / C
     public string? Remark { get; set; } // Ghi chú chi tiết dòng xe
 }
+
+/// <summary>Trạng thái đề nghị / biên bản hủy chọn ngân hàng bảo lãnh hợp đồng mua buôn xe ô tô Đại lý - NPP (DMS.Sales DMS40_DlrCtr_CancelBankMD CancelBankMDStatus: Pending = 'P' [Chờ duyệt], BankApproved = 'A' [Ngân hàng bảo lãnh / Thẩm tra đã thẩm định chấp thuận], Finished = 'F' [NPP hoàn tất duyệt và tự động gỡ bỏ liên kết BankCodeMD khỏi DealerContract], Rejected = 'R' [Từ chối], Cancelled = 'C' [Đã hủy]).</summary>
+public enum DealerContractCancelBankMDStatus { Pending = 0, BankApproved = 1, Finished = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Đề nghị / Biên bản hủy chọn Ngân hàng phát hành bảo lãnh hợp đồng mua bán buôn xe Đại lý - NPP (DMS.Sales DMS40_DlrCtr_CancelBankMD / DlrCtrCancelBankMDController / DMS40.0.34.Contract.cs / CANCEL_BANK_MD_FLOW.md): Đại lý lập đề nghị hủy ngân hàng bảo lãnh đã liên kết với hợp đồng mua buôn, kiểm tra ràng buộc không vướng Lệnh xuất xe (DeliveryOrder), Bảo lãnh ngân hàng (PaymentGuarantee), Phiếu thanh toán (DealerPayment) hay Biên bản hủy HĐ (DealerContractCancelMinutes), quy trình phê duyệt thẩm tra (Ngân hàng/Thẩm tra BankApproved, NPP hoàn tất FinishHq) và tự động gỡ bỏ BankCodeMD trên DealerContract để đại lý liên kết ngân hàng mới hoặc chuyển phương thức thanh toán.</summary>
+public sealed class DealerContractCancelBankMD
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CancelBankMDNo { get; set; } = ""; // Số biên bản / đề nghị hủy chọn NH (PK CancelBankMDNo, format: {ContractNo}.CB{seq:D2} hoặc HNB{yyMMdd}{seq:D3})
+    public string ContractNo { get; set; } = ""; // Số hợp đồng mua buôn đại lý (DlrCtrNo)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string BankCodeMD { get; set; } = ""; // Mã ngân hàng bảo lãnh cần hủy liên kết (VCB, BIDV, VPB, TCB...)
+    public string? BankName { get; set; } // Tên ngân hàng bảo lãnh
+    public int TotalCars { get; set; } // Tổng số xe theo hợp đồng gốc
+    public decimal TotalAmount { get; set; } // Tổng giá trị hợp đồng gốc (VNĐ)
+    public DealerContractCancelBankMDStatus Status { get; set; } = DealerContractCancelBankMDStatus.Pending;
+    public string? RemarkDlr { get; set; } // Lý do / Ghi chú của Đại lý (đổi ngân hàng, hết hạn mức tín dụng...)
+    public string? RemarkBank { get; set; } // Ý kiến thẩm tra / phản hồi của Ngân hàng bảo lãnh
+    public string? RemarkHQ { get; set; } // Ý kiến thẩm định / phê duyệt của NPP
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public string? CancelReason { get; set; } // Lý do đại lý hủy đề nghị
+    public string? CreatedBy { get; set; } // Người lập đề nghị
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? BankApprovedAt { get; set; } // Thời điểm Ngân hàng / Thẩm tra chấp thuận
+    public string? BankApprovedBy { get; set; }
+    public DateTime? FinishedAt { get; set; } // Thời điểm NPP duyệt hoàn tất (gỡ BankCode khỏi HĐ)
+    public string? FinishedBy { get; set; }
+    public DateTime? RejectedAt { get; set; } // Thời điểm từ chối duyệt
+    public string? RejectedBy { get; set; }
+    public DateTime? CancelledAt { get; set; } // Thời điểm đại lý hủy
+    public string? CancelledBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+}

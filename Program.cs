@@ -43,6 +43,7 @@ builder.Services.AddScoped<IPaymentGuaranteeExtService, PaymentGuaranteeExtServi
 builder.Services.AddScoped<IPdiRequestService, PdiRequestService>();
 builder.Services.AddScoped<IPaymentDiscountService, PaymentDiscountService>();
 builder.Services.AddScoped<IDealerContractCancelMinutesService, DealerContractCancelMinutesService>();
+builder.Services.AddScoped<IDealerContractCancelBankMDService, DealerContractCancelBankMDService>();
 builder.Services.AddScoped<IPaymentGuaranteeClaimService, PaymentGuaranteeClaimService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
@@ -1835,6 +1836,85 @@ app.MapDelete("/api/guarantee-claims/{claimNo}/cars/{vin}", async (string claimN
     {
         var r = await svc.RemoveCarAsync(claimNo, vin);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn đòi tiền bảo lãnh {claimNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Đề nghị / Biên bản Hủy chọn Ngân hàng phát hành bảo lãnh hợp đồng bán xe Đại lý - NPP (DMS.Sales DMS40_DlrCtr_CancelBankMD / DlrCtrCancelBankMDController / DMS40.0.34.Contract.cs / CANCEL_BANK_MD_FLOW.md) =====
+app.MapPost("/api/dealer-contract-cancel-banks", async (CreateDealerContractCancelBankMDDto dto, IDealerContractCancelBankMDService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-contract-cancel-banks", async (IDealerContractCancelBankMDService svc, string? status, string? dealer, string? contractNo, string? cancelBankMDNo, string? bankCodeMD) =>
+    Results.Ok(await svc.ListAsync(status, dealer, contractNo, cancelBankMDNo, bankCodeMD))).RequireAuthorization();
+
+app.MapGet("/api/dealer-contract-cancel-banks/stats", async (IDealerContractCancelBankMDService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/dealer-contract-cancel-banks/{cancelBankMDNo}", async (string cancelBankMDNo, IDealerContractCancelBankMDService svc) =>
+{
+    var r = await svc.DetailAsync(cancelBankMDNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-contract-cancel-banks/{cancelBankMDNo}", async (string cancelBankMDNo, UpdateDealerContractCancelBankMDDto dto, IDealerContractCancelBankMDService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(cancelBankMDNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-contract-cancel-banks/{cancelBankMDNo}", async (string cancelBankMDNo, IDealerContractCancelBankMDService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(cancelBankMDNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancel-banks/{cancelBankMDNo}/bank-approve", async (string cancelBankMDNo, BankApproveDealerContractCancelBankMDDto? dto, IDealerContractCancelBankMDService svc) =>
+{
+    try
+    {
+        var r = await svc.BankApproveAsync(cancelBankMDNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancel-banks/{cancelBankMDNo}/finish-hq", async (string cancelBankMDNo, FinishDealerContractCancelBankMDDto? dto, IDealerContractCancelBankMDService svc) =>
+{
+    try
+    {
+        var r = await svc.FinishHqAsync(cancelBankMDNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancel-banks/{cancelBankMDNo}/reject-hq", async (string cancelBankMDNo, RejectDealerContractCancelBankMDDto dto, IDealerContractCancelBankMDService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectHqAsync(cancelBankMDNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-contract-cancel-banks/{cancelBankMDNo}/cancel-dl", async (string cancelBankMDNo, CancelDealerContractCancelBankMDDto dto, IDealerContractCancelBankMDService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelDealerAsync(cancelBankMDNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị hủy chọn ngân hàng bảo lãnh {cancelBankMDNo}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

@@ -1000,6 +1000,38 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(GrtClaimId) REFERENCES GuaranteeClaims(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS DealerContractCancelBankMDs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CancelBankMDNo TEXT NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    BankCodeMD TEXT NOT NULL,
+                    BankName TEXT,
+                    TotalCars INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    RemarkDlr TEXT,
+                    RemarkBank TEXT,
+                    RemarkHQ TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    BankApprovedAt TEXT,
+                    BankApprovedBy TEXT,
+                    FinishedAt TEXT,
+                    FinishedBy TEXT,
+                    RejectedAt TEXT,
+                    RejectedBy TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerContractCancelBankMDs_OrgId_CancelBankMDNo ON DealerContractCancelBankMDs(OrgId, CancelBankMDNo);
             ");
         }
         catch
@@ -3860,6 +3892,280 @@ public static class Seeder
             };
 
             db.GuaranteeClaims.AddRange(gcl1, gcl2, gcl3, gcl4);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.DealerContractCancelBankMDs.AnyAsync(o => o.OrgId == orgId))
+        {
+            // Đảm bảo tồn tại các DealerContract liên quan phục vụ demo đề nghị hủy chọn ngân hàng bảo lãnh
+            if (!await db.DealerContracts.AnyAsync(o => o.OrgId == orgId && o.ContractNo == "2603DRC00007"))
+            {
+                db.DealerContracts.Add(new DealerContract
+                {
+                    OrgId = orgId,
+                    ContractNo = "2603DRC00007",
+                    DealerCode = "VN001",
+                    DealerName = "Hyundai Đông Đô",
+                    ContractDate = DateTime.Today.AddDays(-15),
+                    ContractType = DealerContractType.Standard,
+                    PaymentType = DealerContractPaymentType.Guarantee,
+                    BankCode = null, // Đã được gỡ sau khi hoàn tất đề nghị hủy ngân hàng 2603DRC00007.CB01
+                    BankName = null,
+                    DepositPercent = 10m,
+                    GuaranteeDays = 15,
+                    TotalCars = 2,
+                    TotalAmount = 1680000000m,
+                    Status = DealerContractStatus.Signed,
+                    DealerSignStatus = DealerContractSignStatus.Signed,
+                    HQSignStatus = DealerContractSignStatus.Signed,
+                    DealerSignedBy = "Nguyễn Văn Hưng (Giám đốc Đại lý Đông Đô)",
+                    DealerSignedAt = DateTime.Now.AddDays(-14),
+                    HQSignedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                    HQSignedAt = DateTime.Now.AddDays(-13),
+                    Remark = "Đã hủy liên kết ngân hàng bảo lãnh theo biên bản 2603DRC00007.CB01 ngày " + DateTime.Now.AddDays(-5).ToString("yyyy-MM-dd HH:mm") + ". Có thể cập nhật lại ngân hàng bảo lãnh mới hoặc đổi phương thức thanh toán.",
+                    CreatedBy = "DEALER_SALES_ADMIN",
+                    CreatedAt = DateTime.Now.AddDays(-15),
+                    Details = new List<DealerContractDetail>
+                    {
+                        new DealerContractDetail
+                        {
+                            CarId = "CAR2026-TC0081",
+                            Vin = "KMHE281BBSA889901",
+                            Model = "Tucson 2.0 Xăng Đặc Biệt",
+                            SpecCode = "TC20-SPE-01",
+                            ColorCode = "WH1",
+                            ProductionYear = 2026,
+                            UnitPrice = 909090909m,
+                            VatRate = 10m,
+                            TotalAmount = 1000000000m,
+                            OrderNo = "ORD2603120005",
+                            Remark = "Xe phân bổ tháng 3"
+                        },
+                        new DealerContractDetail
+                        {
+                            CarId = "CAR2026-AC0515",
+                            Vin = "KMHE281BBSA889902",
+                            Model = "Accent 1.5 AT Đặc Biệt",
+                            SpecCode = "AC15-SPE-01",
+                            ColorCode = "BK1",
+                            ProductionYear = 2026,
+                            UnitPrice = 618181818m,
+                            VatRate = 10m,
+                            TotalAmount = 680000000m,
+                            OrderNo = "ORD2603120006",
+                            Remark = "Xe phân bổ tháng 3"
+                        }
+                    }
+                });
+            }
+
+            if (!await db.DealerContracts.AnyAsync(o => o.OrgId == orgId && o.ContractNo == "2603DRC00008"))
+            {
+                db.DealerContracts.Add(new DealerContract
+                {
+                    OrgId = orgId,
+                    ContractNo = "2603DRC00008",
+                    DealerCode = "VN002",
+                    DealerName = "Hyundai Nam Trung",
+                    ContractDate = DateTime.Today.AddDays(-8),
+                    ContractType = DealerContractType.Standard,
+                    PaymentType = DealerContractPaymentType.Guarantee,
+                    BankCode = "BIDV",
+                    BankName = "BIDV Cầu Giấy",
+                    DepositPercent = 10m,
+                    GuaranteeDays = 15,
+                    TotalCars = 1,
+                    TotalAmount = 850000000m,
+                    Status = DealerContractStatus.Signed,
+                    DealerSignStatus = DealerContractSignStatus.Signed,
+                    HQSignStatus = DealerContractSignStatus.Signed,
+                    DealerSignedBy = "Lê Hồng Quân (Đại diện Nam Trung)",
+                    DealerSignedAt = DateTime.Now.AddDays(-7),
+                    HQSignedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                    HQSignedAt = DateTime.Now.AddDays(-7),
+                    Remark = "Hợp đồng mua buôn 01 xe Custin, thanh toán bảo lãnh ngân hàng BIDV Cầu Giấy",
+                    CreatedBy = "DEALER_SALES_ADMIN",
+                    CreatedAt = DateTime.Now.AddDays(-8),
+                    Details = new List<DealerContractDetail>
+                    {
+                        new DealerContractDetail
+                        {
+                            CarId = "CAR2026-CU0215",
+                            Vin = "KMHE281BBSA990011",
+                            Model = "Custin 1.5T-GDi Tiêu Chuẩn",
+                            SpecCode = "CU15-STD-01",
+                            ColorCode = "WH1",
+                            ProductionYear = 2026,
+                            UnitPrice = 772727273m,
+                            VatRate = 10m,
+                            TotalAmount = 850000000m,
+                            OrderNo = "ORD2603140003",
+                            Remark = "Xe phân bổ đợt 2"
+                        }
+                    }
+                });
+            }
+
+            if (!await db.DealerContracts.AnyAsync(o => o.OrgId == orgId && o.ContractNo == "2603DRC00009"))
+            {
+                db.DealerContracts.Add(new DealerContract
+                {
+                    OrgId = orgId,
+                    ContractNo = "2603DRC00009",
+                    DealerCode = "VN003",
+                    DealerName = "Hyundai Tây Hồ",
+                    ContractDate = DateTime.Today.AddDays(-5),
+                    ContractType = DealerContractType.Standard,
+                    PaymentType = DealerContractPaymentType.Guarantee,
+                    BankCode = "VPB",
+                    BankName = "VPBank Thăng Long",
+                    DepositPercent = 10m,
+                    GuaranteeDays = 15,
+                    TotalCars = 1,
+                    TotalAmount = 740000000m,
+                    Status = DealerContractStatus.Signed,
+                    DealerSignStatus = DealerContractSignStatus.Signed,
+                    HQSignStatus = DealerContractSignStatus.Signed,
+                    DealerSignedBy = "Vũ Đình Trọng (Giám đốc Đại lý Tây Hồ)",
+                    DealerSignedAt = DateTime.Now.AddDays(-4),
+                    HQSignedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                    HQSignedAt = DateTime.Now.AddDays(-4),
+                    Remark = "Hợp đồng mua buôn 01 xe Creta Cao Cấp, đại lý gắn bảo lãnh VPBank",
+                    CreatedBy = "DEALER_SALES_ADMIN",
+                    CreatedAt = DateTime.Now.AddDays(-5),
+                    Details = new List<DealerContractDetail>
+                    {
+                        new DealerContractDetail
+                        {
+                            CarId = "CAR2026-CR0195",
+                            Vin = "KMHE281BBSA990022",
+                            Model = "Creta 1.5 Cao Cấp",
+                            SpecCode = "CR15-PRE-02",
+                            ColorCode = "BK1",
+                            ProductionYear = 2026,
+                            UnitPrice = 672727273m,
+                            VatRate = 10m,
+                            TotalAmount = 740000000m,
+                            OrderNo = "ORD2603160001",
+                            Remark = "Xe phân bổ tháng 3"
+                        }
+                    }
+                });
+            }
+
+            await db.SaveChangesAsync();
+
+            var cb1 = new DealerContractCancelBankMD
+            {
+                OrgId = orgId,
+                CancelBankMDNo = "2603DRC00007.CB01",
+                ContractNo = "2603DRC00007",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                BankCodeMD = "VCB",
+                BankName = "Vietcombank Thăng Long",
+                TotalCars = 2,
+                TotalAmount = 1680000000m,
+                Status = DealerContractCancelBankMDStatus.Finished,
+                RemarkDlr = "Đại lý xin hủy chọn ngân hàng Vietcombank do hết hạn mức cấp tín dụng cho quý 1, xin chuyển sang bảo lãnh BIDV",
+                RemarkBank = "Ngân hàng Vietcombank xác nhận hợp đồng chưa phát hành thư bảo lãnh chính thức và đồng ý giải phóng liên kết",
+                RemarkHQ = "NPP phê duyệt hoàn tất hủy chọn ngân hàng bảo lãnh, đã gỡ liên kết BankCodeMD trên hợp đồng",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-7),
+                BankApprovedAt = DateTime.Now.AddDays(-6),
+                BankApprovedBy = "Nguyễn Thu Hà (Chuyên viên Tín dụng VCB)",
+                FinishedAt = DateTime.Now.AddDays(-5),
+                FinishedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                LUDateTime = DateTime.Now.AddDays(-5),
+                LUBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)"
+            };
+
+            var cb2 = new DealerContractCancelBankMD
+            {
+                OrgId = orgId,
+                CancelBankMDNo = "2603DRC00008.CB01",
+                ContractNo = "2603DRC00008",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                BankCodeMD = "BIDV",
+                BankName = "BIDV Cầu Giấy",
+                TotalCars = 1,
+                TotalAmount = 850000000m,
+                Status = DealerContractCancelBankMDStatus.BankApproved,
+                RemarkDlr = "Đại lý đề nghị hủy liên kết bảo lãnh BIDV để chuyển thanh toán trả thẳng bằng tiền mặt / chuyển khoản",
+                RemarkBank = "BIDV Cầu Giấy đồng ý không phát hành bảo lãnh cho hợp đồng 2603DRC00008",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-3),
+                BankApprovedAt = DateTime.Now.AddDays(-2),
+                BankApprovedBy = "Trần Mạnh Cường (Trưởng phòng KHDN BIDV Cầu Giấy)",
+                LUDateTime = DateTime.Now.AddDays(-2),
+                LUBy = "Trần Mạnh Cường (Trưởng phòng KHDN BIDV Cầu Giấy)"
+            };
+
+            var cb3 = new DealerContractCancelBankMD
+            {
+                OrgId = orgId,
+                CancelBankMDNo = "2603DRC00009.CB01",
+                ContractNo = "2603DRC00009",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                BankCodeMD = "VPB",
+                BankName = "VPBank Thăng Long",
+                TotalCars = 1,
+                TotalAmount = 740000000m,
+                Status = DealerContractCancelBankMDStatus.Pending,
+                RemarkDlr = "Đại lý xin thay đổi ngân hàng bảo lãnh sang VietinBank do chính sách lãi suất ưu đãi hơn",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                LUDateTime = DateTime.Now.AddDays(-1),
+                LUBy = "DEALER_SALES_ADMIN"
+            };
+
+            var cb4 = new DealerContractCancelBankMD
+            {
+                OrgId = orgId,
+                CancelBankMDNo = "2603DRC00009.CB02",
+                ContractNo = "2603DRC00009",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                BankCodeMD = "VPB",
+                BankName = "VPBank Thăng Long",
+                TotalCars = 1,
+                TotalAmount = 740000000m,
+                Status = DealerContractCancelBankMDStatus.Rejected,
+                RemarkDlr = "Đại lý xin rút bảo lãnh ngân hàng VPBank",
+                RejectReason = "Đại lý chưa gửi kèm công văn giải trình lý do hủy chọn ngân hàng và xác nhận số dư khả dụng",
+                RejectedAt = DateTime.Now.AddDays(-3),
+                RejectedBy = "Lê Thị Thu Thủy (Trưởng phòng Tài vụ HTC)",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-4),
+                LUDateTime = DateTime.Now.AddDays(-3),
+                LUBy = "Lê Thị Thu Thủy (Trưởng phòng Tài vụ HTC)"
+            };
+
+            var cb5 = new DealerContractCancelBankMD
+            {
+                OrgId = orgId,
+                CancelBankMDNo = "2603DRC00008.CB02",
+                ContractNo = "2603DRC00008",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                BankCodeMD = "BIDV",
+                BankName = "BIDV Cầu Giấy",
+                TotalCars = 1,
+                TotalAmount = 850000000m,
+                Status = DealerContractCancelBankMDStatus.Cancelled,
+                RemarkDlr = "Đại lý xin đổi sang Vietcombank",
+                CancelReason = "Đại lý chủ động rút đề nghị do ngân hàng BIDV đã gia hạn thêm hạn mức cấp bảo lãnh cho đại lý",
+                CancelledAt = DateTime.Now.AddDays(-4),
+                CancelledBy = "DEALER_SALES_ADMIN",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedAt = DateTime.Now.AddDays(-5),
+                LUDateTime = DateTime.Now.AddDays(-4),
+                LUBy = "DEALER_SALES_ADMIN"
+            };
+
+            db.DealerContractCancelBankMDs.AddRange(cb1, cb2, cb3, cb4, cb5);
             await db.SaveChangesAsync();
         }
     }
