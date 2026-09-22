@@ -56,6 +56,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<DealerDriveTest> DriveTests => Set<DealerDriveTest>();
     public DbSet<StorageRearrangeCBOrder> StorageRearrangeCBOrders => Set<StorageRearrangeCBOrder>();
     public DbSet<StorageRearrangeCBDetail> StorageRearrangeCBDetails => Set<StorageRearrangeCBDetail>();
+    public DbSet<CarCancelReasonMaster> CarCancelReasons => Set<CarCancelReasonMaster>();
+    public DbSet<CarRecord> Cars => Set<CarRecord>();
+    public DbSet<CarCancelLog> CarCancelLogs => Set<CarCancelLog>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -176,5 +179,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<StorageRearrangeCBOrder>().Property(x => x.Status).HasConversion<int>();
         b.Entity<StorageRearrangeCBOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.StoRearCBId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<StorageRearrangeCBDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarCancelReasonMaster>().HasIndex(x => x.Code).IsUnique();
+        b.Entity<CarRecord>().HasIndex(x => new { x.OrgId, x.CarId }).IsUnique();
+        b.Entity<CarRecord>().HasIndex(x => new { x.OrgId, x.Vin });
+        b.Entity<CarCancelLog>().HasIndex(x => new { x.OrgId, x.CarId });
     }
 }

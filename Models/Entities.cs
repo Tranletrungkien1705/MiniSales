@@ -1599,6 +1599,72 @@ public sealed class StorageRearrangeCBDetail
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
+/// <summary>Mã lý do hủy xe ô tô tiêu chuẩn (DMS.Sales Mst_CarCancelType / CarCancelController / Error.idN.DMSSales.Car.cs): CCT01 Lỗi kỹ thuật nhà máy HTMV, CCT02 Khách hàng hủy HĐ, CCT03 Đại lý quá hạn thanh toán/bảo lãnh, CCT04 Tái điều phối lô khác, CCT05 Hư hại lưu kho bãi vận chuyển, CCT99 Lý do khác).</summary>
+public enum CarCancelReasonCode { TechnicalFault = 0, CustomerCancel = 1, PaymentOverdue = 2, Reallocation = 3, StorageDamage = 4, Other = 5 }
+
+/// <summary>Danh mục lý do hủy xe ô tô (DMS.Sales Mst_CarCancelType): quản lý mã, tên và mô tả nguyên nhân hủy xe trong hệ thống.</summary>
+public sealed class CarCancelReasonMaster
+{
+    public long Id { get; set; }
+    public string Code { get; set; } = ""; // Mã lý do hủy: CCT01, CCT02, CCT03, CCT04, CCT05, CCT99
+    public string Name { get; set; } = ""; // Tên lý do hủy
+    public string Description { get; set; } = ""; // Mô tả chi tiết
+    public bool FlagActive { get; set; } = true; // Trạng thái kích hoạt
+}
+
+/// <summary>Hồ sơ định danh & trạng thái xe ô tô (DMS.Sales Car_Car / CarCancelController / Car.1.cs / FrmMngCarCancel / FrmCarCancel / FrmCapNhatTTHuyXe): quản lý thông tin xe, số khung VIN, dòng xe, đại lý, trạng thái hoạt động FlagActive ('1'=hoạt động, '0'=đã hủy), loại hủy xe CarCancelType, ngày hủy, lý do hủy, cùng các cờ điều hành xe hủy (FlagEarlyCancel '1'=xe sắp hủy, FlagMapVIN '1'=cho phép ghép VIN, FlagCarDeliveryOrder '1'=cho phép lập lệnh xuất xe, FlagTestCar '1'=xe lái thử demo) và thông số hoàn thành nghĩa vụ giao xe.</summary>
+public sealed class CarRecord
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống (CarId, vd: 2605C64655BN7I-CKD, CAR2026-SF0988)
+    public string Vin { get; set; } = ""; // Số khung xe (17 ký tự)
+    public string ModelCode { get; set; } = ""; // Mã model xe (SF25, TU20, CR15, AC14...)
+    public string ModelName { get; set; } = ""; // Tên model xe (Santa Fe, Tucson, Creta, Accent...)
+    public string? SpecCode { get; set; } // Mã cấu hình xe (spec)
+    public string? SpecDescription { get; set; } // Mô tả bản cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu ngoại thất
+    public string? ColorName { get; set; } // Tên màu ngoại thất
+    public string? EngineNo { get; set; } // Số máy
+    public string DealerCode { get; set; } = ""; // Mã đại lý quản lý xe (VN001, VN002...)
+    public string? DealerName { get; set; } // Tên đại lý
+    public string? StorageCode { get; set; } // Mã kho lưu giữ hiện tại
+    public string? StorageName { get; set; } // Tên kho
+    public string? SoCode { get; set; } // Mã đơn hàng bán xe gắn với xe (Sales Order)
+    public decimal PriceActual { get; set; } // Giá bán buôn thực tế của xe (VNĐ)
+    public decimal PaymentDepositAmount { get; set; } // Số tiền cọc đã thanh toán hoàn tất (VNĐ)
+    public decimal GuaranteeAmount { get; set; } // Giá trị bảo lãnh ngân hàng đã mở cho xe (VNĐ)
+    public decimal DutyCompletedAmount { get; set; } // Giá trị đã hoàn thành nghĩa vụ giao xe (VNĐ) = cọc + bảo lãnh
+    public string FlagActive { get; set; } = "1"; // '1' = Xe đang hoạt động bình thường, '0' = Xe đã hủy (CarCancel)
+    public string FlagAllowChangeVIN { get; set; } = "1"; // '1' = Cho phép đổi VIN, '0' = Khóa đổi VIN
+    public string? CarCancelType { get; set; } // Loại hủy xe (CCT01, CCT02... hoặc 'NONE' khi phục hồi)
+    public string? CarCancelRemark { get; set; } // Ghi chú nguyên nhân hủy xe
+    public DateTime? CarCancelDate { get; set; } // Ngày thực hiện hủy xe
+    public string? CarCancelBy { get; set; } // Người thực hiện hủy xe
+    public string FlagEarlyCancel { get; set; } = "0"; // '1' = Xe sắp bị hủy (cảnh báo quá hạn cọc/bảo lãnh), '0' = Bình thường
+    public string FlagMapVIN { get; set; } = "1"; // '1' = Cho phép ghép số khung VIN vào đơn hàng, '0' = Khóa ghép VIN
+    public string FlagCarDeliveryOrder { get; set; } = "1"; // '1' = Cho phép tạo lệnh xuất xe, '0' = Khóa tạo lệnh xuất xe
+    public string FlagTestCar { get; set; } = "0"; // '1' = Xe demo lái thử đại lý, '0' = Xe thương mại thông thường
+    public DateTime CreatedAt { get; set; } = DateTime.Now; // Ngày nhập thông tin xe
+    public DateTime? LogLUDateTime { get; set; } // Thời gian cập nhật cuối
+    public string? LogLUBy { get; set; } // Người cập nhật cuối
+}
+
+/// <summary>Nhật ký vết điều hành hủy & phục hồi xe ô tô (DMS.Sales Car_Car LogLUDateTime / LogLUBy / CarCancel audit): lưu vết từng hành động hủy xe, phục hồi xe đã hủy, cập nhật cờ điều hành xe.</summary>
+public sealed class CarCancelLog
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CarId { get; set; } = "";
+    public string Vin { get; set; } = "";
+    public string Action { get; set; } = ""; // "Cancel" | "Restore" | "UpdateFlags"
+    public string? CancelType { get; set; } // Loại hủy liên quan
+    public string? Remark { get; set; } // Ghi chú thao tác
+    public string? PerformedBy { get; set; } // Người thực hiện
+    public DateTime PerformedAt { get; set; } = DateTime.Now; // Thời điểm thực hiện
+}
+
+
 
 
 

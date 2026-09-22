@@ -1252,6 +1252,66 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(StoRearCBId) REFERENCES StorageRearrangeCBOrders(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarCancelReasons (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Code TEXT NOT NULL,
+                    Name TEXT NOT NULL,
+                    Description TEXT NOT NULL,
+                    FlagActive INTEGER NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarCancelReasons_Code ON CarCancelReasons(Code);
+
+                CREATE TABLE IF NOT EXISTS Cars (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    StorageCode TEXT,
+                    StorageName TEXT,
+                    SoCode TEXT,
+                    PriceActual REAL NOT NULL,
+                    PaymentDepositAmount REAL NOT NULL,
+                    GuaranteeAmount REAL NOT NULL,
+                    DutyCompletedAmount REAL NOT NULL,
+                    FlagActive TEXT NOT NULL,
+                    FlagAllowChangeVIN TEXT NOT NULL,
+                    CarCancelType TEXT,
+                    CarCancelRemark TEXT,
+                    CarCancelDate TEXT,
+                    CarCancelBy TEXT,
+                    FlagEarlyCancel TEXT NOT NULL,
+                    FlagMapVIN TEXT NOT NULL,
+                    FlagCarDeliveryOrder TEXT NOT NULL,
+                    FlagTestCar TEXT NOT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_Cars_OrgId_CarId ON Cars(OrgId, CarId);
+                CREATE INDEX IF NOT EXISTS IX_Cars_OrgId_Vin ON Cars(OrgId, Vin);
+
+                CREATE TABLE IF NOT EXISTS CarCancelLogs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Action TEXT NOT NULL,
+                    CancelType TEXT,
+                    Remark TEXT,
+                    PerformedBy TEXT,
+                    PerformedAt TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS IX_CarCancelLogs_OrgId_CarId ON CarCancelLogs(OrgId, CarId);
             ");
         }
         catch
@@ -5545,6 +5605,412 @@ public static class Seeder
             };
 
             db.StorageRearrangeCBOrders.AddRange(rcb1, rcb2, rcb3, rcb4);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.CarCancelReasons.AnyAsync())
+        {
+            var reasons = new List<CarCancelReasonMaster>
+            {
+                new CarCancelReasonMaster { Code = "CCT01", Name = "Lỗi kỹ thuật nhà máy HTMV", Description = "Phát hiện lỗi kỹ thuật chất lượng xuất xưởng từ nhà máy sản xuất HTMV cần thu hồi khắc phục", FlagActive = true },
+                new CarCancelReasonMaster { Code = "CCT02", Name = "Khách hàng hủy hợp đồng", Description = "Khách hàng cá nhân/doanh nghiệp hủy cọc hợp đồng bán lẻ và từ chối nhận bàn giao xe", FlagActive = true },
+                new CarCancelReasonMaster { Code = "CCT03", Name = "Đại lý quá hạn thanh toán", Description = "Đại lý quá hạn thực hiện nghĩa vụ thanh toán cọc hoặc phát hành bảo lãnh ngân hàng theo quy định", FlagActive = true },
+                new CarCancelReasonMaster { Code = "CCT04", Name = "Tái phân bổ điều chuyển lô", Description = "Ban điều phối kinh doanh NPP tái phân bổ xe cho đơn hàng ưu tiên hoặc đối tác chiến lược khác", FlagActive = true },
+                new CarCancelReasonMaster { Code = "CCT05", Name = "Hư hại vận chuyển lưu kho", Description = "Xe bị trầy xước, va chạm hoặc sự cố ngoại cảnh trong quá trình vận chuyển đường dài hoặc lưu bãi", FlagActive = true },
+                new CarCancelReasonMaster { Code = "CCT99", Name = "Lý do hủy khác", Description = "Các lý do điều hành phát sinh khác theo phê duyệt của Lãnh đạo NPP (bắt buộc nhập lý do chi tiết)", FlagActive = true }
+            };
+            db.CarCancelReasons.AddRange(reasons);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.Cars.AnyAsync(o => o.OrgId == orgId))
+        {
+            var c1 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-SF0988",
+                Vin = "KMHE281BBSA129841",
+                ModelCode = "SF25",
+                ModelName = "Santa Fe 2.5 HTRAC",
+                SpecCode = "SF25-PRE-01",
+                SpecDescription = "Santa Fe 2.5 xăng cao cấp dẫn động HTRAC",
+                ColorCode = "WW2",
+                ColorName = "Trắng ngọc trai",
+                EngineNo = "G4KP-129841",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hyundai Ninh Bình",
+                SoCode = "ORD2603010001",
+                PriceActual = 1350000000m,
+                PaymentDepositAmount = 135000000m,
+                GuaranteeAmount = 1215000000m,
+                DutyCompletedAmount = 1350000000m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                CarCancelType = null,
+                CarCancelRemark = null,
+                CarCancelDate = null,
+                CarCancelBy = null,
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "1",
+                FlagCarDeliveryOrder = "1",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-20),
+                LogLUDateTime = DateTime.Today.AddDays(-5),
+                LogLUBy = "HE_THONG_BAN_HANG"
+            };
+
+            var c2 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-TU1102",
+                Vin = "KMHE281BBSA987654",
+                ModelCode = "TU20",
+                ModelName = "Tucson 2.0 AT",
+                SpecCode = "TU20-STD-01",
+                SpecDescription = "Tucson 2.0 xăng tiêu chuẩn bản nâng cấp",
+                ColorCode = "NKA",
+                ColorName = "Đen Phantom",
+                EngineNo = "G4NM-987654",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                StorageCode = "KHO_TONG_SG",
+                StorageName = "Kho Tổng Nam Bộ Hiệp Phước",
+                SoCode = "ORD2603010002",
+                PriceActual = 950000000m,
+                PaymentDepositAmount = 95000000m,
+                GuaranteeAmount = 855000000m,
+                DutyCompletedAmount = 950000000m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                CarCancelType = null,
+                CarCancelRemark = null,
+                CarCancelDate = null,
+                CarCancelBy = null,
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "1",
+                FlagCarDeliveryOrder = "1",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-25),
+                LogLUDateTime = DateTime.Today.AddDays(-10),
+                LogLUBy = "HE_THONG_BAN_HANG"
+            };
+
+            var c3 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-CR0192",
+                Vin = "KMHE281BBSA334455",
+                ModelCode = "CR15",
+                ModelName = "Creta 1.5 Cao Cấp",
+                SpecCode = "CR15-PRE-02",
+                SpecDescription = "Creta 1.5 CVT bản cao cấp 2 tông màu",
+                ColorCode = "R2N",
+                ColorName = "Đỏ đô nóc đen",
+                EngineNo = "G4FL-334455",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hà Nội - Đài Tư",
+                SoCode = "ORD2603010003",
+                PriceActual = 740000000m,
+                PaymentDepositAmount = 0m,
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 0m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                CarCancelType = null,
+                CarCancelRemark = "Cảnh báo sớm: Đại lý chậm nộp UNC thanh toán cọc 10% quá 5 ngày, nguy cơ bị hủy ghép VIN",
+                CarCancelDate = null,
+                CarCancelBy = null,
+                FlagEarlyCancel = "1", // Xe sắp bị hủy
+                FlagMapVIN = "1",
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-10),
+                LogLUDateTime = DateTime.Today.AddDays(-1),
+                LogLUBy = "Đặng Phương Nam (Phòng Bán buôn HTC)"
+            };
+
+            var c4 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "2605C64655BN7I-CKD",
+                Vin = "KMHE281BBSA556677",
+                ModelCode = "SF25",
+                ModelName = "Santa Fe 2.5 Xăng Cao Cấp",
+                SpecCode = "SF25-PRE-01",
+                SpecDescription = "Santa Fe 2.5 CKD xăng cao cấp",
+                ColorCode = "WH1",
+                ColorName = "Trắng",
+                EngineNo = "G4KP-556677",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hyundai Ninh Bình",
+                SoCode = "ORD2603010008",
+                PriceActual = 1350000000m,
+                PaymentDepositAmount = 0m,
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 0m,
+                FlagActive = "0", // ĐÃ HỦY
+                FlagAllowChangeVIN = "1",
+                CarCancelType = "CCT02",
+                CarCancelRemark = "Khách hàng hủy hợp đồng mua xe do chuyển công tác nước ngoài, đại lý xin hủy xe để hoàn cọc",
+                CarCancelDate = DateTime.Today.AddDays(-12),
+                CarCancelBy = "Lê Văn Hùng (Chuyên viên Điều phối NPP)",
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "0",
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-30),
+                LogLUDateTime = DateTime.Today.AddDays(-12),
+                LogLUBy = "Lê Văn Hùng (Chuyên viên Điều phối NPP)"
+            };
+
+            var c5 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "2605C64656BN7I-CKD",
+                Vin = "KMHE281BBSA667788",
+                ModelCode = "TU20",
+                ModelName = "Tucson 2.0 Dầu Cao Cấp",
+                SpecCode = "TU20-DSL-02",
+                SpecDescription = "Tucson 2.0 Diesel máy dầu đặc biệt",
+                ColorCode = "BK1",
+                ColorName = "Đen",
+                EngineNo = "D4HD-667788",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                StorageCode = "KHO_TONG_SG",
+                StorageName = "Kho Tổng Nam Bộ Hiệp Phước",
+                SoCode = "ORD2603010009",
+                PriceActual = 1060000000m,
+                PaymentDepositAmount = 0m,
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 0m,
+                FlagActive = "0", // ĐÃ HỦY
+                FlagAllowChangeVIN = "1",
+                CarCancelType = "CCT03",
+                CarCancelRemark = "Đại lý Nam Trung quá hạn mở thư bảo lãnh ngân hàng 15 ngày làm việc theo hợp đồng bán buôn",
+                CarCancelDate = DateTime.Today.AddDays(-8),
+                CarCancelBy = "Nguyễn Thị Phương (Phòng Quản lý Bán buôn HTC)",
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "0",
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-28),
+                LogLUDateTime = DateTime.Today.AddDays(-8),
+                LogLUBy = "Nguyễn Thị Phương (Phòng Quản lý Bán buôn HTC)"
+            };
+
+            var c6 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "2605C64657BN7I-CKD",
+                Vin = "KMHE281BBSA778899",
+                ModelCode = "I10",
+                ModelName = "Grand i10 Sedan 1.2 AT",
+                SpecCode = "I10-SED-01",
+                SpecDescription = "Grand i10 Sedan 1.2 số tự động",
+                ColorCode = "SL1",
+                ColorName = "Bạc",
+                EngineNo = "G4LA-778899",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hyundai Ninh Bình",
+                SoCode = "ORD2603010010",
+                PriceActual = 435000000m,
+                PaymentDepositAmount = 0m,
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 0m,
+                FlagActive = "0", // ĐÃ HỦY
+                FlagAllowChangeVIN = "1",
+                CarCancelType = "CCT01",
+                CarCancelRemark = "Nhà máy HTMV phát hiện lỗi cụm thước lái trong kiểm định xuất xưởng, yêu cầu hủy lệnh cấp cho đại lý",
+                CarCancelDate = DateTime.Today.AddDays(-5),
+                CarCancelBy = "Hoàng Minh Trí (KCS Nhà máy HTMV)",
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "0",
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-15),
+                LogLUDateTime = DateTime.Today.AddDays(-5),
+                LogLUBy = "Hoàng Minh Trí (KCS Nhà máy HTMV)"
+            };
+
+            var c7 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "2605C64658BN7I-CKD",
+                Vin = "KMHE281BBSA889900",
+                ModelCode = "EL16",
+                ModelName = "Elantra 1.6 AT",
+                SpecCode = "EL16-STD-01",
+                SpecDescription = "Elantra 1.6 AT Sedan",
+                ColorCode = "RD1",
+                ColorName = "Đỏ đô",
+                EngineNo = "G4FG-889900",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hà Nội - Đài Tư",
+                SoCode = "ORD2603010011",
+                PriceActual = 669000000m,
+                PaymentDepositAmount = 0m,
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 0m,
+                FlagActive = "0", // ĐÃ HỦY
+                FlagAllowChangeVIN = "1",
+                CarCancelType = "CCT04",
+                CarCancelRemark = "Điều chuyển tái phân bổ lô xe cho hợp đồng cung ứng xe fleet doanh nghiệp Mai Linh",
+                CarCancelDate = DateTime.Today.AddDays(-2),
+                CarCancelBy = "Lê Văn Hùng (Chuyên viên Điều phối NPP)",
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "0",
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-12),
+                LogLUDateTime = DateTime.Today.AddDays(-2),
+                LogLUBy = "Lê Văn Hùng (Chuyên viên Điều phối NPP)"
+            };
+
+            var c8 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-CS2001",
+                Vin = "KMHE281BBSA112233",
+                ModelCode = "CS20",
+                ModelName = "Custin 2.0T Cao Cấp",
+                SpecCode = "CS20-PRE-01",
+                SpecDescription = "Custin 2.0 Turbo Bản Cao Cấp 7 chỗ",
+                ColorCode = "WW1",
+                ColorName = "Trắng tuyết",
+                EngineNo = "G4NN-112233",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                StorageCode = "SHOWROOM_DONGDO",
+                StorageName = "Showroom Hyundai Đông Đô",
+                SoCode = "ORD2603010012",
+                PriceActual = 999000000m,
+                PaymentDepositAmount = 0m,
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 0m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                CarCancelType = null,
+                CarCancelRemark = "Xe lái thử phục vụ khách hàng trải nghiệm tại đại lý",
+                CarCancelDate = null,
+                CarCancelBy = null,
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "0",
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "1", // Xe lái thử Demo
+                CreatedAt = DateTime.Today.AddDays(-18),
+                LogLUDateTime = DateTime.Today.AddDays(-18),
+                LogLUBy = "DEALER_ADMIN"
+            };
+
+            var c9 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-AC1401",
+                Vin = "KMHE281BBSA223344",
+                ModelCode = "AC14",
+                ModelName = "Accent 1.4 AT",
+                SpecCode = "AC14-STD-01",
+                SpecDescription = "Accent 1.4 AT Sedan gia đình",
+                ColorCode = "SL2",
+                ColorName = "Bạc",
+                EngineNo = "G4LC-223344",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hyundai Ninh Bình",
+                SoCode = "ORD2603010015",
+                PriceActual = 542000000m,
+                PaymentDepositAmount = 0m,
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 0m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                CarCancelType = null,
+                CarCancelRemark = null,
+                CarCancelDate = null,
+                CarCancelBy = null,
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "1",
+                FlagCarDeliveryOrder = "1",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-8),
+                LogLUDateTime = DateTime.Today.AddDays(-8),
+                LogLUBy = "HE_THONG_BAN_HANG"
+            };
+
+            db.Cars.AddRange(c1, c2, c3, c4, c5, c6, c7, c8, c9);
+
+            var logs = new List<CarCancelLog>
+            {
+                new CarCancelLog
+                {
+                    OrgId = orgId,
+                    CarId = "2605C64655BN7I-CKD",
+                    Vin = "KMHE281BBSA556677",
+                    Action = "Cancel",
+                    CancelType = "CCT02",
+                    Remark = "Khách hàng hủy hợp đồng mua xe do chuyển công tác nước ngoài",
+                    PerformedBy = "Lê Văn Hùng (Chuyên viên Điều phối NPP)",
+                    PerformedAt = DateTime.Today.AddDays(-12)
+                },
+                new CarCancelLog
+                {
+                    OrgId = orgId,
+                    CarId = "2605C64656BN7I-CKD",
+                    Vin = "KMHE281BBSA667788",
+                    Action = "Cancel",
+                    CancelType = "CCT03",
+                    Remark = "Đại lý Nam Trung quá hạn mở thư bảo lãnh ngân hàng 15 ngày làm việc",
+                    PerformedBy = "Nguyễn Thị Phương (Phòng Quản lý Bán buôn HTC)",
+                    PerformedAt = DateTime.Today.AddDays(-8)
+                },
+                new CarCancelLog
+                {
+                    OrgId = orgId,
+                    CarId = "2605C64657BN7I-CKD",
+                    Vin = "KMHE281BBSA778899",
+                    Action = "Cancel",
+                    CancelType = "CCT01",
+                    Remark = "Nhà máy HTMV phát hiện lỗi cụm thước lái trong kiểm định xuất xưởng",
+                    PerformedBy = "Hoàng Minh Trí (KCS Nhà máy HTMV)",
+                    PerformedAt = DateTime.Today.AddDays(-5)
+                },
+                new CarCancelLog
+                {
+                    OrgId = orgId,
+                    CarId = "2605C64658BN7I-CKD",
+                    Vin = "KMHE281BBSA889900",
+                    Action = "Cancel",
+                    CancelType = "CCT04",
+                    Remark = "Điều chuyển tái phân bổ lô xe cho hợp đồng cung ứng xe fleet doanh nghiệp Mai Linh",
+                    PerformedBy = "Lê Văn Hùng (Chuyên viên Điều phối NPP)",
+                    PerformedAt = DateTime.Today.AddDays(-2)
+                },
+                new CarCancelLog
+                {
+                    OrgId = orgId,
+                    CarId = "CAR2026-CR0192",
+                    Vin = "KMHE281BBSA334455",
+                    Action = "UpdateFlags",
+                    CancelType = null,
+                    Remark = "Cập nhật cờ điều hành: MapVIN=1, EarlyCancel=1, CarDO=0, TestCar=0. Ghi chú cảnh báo chậm thanh toán",
+                    PerformedBy = "Đặng Phương Nam (Phòng Bán buôn HTC)",
+                    PerformedAt = DateTime.Today.AddDays(-1)
+                }
+            };
+            db.CarCancelLogs.AddRange(logs);
+
             await db.SaveChangesAsync();
         }
     }

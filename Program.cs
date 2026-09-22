@@ -50,6 +50,7 @@ builder.Services.AddScoped<ICarTestCarService, CarTestCarService>();
 builder.Services.AddScoped<ICarBodyRequestService, CarBodyRequestService>();
 builder.Services.AddScoped<IDealerDriveTestService, DealerDriveTestService>();
 builder.Services.AddScoped<IStorageRearrangeCBService, StorageRearrangeCBService>();
+builder.Services.AddScoped<ICarCancelService, CarCancelService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2431,6 +2432,56 @@ app.MapPost("/api/rearrange-cb/{stoRearCBNo}/cancel", async (string stoRearCBNo,
         var r = await svc.CancelAsync(stoRearCBNo, dto);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy lệnh điều chuyển đóng thùng {stoRearCBNo}." }) : Results.Ok(r);
     }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Hủy Xe Ô tô & Khôi phục Xe Hủy / Điều Hành Cờ Xe (Vehicle Cancellation Management - DMS.Sales CarCancelController / Car.1.cs / FrmMngCarCancel / FrmCarCancel / FrmCapNhatTTHuyXe) =====
+app.MapGet("/api/car-cancels", async (ICarCancelService svc, string? carCancelType, string? carId, string? vin, string? modelCode, string? dealerCode, string? soCode, string? flagEarlyCancel, string? flagActive, DateTime? carCancelDateFrom, DateTime? carCancelDateTo) =>
+    Results.Ok(await svc.SearchAsync(new CarCancelSearchFilterDto(carCancelType, carId, vin, modelCode, dealerCode, soCode, flagEarlyCancel, flagActive ?? "0", carCancelDateFrom, carCancelDateTo)))).RequireAuthorization();
+
+app.MapGet("/api/car-cancels/stats", async (ICarCancelService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/car-cancels/reasons", async (ICarCancelService svc) =>
+    Results.Ok(await svc.GetReasonsAsync())).RequireAuthorization();
+
+app.MapGet("/api/car-cancels/eligible-cars", async (ICarCancelService svc, string? dealerCode, string? modelCode) =>
+    Results.Ok(await svc.GetEligibleToCancelAsync(dealerCode, modelCode))).RequireAuthorization();
+
+app.MapGet("/api/car-cancels/logs", async (ICarCancelService svc, string? carId, string? vin) =>
+    Results.Ok(await svc.GetLogsAsync(carId, vin))).RequireAuthorization();
+
+app.MapGet("/api/car-cancels/{carId}", async (string carId, ICarCancelService svc) =>
+{
+    var r = await svc.GetByIdAsync(carId);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy thông tin xe với mã định danh hoặc số khung '{carId}'." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/car-cancels", async (CancelCarInputDto dto, ICarCancelService svc) =>
+{
+    try { return Results.Ok(await svc.CancelAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/car-cancels/{carId}/flags", async (string carId, UpdateCarFlagsDto dto, ICarCancelService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateFlagsAsync(carId, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy thông tin xe với mã định danh '{carId}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-cancels/restore-batch", async (BatchCarIdsDto dto, ICarCancelService svc) =>
+{
+    try { return Results.Ok(await svc.RestoreBatchAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-cancels/cancel-batch", async (BatchCarCancelDto dto, ICarCancelService svc) =>
+{
+    try { return Results.Ok(await svc.CancelBatchAsync(dto)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
