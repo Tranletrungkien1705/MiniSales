@@ -1145,6 +1145,59 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(TestCarId) REFERENCES CarTestCars(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarBodyRequests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CBReqNo TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    StorageCodeTo TEXT NOT NULL,
+                    StorageNameTo TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    RejectDate TEXT,
+                    RejectBy TEXT,
+                    CancelReason TEXT,
+                    CancelDate TEXT,
+                    CancelBy TEXT,
+                    CreatedDate TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    ApprovedDate TEXT,
+                    ApprovedBy TEXT,
+                    CompletedDate TEXT,
+                    CompletedBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarBodyRequests_OrgId_CBReqNo ON CarBodyRequests(OrgId, CBReqNo);
+
+                CREATE TABLE IF NOT EXISTS CarBodyRequestDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CBRequestId INTEGER NOT NULL,
+                    CBReqNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    ModelCode TEXT,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    StorageCodeFrom TEXT NOT NULL,
+                    StorageNameFrom TEXT,
+                    StorageCodeTo TEXT NOT NULL,
+                    StorageNameTo TEXT,
+                    LoaiThung TEXT NOT NULL,
+                    ActualSpec TEXT,
+                    TypeCB TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    InspectionResult TEXT,
+                    SerialNo TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(CBRequestId) REFERENCES CarBodyRequests(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -4775,6 +4828,250 @@ public static class Seeder
             };
 
             db.TestCars.AddRange(tc1, tc2, tc3, tc4, tc5);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.BodyRequests.AnyAsync(o => o.OrgId == orgId))
+        {
+            var cbr1 = new CarBodyRequest
+            {
+                OrgId = orgId,
+                CBReqNo = "2603CBR000001",
+                Status = CarBodyRequestStatus.Completed,
+                TotalCars = 2,
+                StorageCodeTo = "KHO_DT_01",
+                StorageNameTo = "Xưởng Đóng Thùng Chuyên Dụng Hiệp Hòa",
+                Remark = "Đóng thùng kín Inox 2 lớp tiêu chuẩn vận chuyển hàng bưu chính cho dòng Mighty EX8",
+                CreatedDate = DateTime.Today.AddDays(-14),
+                CreatedBy = "NPP_PLANNING_CV",
+                ApprovedDate = DateTime.Today.AddDays(-13),
+                ApprovedBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                CompletedDate = DateTime.Today.AddDays(-2),
+                CompletedBy = "Nguyễn Văn Hùng (Kỹ sư Giám sát Xưởng Đóng Thùng Hiệp Hòa)",
+                LUDateTime = DateTime.Today.AddDays(-2),
+                LUBy = "Nguyễn Văn Hùng (Kỹ sư Giám sát Xưởng Đóng Thùng Hiệp Hòa)",
+                Details = new List<CarBodyRequestDetail>
+                {
+                    new CarBodyRequestDetail
+                    {
+                        CBReqNo = "2603CBR000001",
+                        CarId = "CAR2026-EX8-881",
+                        Vin = "KMHEC81BBSA600881",
+                        Model = "Hyundai Mighty EX8 GT S2",
+                        ModelCode = "EX8",
+                        SpecCode = "EX8-CHASSIS-01",
+                        SpecDescription = "Mighty EX8 GT S2 Sắt xi bản dài",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng",
+                        EngineNo = "D4CC-600881",
+                        StorageCodeFrom = "KHO_TONG_HN",
+                        StorageNameFrom = "Kho Tổng Hyundai Ninh Bình",
+                        StorageCodeTo = "KHO_DT_01",
+                        StorageNameTo = "Xưởng Đóng Thùng Chuyên Dụng Hiệp Hòa",
+                        LoaiThung = "Thùng kín Inox",
+                        ActualSpec = "Thùng kín Inox 304 dày 0.8mm dập sóng mở cửa hông",
+                        TypeCB = "Y",
+                        Status = CarBodyRequestDtlStatus.Completed,
+                        InspectionResult = "PASSED - Đạt chuẩn an toàn kỹ thuật Cục Đăng Kiểm",
+                        SerialNo = "CB-2026-HH-0118",
+                        Remark = "Đã hoàn thành bàn giao nghiệm thu xuất xưởng"
+                    },
+                    new CarBodyRequestDetail
+                    {
+                        CBReqNo = "2603CBR000001",
+                        CarId = "CAR2026-EX8-882",
+                        Vin = "KMHEC81BBSA600882",
+                        Model = "Hyundai Mighty EX8 GT S2",
+                        ModelCode = "EX8",
+                        SpecCode = "EX8-CHASSIS-01",
+                        SpecDescription = "Mighty EX8 GT S2 Sắt xi bản dài",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng",
+                        EngineNo = "D4CC-600882",
+                        StorageCodeFrom = "KHO_TONG_HN",
+                        StorageNameFrom = "Kho Tổng Hyundai Ninh Bình",
+                        StorageCodeTo = "KHO_DT_01",
+                        StorageNameTo = "Xưởng Đóng Thùng Chuyên Dụng Hiệp Hòa",
+                        LoaiThung = "Thùng kín Inox",
+                        ActualSpec = "Thùng kín Inox 304 dày 0.8mm dập sóng mở cửa hông",
+                        TypeCB = "Y",
+                        Status = CarBodyRequestDtlStatus.Completed,
+                        InspectionResult = "PASSED - Đạt chuẩn an toàn kỹ thuật Cục Đăng Kiểm",
+                        SerialNo = "CB-2026-HH-0119",
+                        Remark = "Đã hoàn thành bàn giao nghiệm thu xuất xưởng"
+                    }
+                }
+            };
+
+            var cbr2 = new CarBodyRequest
+            {
+                OrgId = orgId,
+                CBReqNo = "2603CBR000002",
+                Status = CarBodyRequestStatus.Approved,
+                TotalCars = 1,
+                StorageCodeTo = "KHO_DT_QUYENAUTO",
+                StorageNameTo = "Xưởng Đóng Thùng Quyền Auto (Đông Lạnh)",
+                Remark = "Gia công đóng thùng đông lạnh âm sâu (-18 độ C) vận chuyển dược phẩm vắc-xin cho xe New Porter H150",
+                CreatedDate = DateTime.Today.AddDays(-6),
+                CreatedBy = "NPP_PLANNING_CV",
+                ApprovedDate = DateTime.Today.AddDays(-5),
+                ApprovedBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                LUDateTime = DateTime.Today.AddDays(-5),
+                LUBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                Details = new List<CarBodyRequestDetail>
+                {
+                    new CarBodyRequestDetail
+                    {
+                        CBReqNo = "2603CBR000002",
+                        CarId = "CAR2026-H150-771",
+                        Vin = "KMHEB81BBSA500771",
+                        Model = "Hyundai New Porter H150",
+                        ModelCode = "H150",
+                        SpecCode = "H150-CHASSIS-02",
+                        SpecDescription = "New Porter H150 Sắt xi cabin đơn",
+                        ColorCode = "BL1",
+                        ColorName = "Xanh Hyundai",
+                        EngineNo = "D4CB-500771",
+                        StorageCodeFrom = "KHO_TONG_SG",
+                        StorageNameFrom = "Kho Tổng Nam Bộ Hiệp Phước",
+                        StorageCodeTo = "KHO_DT_QUYENAUTO",
+                        StorageNameTo = "Xưởng Đóng Thùng Quyền Auto (Đông Lạnh)",
+                        LoaiThung = "Thùng đông lạnh",
+                        ActualSpec = "Thùng Composite Foam PU cách nhiệt dày 80mm máy lạnh Thermal Master T1400",
+                        TypeCB = "N",
+                        Status = CarBodyRequestDtlStatus.Approved,
+                        Remark = "Đang tiến hành lắp khung thùng và dàn lạnh tại xưởng Quyền Auto"
+                    }
+                }
+            };
+
+            var cbr3 = new CarBodyRequest
+            {
+                OrgId = orgId,
+                CBReqNo = "2603CBR000003",
+                Status = CarBodyRequestStatus.Pending,
+                TotalCars = 1,
+                StorageCodeTo = "KHO_DT_02",
+                StorageNameTo = "Xưởng Đóng Thùng Ô Tô Nam Việt",
+                Remark = "Đóng thùng mui bạt 5 bửng mở bọc tôn mạ kẽm cho xe tải trung Hyundai New Mighty 110SP",
+                CreatedDate = DateTime.Today.AddDays(-1),
+                CreatedBy = "DEALER_COMMERCIAL_ADMIN",
+                LUDateTime = DateTime.Today.AddDays(-1),
+                LUBy = "DEALER_COMMERCIAL_ADMIN",
+                Details = new List<CarBodyRequestDetail>
+                {
+                    new CarBodyRequestDetail
+                    {
+                        CBReqNo = "2603CBR000003",
+                        CarId = "CAR2026-110SP-661",
+                        Vin = "KMHEE81BBSA700661",
+                        Model = "Hyundai New Mighty 110SP",
+                        ModelCode = "110SP",
+                        SpecCode = "110SP-CHASSIS-01",
+                        SpecDescription = "Mighty 110SP 7 tấn sắt xi",
+                        ColorCode = "BL1",
+                        ColorName = "Xanh Hyundai",
+                        EngineNo = "D4GA-700661",
+                        StorageCodeFrom = "KHO_TONG_HN",
+                        StorageNameFrom = "Kho Tổng Hyundai Ninh Bình",
+                        StorageCodeTo = "KHO_DT_02",
+                        StorageNameTo = "Xưởng Đóng Thùng Ô Tô Nam Việt",
+                        LoaiThung = "Thùng mui bạt",
+                        ActualSpec = "Thùng mui bạt tiêu chuẩn 5 bửng bạt simili Hàn Quốc",
+                        TypeCB = "N",
+                        Status = CarBodyRequestDtlStatus.Pending,
+                        Remark = "Chờ phê duyệt lệnh điều chuyển và chi phí đóng thùng"
+                    }
+                }
+            };
+
+            var cbr4 = new CarBodyRequest
+            {
+                OrgId = orgId,
+                CBReqNo = "2603CBR000004",
+                Status = CarBodyRequestStatus.Rejected,
+                TotalCars = 1,
+                StorageCodeTo = "KHO_DT_01",
+                StorageNameTo = "Xưởng Đóng Thùng Chuyên Dụng Hiệp Hòa",
+                Remark = "Yêu cầu đóng thùng lửng chở kính chuyên dụng cho xe Mighty W11S",
+                RejectReason = "Bản vẽ thiết kế giá chữ A chở kính chưa được Cục Đăng Kiểm phê duyệt mẫu hồ sơ hoán cải",
+                RejectDate = DateTime.Today.AddDays(-4),
+                RejectBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                CreatedDate = DateTime.Today.AddDays(-6),
+                CreatedBy = "DEALER_COMMERCIAL_ADMIN",
+                LUDateTime = DateTime.Today.AddDays(-4),
+                LUBy = "Vũ Thành Long (Phó Giám đốc Khối Xe Thương Mại NPP)",
+                Details = new List<CarBodyRequestDetail>
+                {
+                    new CarBodyRequestDetail
+                    {
+                        CBReqNo = "2603CBR000004",
+                        CarId = "CAR2026-W11S-551",
+                        Vin = "KMHEF81BBSA800551",
+                        Model = "Hyundai Mighty W11S",
+                        ModelCode = "W11S",
+                        SpecCode = "W11S-CHASSIS-01",
+                        SpecDescription = "Mighty W11S Tải trung sắt xi",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng",
+                        EngineNo = "D4GA-800551",
+                        StorageCodeFrom = "KHO_TONG_SG",
+                        StorageNameFrom = "Kho Tổng Nam Bộ Hiệp Phước",
+                        StorageCodeTo = "KHO_DT_01",
+                        StorageNameTo = "Xưởng Đóng Thùng Chuyên Dụng Hiệp Hòa",
+                        LoaiThung = "Thùng lửng chuyên dụng",
+                        ActualSpec = "Thùng lửng gắn giá chữ A chở kính",
+                        TypeCB = "N",
+                        Status = CarBodyRequestDtlStatus.Rejected,
+                        Remark = "Hồ sơ hoán cải bị từ chối"
+                    }
+                }
+            };
+
+            var cbr5 = new CarBodyRequest
+            {
+                OrgId = orgId,
+                CBReqNo = "2603CBR000005",
+                Status = CarBodyRequestStatus.Cancelled,
+                TotalCars = 1,
+                StorageCodeTo = "KHO_DT_02",
+                StorageNameTo = "Xưởng Đóng Thùng Ô Tô Nam Việt",
+                Remark = "Đóng thùng kín Inox cho Mighty EX8 GTL",
+                CancelReason = "Khách hàng đổi nhu cầu sang mua xe sắt xi tự về đóng thùng theo thiết kế chuyên dùng riêng của doanh nghiệp",
+                CancelDate = DateTime.Today.AddDays(-8),
+                CancelBy = "DEALER_COMMERCIAL_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-10),
+                CreatedBy = "DEALER_COMMERCIAL_ADMIN",
+                LUDateTime = DateTime.Today.AddDays(-8),
+                LUBy = "DEALER_COMMERCIAL_ADMIN",
+                Details = new List<CarBodyRequestDetail>
+                {
+                    new CarBodyRequestDetail
+                    {
+                        CBReqNo = "2603CBR000005",
+                        CarId = "CAR2026-EX8L-441",
+                        Vin = "KMHEC81BBSA600441",
+                        Model = "Hyundai Mighty EX8 GTL",
+                        ModelCode = "EX8L",
+                        SpecCode = "EX8L-CHASSIS-01",
+                        SpecDescription = "Mighty EX8 GTL Sắt xi siêu dài",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng",
+                        EngineNo = "D4CC-600441",
+                        StorageCodeFrom = "KHO_TONG_HP",
+                        StorageNameFrom = "Kho Trung Chuyển Hải Phòng",
+                        StorageCodeTo = "KHO_DT_02",
+                        StorageNameTo = "Xưởng Đóng Thùng Ô Tô Nam Việt",
+                        LoaiThung = "Thùng kín Inox",
+                        ActualSpec = "Thùng kín Inox tiêu chuẩn",
+                        TypeCB = "N",
+                        Status = CarBodyRequestDtlStatus.Cancelled,
+                        Remark = "Đã hủy theo văn bản đề nghị của đại lý"
+                    }
+                }
+            };
+
+            db.BodyRequests.AddRange(cbr1, cbr2, cbr3, cbr4, cbr5);
             await db.SaveChangesAsync();
         }
     }

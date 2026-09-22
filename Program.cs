@@ -47,6 +47,7 @@ builder.Services.AddScoped<IDealerContractCancelBankMDService, DealerContractCan
 builder.Services.AddScoped<IPaymentGuaranteeClaimService, PaymentGuaranteeClaimService>();
 builder.Services.AddScoped<IBankBillMinutesService, BankBillMinutesService>();
 builder.Services.AddScoped<ICarTestCarService, CarTestCarService>();
+builder.Services.AddScoped<ICarBodyRequestService, CarBodyRequestService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2121,6 +2122,118 @@ app.MapDelete("/api/test-cars/{testCarCode}/cars/{vin}", async (string testCarCo
     {
         var r = await svc.RemoveCarAsync(testCarCode, vin);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Yêu cầu Đóng Thùng Xe Ô tô Thương Mại (Car Body Building Request - DMS.Sales Sto_CBReq / StoCBReqController / Storage.cs) =====
+app.MapPost("/api/body-requests", async (CreateCarBodyRequestDto dto, ICarBodyRequestService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/body-requests", async (ICarBodyRequestService svc, string? status, string? vin, string? storageCodeTo, string? cbReqNo, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, vin, storageCodeTo, cbReqNo, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/body-requests/eligible-cars", async (ICarBodyRequestService svc, string? storageCode) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(storageCode))).RequireAuthorization();
+
+app.MapGet("/api/body-requests/stats", async (ICarBodyRequestService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/body-requests/{cbReqNo}", async (string cbReqNo, ICarBodyRequestService svc) =>
+{
+    var r = await svc.DetailAsync(cbReqNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/body-requests/{cbReqNo}", async (string cbReqNo, UpdateCarBodyRequestDto dto, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(cbReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/body-requests/{cbReqNo}", async (string cbReqNo, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(cbReqNo);
+        return !ok ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(new { success = true, cbReqNo });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/body-requests/{cbReqNo}/cars/{vin}", async (string cbReqNo, string vin, UpdateCarBodyDetailLineDto dto, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.DetailUpdateAsync(cbReqNo, vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/body-requests/{cbReqNo}/cars", async (string cbReqNo, List<AddCarBodyDetailLineDto> items, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(cbReqNo, items);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/body-requests/{cbReqNo}/cars/{vin}", async (string cbReqNo, string vin, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(cbReqNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/body-requests/{cbReqNo}/approve", async (string cbReqNo, ApproveCarBodyRequestDto? dto, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(cbReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/body-requests/{cbReqNo}/reject", async (string cbReqNo, RejectCarBodyRequestDto dto, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(cbReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/body-requests/{cbReqNo}/cancel", async (string cbReqNo, CancelCarBodyRequestDto dto, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(cbReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/body-requests/{cbReqNo}/complete", async (string cbReqNo, CompleteCarBodyRequestDto? dto, ICarBodyRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.CompleteAsync(cbReqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu đóng thùng {cbReqNo}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

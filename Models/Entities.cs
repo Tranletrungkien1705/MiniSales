@@ -1415,4 +1415,68 @@ public sealed class CarTestCarDetail
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
+/// <summary>Trạng thái Yêu cầu đóng thùng xe ô tô thương mại (DMS.Sales Sto_CBReq CBReqStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [NPP duyệt lệnh đóng thùng], Completed = 'D' [Nghiệm thu hoàn tất đóng thùng], Rejected = 'R' [Từ chối], Cancelled = 'C' [Đã hủy]).</summary>
+public enum CarBodyRequestStatus { Pending = 0, Approved = 1, Completed = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Trạng thái dòng xe trong yêu cầu đóng thùng (DMS.Sales Sto_CBReqDetail CBReqDtlStatus: Pending = 'P', Approved = 'A', Completed = 'D', Rejected = 'R', Cancelled = 'C').</summary>
+public enum CarBodyRequestDtlStatus { Pending = 0, Approved = 1, Completed = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Yêu cầu đóng thùng xe ô tô thương mại / xe tải (DMS.Sales Sto_CBReq / StoCBReqController / Storage.cs / StoCBReq.txt / YC Đóng Thùng.xlsx): quy trình điều chuyển xe chassis chưa đóng thùng (TypeCB='N') sang xưởng/kho đóng thùng (StorageType=DT), quản lý loại thùng (thùng mui bạt, thùng kín, thùng lửng, thùng đông lạnh...), NPP thẩm định phê duyệt (ApproveHQ), cập nhật chi tiết dòng xe (DetailUpdateHQ), từ chối (RejectHQ), hủy yêu cầu (CancelHQ) và nghiệm thu kỹ thuật xuất xưởng hoàn tất đóng thùng (CompleteHQ đồng bộ TypeCB='Y').</summary>
+public sealed class CarBodyRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CBReqNo { get; set; } = ""; // Số yêu cầu đóng thùng (PK CBReqNo, format: {yyMM}CBR{seq:D6}, vd: 2603CBR000001)
+    public CarBodyRequestStatus Status { get; set; } = CarBodyRequestStatus.Pending; // Trạng thái: P -> A -> D / R / C
+    public int TotalCars { get; set; } // Tổng số lượng xe cần đóng thùng
+    public string StorageCodeTo { get; set; } = ""; // Kho/Xưởng đóng thùng đích (bắt buộc StorageType = DT)
+    public string? StorageNameTo { get; set; } // Tên xưởng đóng thùng (vd: Xưởng đóng thùng Hiệp Hòa, Nam Việt, Quyền Auto...)
+    public string? Remark { get; set; } // Ghi chú yêu cầu kỹ thuật đóng thùng
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public DateTime? RejectDate { get; set; }
+    public string? RejectBy { get; set; }
+    public string? CancelReason { get; set; } // Lý do hủy yêu cầu
+    public DateTime? CancelDate { get; set; }
+    public string? CancelBy { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.Now; // Ngày tạo yêu cầu
+    public string? CreatedBy { get; set; }
+    public DateTime? ApprovedDate { get; set; } // Ngày NPP phê duyệt
+    public string? ApprovedBy { get; set; }
+    public DateTime? CompletedDate { get; set; } // Ngày nghiệm thu hoàn tất đóng thùng
+    public string? CompletedBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<CarBodyRequestDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Yêu cầu đóng thùng (DMS.Sales Sto_CBReqDetail): theo dõi từng số khung VIN xe chassis, kho xuất bốc xe (StorageCodeFrom), xưởng nhận xe đóng thùng (StorageCodeTo), loại thùng cần đóng (LoaiThung), quy chuẩn thùng nghiệm thu và trạng thái xử lý.</summary>
+public sealed class CarBodyRequestDetail
+{
+    public long Id { get; set; }
+    public long CBRequestId { get; set; }
+    public string CBReqNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung VIN (17 ký tự)
+    public string Model { get; set; } = ""; // Model xe thương mại (Mighty EX8, Porter H150, Mighty W11S...)
+    public string? ModelCode { get; set; } // Mã model
+    public string? SpecCode { get; set; } // Mã cấu hình xe chassis
+    public string? SpecDescription { get; set; } // Mô tả cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu cabin
+    public string? ColorName { get; set; } // Tên màu sơn
+    public string? EngineNo { get; set; } // Số máy
+    public string StorageCodeFrom { get; set; } = ""; // Kho hiện tại đang lưu trữ xe sắt xi
+    public string? StorageNameFrom { get; set; } // Tên kho xuất xe
+    public string StorageCodeTo { get; set; } = ""; // Kho/Xưởng đóng thùng đích (StorageType = DT)
+    public string? StorageNameTo { get; set; } // Tên kho/xưởng đóng thùng
+    public string LoaiThung { get; set; } = ""; // Loại thùng: Thùng mui bạt, Thùng kín Inox, Thùng kín Composite, Thùng đông lạnh, Thùng lửng...
+    public string? ActualSpec { get; set; } // Cấu hình quy chuẩn thùng sau khi đóng xong
+    public string TypeCB { get; set; } = "N"; // Tình trạng đóng thùng: "N" = Chưa đóng thùng (chassis), "Y" = Đã hoàn tất đóng thùng
+    public CarBodyRequestDtlStatus Status { get; set; } = CarBodyRequestDtlStatus.Pending; // Trạng thái dòng: P -> A -> D / R / C
+    public string? InspectionResult { get; set; } // Kết quả nghiệm thu kỹ thuật thùng xe (vd: PASSED, Đạt chuẩn an toàn kỹ thuật)
+    public string? SerialNo { get; set; } // Số sê-ri phiếu xuất xưởng thùng xe
+    public string? Remark { get; set; } // Ghi chú chi tiết dòng xe
+}
+
+
 
