@@ -46,6 +46,7 @@ builder.Services.AddScoped<IDealerContractCancelMinutesService, DealerContractCa
 builder.Services.AddScoped<IDealerContractCancelBankMDService, DealerContractCancelBankMDService>();
 builder.Services.AddScoped<IPaymentGuaranteeClaimService, PaymentGuaranteeClaimService>();
 builder.Services.AddScoped<IBankBillMinutesService, BankBillMinutesService>();
+builder.Services.AddScoped<ICarTestCarService, CarTestCarService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2018,6 +2019,108 @@ app.MapDelete("/api/bank-bill-minutes/{bankBillMnNo}/cars/{vin}", async (string 
     {
         var r = await svc.RemoveCarAsync(bankBillMnNo, vin);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản bàn giao hối phiếu {bankBillMnNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Đề nghị & Phê duyệt Đăng ký Xe Lái Thử Đại lý (Car Test Car / Demo Car - DMS.Sales Car_TestCar / CarTestCarController / 05_QUAN_LY_XE.md) =====
+app.MapPost("/api/test-cars", async (CreateCarTestCarDto dto, ICarTestCarService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/test-cars", async (ICarTestCarService svc, string? status, string? dealerCode, string? model, string? vin, string? testCarCode, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, dealerCode, model, vin, testCarCode, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/test-cars/eligible-cars", async (ICarTestCarService svc, string? dealerCode) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/test-cars/stats", async (ICarTestCarService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/test-cars/{testCarCode}", async (string testCarCode, ICarTestCarService svc) =>
+{
+    var r = await svc.DetailAsync(testCarCode);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/test-cars/{testCarCode}", async (string testCarCode, UpdateCarTestCarDto dto, ICarTestCarService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(testCarCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/test-cars/{testCarCode}", async (string testCarCode, ICarTestCarService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(testCarCode);
+        return !ok ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(new { success = true, testCarCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/test-cars/{testCarCode}/approve1-hq", async (string testCarCode, Approve1CarTestCarDto? dto, ICarTestCarService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1HqAsync(testCarCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/test-cars/{testCarCode}/approve2-hq", async (string testCarCode, Approve2CarTestCarDto? dto, ICarTestCarService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2HqAsync(testCarCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/test-cars/{testCarCode}/reject-hq", async (string testCarCode, RejectCarTestCarDto dto, ICarTestCarService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectHqAsync(testCarCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/test-cars/{testCarCode}/cancel", async (string testCarCode, CancelCarTestCarDto dto, ICarTestCarService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(testCarCode, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/test-cars/{testCarCode}/cars", async (string testCarCode, List<AddTestCarItemDto> items, ICarTestCarService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(testCarCode, items);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/test-cars/{testCarCode}/cars/{vin}", async (string testCarCode, string vin, ICarTestCarService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(testCarCode, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xe lái thử {testCarCode} hoặc xe VIN {vin}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

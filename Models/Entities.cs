@@ -1355,3 +1355,64 @@ public sealed class BankBillMinutesDetail
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
+/// <summary>Trạng thái Đề nghị đăng ký xe lái thử Đại lý (DMS.Sales Car_TestCar TestCarStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [NPP duyệt kế hoạch Cấp 1], Finished = 'F' [NPP duyệt hoàn tất Cấp 2 và kích hoạt FlagTestCar = '1'], Rejected = 'R' [Từ chối], Cancelled = 'C' [Hủy]).</summary>
+public enum TestCarStatus { Pending = 0, Approved = 1, Finished = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Trạng thái dòng xe trong đề nghị đăng ký xe lái thử (DMS.Sales Car_TestCarDtl TestCarStatusDtl: Pending = 'P', Approved = 'A', Finished = 'F', Rejected = 'R', Cancelled = 'C').</summary>
+public enum TestCarDetailStatus { Pending = 0, Approved = 1, Finished = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Đề nghị / Phê duyệt Đăng ký Xe Lái Thử Đại lý - NPP (DMS.Sales Car_TestCar / CarTestCarController / 05_QUAN_LY_XE.md): Đại lý lập đề nghị đưa xe trong đơn hàng/kho vào đội xe Demo lái thử (TestCarCode format {yyMM}TC{seq:D4}), thời hạn hiệu lực lái thử (EffDateStart -> EffDateEnd), quy trình duyệt 2 cấp NPP (ApproveAHQ duyệt kế hoạch, ApproveFHQ duyệt chính thức đưa vào sử dụng và kích hoạt cờ xe lái thử FlagTestCar = '1' cho xe ô tô).</summary>
+public sealed class CarTestCar
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TestCarCode { get; set; } = ""; // Số đề nghị đăng ký xe lái thử (PK TestCarCode, format: {yyMM}TC{seq:D4}, vd: 2603TC0001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý đăng ký
+    public string DealerName { get; set; } = ""; // Tên đại lý (MD_DealerName)
+    public TestCarStatus TestCarStatus { get; set; } = TestCarStatus.Pending; // Trạng thái đề nghị: P -> A -> F / R / C
+    public int TotalCars { get; set; } // Tổng số xe đăng ký lái thử
+    public decimal TotalAmount { get; set; } // Tổng giá trị xe lái thử (VNĐ)
+    public string? Remark { get; set; } // Ghi chú / Mục đích đăng ký lái thử
+    public string? RejectReason { get; set; } // Lý do NPP từ chối duyệt
+    public DateTime? RejectDate { get; set; } // Ngày NPP từ chối
+    public string? RejectBy { get; set; } // Người từ chối
+    public string? CancelReason { get; set; } // Lý do hủy đề nghị
+    public DateTime? CancelledDate { get; set; } // Ngày hủy đề nghị
+    public string? CancelledBy { get; set; } // Người thực hiện hủy
+    public DateTime CreatedDate { get; set; } = DateTime.Now; // Ngày tạo đề nghị
+    public string? CreatedBy { get; set; } // Người tạo đề nghị
+    public DateTime? ApprovedDate { get; set; } // Ngày NPP thẩm định duyệt kế hoạch Cấp 1 (ApproveAHQ)
+    public string? ApprovedBy { get; set; } // Chuyên viên / Lãnh đạo NPP duyệt Cấp 1
+    public DateTime? FinishedDate { get; set; } // Ngày NPP phê duyệt hoàn tất Cấp 2 đưa vào sử dụng (ApproveFHQ)
+    public string? FinishedBy { get; set; } // Lãnh đạo NPP phê duyệt Cấp 2
+    public DateTime? LUDateTime { get; set; } // Thời gian cập nhật cuối
+    public string? LUBy { get; set; } // Người cập nhật cuối
+
+    public List<CarTestCarDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe trong Đề nghị đăng ký xe lái thử (DMS.Sales Car_TestCarDtl): liên kết số khung VIN, mã xe CarId, Model, Spec, Color, đơn giá, thời hạn hiệu lực lái thử (EffDateStart đến EffDateEnd), cờ xe lái thử FlagTestCar và trạng thái dòng xe.</summary>
+public sealed class CarTestCarDetail
+{
+    public long Id { get; set; }
+    public long TestCarId { get; set; }
+    public string TestCarCode { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung VIN xe (17 ký tự)
+    public string Model { get; set; } = ""; // Tên model xe (Santa Fe, Tucson, Creta, Accent...)
+    public string? ModelCode { get; set; } // Mã model
+    public string? SpecCode { get; set; } // Mã cấu hình xe (spec)
+    public string? SpecDescription { get; set; } // Mô tả bản xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? ColorName { get; set; } // Tên màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public string? SOCode { get; set; } // Số đơn đặt hàng liên kết (CC_SOCode)
+    public decimal UnitPriceActual { get; set; } // Giá xe thực tế (VNĐ)
+    public DateTime EffDateStart { get; set; } = DateTime.Today; // Thời gian đăng ký lái thử từ ngày
+    public DateTime EffDateEnd { get; set; } = DateTime.Today.AddMonths(6); // Thời gian đăng ký lái thử đến ngày
+    public bool FlagTestCar { get; set; } // Cờ xe lái thử (FlagTestCar: true khi duyệt hoàn tất Finished)
+    public TestCarDetailStatus Status { get; set; } = TestCarDetailStatus.Pending; // Trạng thái dòng xe: P -> A -> F / R / C
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
+

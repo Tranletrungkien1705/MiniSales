@@ -1095,6 +1095,56 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(BankBillMinutesId) REFERENCES BankBillMinutes(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarTestCars (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TestCarCode TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    TestCarStatus INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    RejectDate TEXT,
+                    RejectBy TEXT,
+                    CancelReason TEXT,
+                    CancelledDate TEXT,
+                    CancelledBy TEXT,
+                    CreatedDate TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    ApprovedDate TEXT,
+                    ApprovedBy TEXT,
+                    FinishedDate TEXT,
+                    FinishedBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarTestCars_OrgId_TestCarCode ON CarTestCars(OrgId, TestCarCode);
+
+                CREATE TABLE IF NOT EXISTS CarTestCarDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TestCarId INTEGER NOT NULL,
+                    TestCarCode TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    ModelCode TEXT,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    SOCode TEXT,
+                    UnitPriceActual REAL NOT NULL,
+                    EffDateStart TEXT NOT NULL,
+                    EffDateEnd TEXT NOT NULL,
+                    FlagTestCar INTEGER NOT NULL,
+                    Status INTEGER NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(TestCarId) REFERENCES CarTestCars(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -4492,6 +4542,239 @@ public static class Seeder
             };
 
             db.BankBillMinutes.AddRange(bbm1, bbm2, bbm3, bbm4, bbm5);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.TestCars.AnyAsync(o => o.OrgId == orgId))
+        {
+            var tc1 = new CarTestCar
+            {
+                OrgId = orgId,
+                TestCarCode = "2603TC0001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                TestCarStatus = TestCarStatus.Finished,
+                TotalCars = 2,
+                TotalAmount = 2090000000m,
+                Remark = "Đăng ký 02 xe Santa Fe & Creta làm xe lái thử showroom Đông Đô phục vụ chiến dịch lái thử trải nghiệm SUV Hyundai quý 1 & 2",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-30),
+                ApprovedDate = DateTime.Today.AddDays(-28),
+                ApprovedBy = "Lê Hoàng Quân (Trưởng phòng Bán hàng NPP)",
+                FinishedDate = DateTime.Today.AddDays(-26),
+                FinishedBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                LUDateTime = DateTime.Today.AddDays(-26),
+                LUBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                Details = new List<CarTestCarDetail>
+                {
+                    new CarTestCarDetail
+                    {
+                        TestCarCode = "2603TC0001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        ModelCode = "TM",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 xăng cao cấp dẫn động 4 bánh HTRAC",
+                        ColorCode = "WW2",
+                        ColorName = "Trắng ngọc trai",
+                        EngineNo = "G4KP-102941",
+                        SOCode = "ORD2603010001",
+                        UnitPriceActual = 1350000000m,
+                        EffDateStart = DateTime.Today.AddDays(-26),
+                        EffDateEnd = DateTime.Today.AddDays(339),
+                        FlagTestCar = true,
+                        Status = TestCarDetailStatus.Finished,
+                        Remark = "Xe demo showroom Đông Đô"
+                    },
+                    new CarTestCarDetail
+                    {
+                        TestCarCode = "2603TC0001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        ModelCode = "SU2",
+                        SpecCode = "CR15-PRE-02",
+                        SpecDescription = "Creta 1.5 CVT bản cao cấp",
+                        ColorCode = "R3R",
+                        ColorName = "Đỏ mận",
+                        EngineNo = "G4FL-334411",
+                        SOCode = "ORD2603010001",
+                        UnitPriceActual = 740000000m,
+                        EffDateStart = DateTime.Today.AddDays(-26),
+                        EffDateEnd = DateTime.Today.AddDays(339),
+                        FlagTestCar = true,
+                        Status = TestCarDetailStatus.Finished,
+                        Remark = "Xe lái thử đô thị B-SUV"
+                    }
+                }
+            };
+
+            var tc2 = new CarTestCar
+            {
+                OrgId = orgId,
+                TestCarCode = "2603TC0002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                TestCarStatus = TestCarStatus.Approved,
+                TotalCars = 1,
+                TotalAmount = 950000000m,
+                Remark = "Đăng ký xe Tucson 2.0 AT làm xe lái thử khách hàng tuyến đường dài và cao tốc",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-10),
+                ApprovedDate = DateTime.Today.AddDays(-8),
+                ApprovedBy = "Lê Hoàng Quân (Trưởng phòng Bán hàng NPP)",
+                LUDateTime = DateTime.Today.AddDays(-8),
+                LUBy = "Lê Hoàng Quân (Trưởng phòng Bán hàng NPP)",
+                Details = new List<CarTestCarDetail>
+                {
+                    new CarTestCarDetail
+                    {
+                        TestCarCode = "2603TC0002",
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        ModelCode = "NX4",
+                        SpecCode = "TU20-STD-01",
+                        SpecDescription = "Tucson 2.0 máy xăng số tự động tiêu chuẩn",
+                        ColorCode = "NKA",
+                        ColorName = "Đen Phantom",
+                        EngineNo = "G4NL-983102",
+                        SOCode = "ORD2602150002",
+                        UnitPriceActual = 950000000m,
+                        EffDateStart = DateTime.Today.AddDays(-8),
+                        EffDateEnd = DateTime.Today.AddDays(174),
+                        FlagTestCar = false,
+                        Status = TestCarDetailStatus.Approved,
+                        Remark = "Đã duyệt Cấp 1 chuyên viên, chờ lãnh đạo NPP ký phê duyệt Cấp 2"
+                    }
+                }
+            };
+
+            var tc3 = new CarTestCar
+            {
+                OrgId = orgId,
+                TestCarCode = "2603TC0003",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                TestCarStatus = TestCarStatus.Pending,
+                TotalCars = 1,
+                TotalAmount = 850000000m,
+                Remark = "Đại lý Tây Hồ đăng ký mới xe Custin 1.5T làm xe lái thử gia đình MPV 7 chỗ cao cấp",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-2),
+                LUDateTime = DateTime.Today.AddDays(-2),
+                LUBy = "DEALER_SALES_ADMIN",
+                Details = new List<CarTestCarDetail>
+                {
+                    new CarTestCarDetail
+                    {
+                        TestCarCode = "2603TC0003",
+                        CarId = "CAR2026-CU0211",
+                        Vin = "KMHE281BBSA556677",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        ModelCode = "KU",
+                        SpecCode = "CU15-PRE-01",
+                        SpecDescription = "Custin 1.5T máy xăng tăng áp cao cấp",
+                        ColorCode = "GY1",
+                        ColorName = "Xám kim loại",
+                        EngineNo = "G4FS-556677",
+                        SOCode = "ORD2603100001",
+                        UnitPriceActual = 850000000m,
+                        EffDateStart = DateTime.Today,
+                        EffDateEnd = DateTime.Today.AddMonths(6),
+                        FlagTestCar = false,
+                        Status = TestCarDetailStatus.Pending,
+                        Remark = "Hồ sơ mới gửi, chờ chuyên viên NPP thẩm tra"
+                    }
+                }
+            };
+
+            var tc4 = new CarTestCar
+            {
+                OrgId = orgId,
+                TestCarCode = "2603TC0004",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                TestCarStatus = TestCarStatus.Rejected,
+                TotalCars = 1,
+                TotalAmount = 620000000m,
+                Remark = "Đăng ký xe Stargazer X 1.5 làm xe lái thử bổ sung cho chi nhánh thứ 2",
+                RejectReason = "Đại lý đã sử dụng đủ định mức xe lái thử phân khúc MPV theo chính sách đại lý năm 2026 của NPP",
+                RejectDate = DateTime.Today.AddDays(-5),
+                RejectBy = "Lê Hoàng Quân (Trưởng phòng Bán hàng NPP)",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-7),
+                LUDateTime = DateTime.Today.AddDays(-5),
+                LUBy = "Lê Hoàng Quân (Trưởng phòng Bán hàng NPP)",
+                Details = new List<CarTestCarDetail>
+                {
+                    new CarTestCarDetail
+                    {
+                        TestCarCode = "2603TC0004",
+                        CarId = "CAR2026-SG0109",
+                        Vin = "KMHE281BBSA778899",
+                        Model = "Stargazer X 1.5 Cao Cấp",
+                        ModelCode = "KS",
+                        SpecCode = "SG15-PRE-01",
+                        SpecDescription = "Stargazer X 1.5 IVT bản cao cấp",
+                        ColorCode = "MB1",
+                        ColorName = "Xám từ tính",
+                        EngineNo = "G4FL-778899",
+                        SOCode = "ORD2603050001",
+                        UnitPriceActual = 620000000m,
+                        EffDateStart = DateTime.Today.AddDays(-7),
+                        EffDateEnd = DateTime.Today.AddDays(173),
+                        FlagTestCar = false,
+                        Status = TestCarDetailStatus.Rejected,
+                        Remark = "Từ chối duyệt theo quy định định mức xe demo"
+                    }
+                }
+            };
+
+            var tc5 = new CarTestCar
+            {
+                OrgId = orgId,
+                TestCarCode = "2603TC0005",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                TestCarStatus = TestCarStatus.Cancelled,
+                TotalCars = 1,
+                TotalAmount = 540000000m,
+                Remark = "Đăng ký xe Accent 1.5 AT làm xe demo",
+                CancelReason = "Đại lý chủ động xin hủy đề nghị do xe này đã được khách hàng ký hợp đồng mua bán buôn theo lô",
+                CancelledDate = DateTime.Today.AddDays(-12),
+                CancelledBy = "DEALER_SALES_ADMIN",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDate = DateTime.Today.AddDays(-15),
+                LUDateTime = DateTime.Today.AddDays(-12),
+                LUBy = "DEALER_SALES_ADMIN",
+                Details = new List<CarTestCarDetail>
+                {
+                    new CarTestCarDetail
+                    {
+                        TestCarCode = "2603TC0005",
+                        CarId = "CAR2026-AC0088",
+                        Vin = "KMHE281BBSA112233",
+                        Model = "Accent 1.5 AT Đặc Biệt",
+                        ModelCode = "BN7",
+                        SpecCode = "AC15-SPE-01",
+                        SpecDescription = "Accent 1.5 AT bản đặc biệt",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng tuyết",
+                        EngineNo = "G4FL-112233",
+                        SOCode = "ORD2602100001",
+                        UnitPriceActual = 540000000m,
+                        EffDateStart = DateTime.Today.AddDays(-15),
+                        EffDateEnd = DateTime.Today.AddDays(165),
+                        FlagTestCar = false,
+                        Status = TestCarDetailStatus.Cancelled,
+                        Remark = "Đã hủy theo đề nghị đại lý"
+                    }
+                }
+            };
+
+            db.TestCars.AddRange(tc1, tc2, tc3, tc4, tc5);
             await db.SaveChangesAsync();
         }
     }
