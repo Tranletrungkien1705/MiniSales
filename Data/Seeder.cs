@@ -493,6 +493,60 @@ public static class Seeder
                     LogDateTime TEXT NOT NULL,
                     FOREIGN KEY(ContractId) REFERENCES RetailContracts(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS DealerPayments (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PaymentNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    ContractNo TEXT,
+                    PaymentType INTEGER NOT NULL,
+                    PaymentMethod INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    PaymentDate TEXT NOT NULL,
+                    PaymentDueDate TEXT,
+                    PaymentEndDate TEXT,
+                    Status INTEGER NOT NULL,
+                    BankPaymentNo TEXT,
+                    BankCodeSend TEXT,
+                    BankAccountSend TEXT,
+                    BankCodeReceive TEXT,
+                    BankAccountReceive TEXT,
+                    Funds TEXT,
+                    BankLending TEXT,
+                    InterestRate REAL,
+                    LoanPeriod INTEGER,
+                    GuaranteeType TEXT,
+                    DepositPercent REAL NOT NULL,
+                    AccountingRecordNo TEXT,
+                    AccountingRecordDate TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ApprovedBy TEXT,
+                    ApprovedAt TEXT,
+                    FinishedBy TEXT,
+                    FinishedAt TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerPayments_OrgId_PaymentNo ON DealerPayments(OrgId, PaymentNo);
+
+                CREATE TABLE IF NOT EXISTS DealerPaymentDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PaymentId INTEGER NOT NULL,
+                    PaymentNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    Amount REAL NOT NULL,
+                    GuaranteeNo TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(PaymentId) REFERENCES DealerPayments(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -1688,6 +1742,148 @@ public static class Seeder
             };
 
             db.RetailContracts.AddRange(rc1, rc2, rc3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.DealerPayments.AnyAsync(o => o.OrgId == orgId))
+        {
+            var pmt1 = new DealerPayment
+            {
+                OrgId = orgId,
+                PaymentNo = "PMT26090001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ContractNo = "2603DRC00001",
+                PaymentType = WholesalePaymentType.PMT,
+                PaymentMethod = WholesalePaymentMethod.BankTransfer,
+                TotalAmount = 226600000m,
+                PaymentDate = DateTime.Today.AddDays(-9),
+                PaymentDueDate = DateTime.Today.AddDays(-7),
+                PaymentEndDate = DateTime.Today.AddDays(20),
+                Status = WholesalePaymentStatus.Finished,
+                BankPaymentNo = "UNC-VCB-260901",
+                BankCodeSend = "TCB",
+                BankAccountSend = "19033889911",
+                BankCodeReceive = "VCB",
+                BankAccountReceive = "0011001234567",
+                Funds = "0",
+                DepositPercent = 10m,
+                AccountingRecordNo = "SAP-AR-2026090188",
+                AccountingRecordDate = DateTime.Today.AddDays(-8),
+                Remark = "Thanh toán cọc 10% lô 02 xe Santa Fe & Creta hợp đồng mua buôn 2603DRC00001 qua Vietcombank",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Now.AddDays(-9),
+                ApprovedBy = "NPP_ACCOUNTING_STAFF",
+                ApprovedAt = DateTime.Now.AddDays(-9),
+                FinishedBy = "KETOAN_TRUONG_HTC",
+                FinishedAt = DateTime.Now.AddDays(-8),
+                Details = new List<DealerPaymentDetail>
+                {
+                    new DealerPaymentDetail
+                    {
+                        PaymentNo = "PMT26090001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        Amount = 145200000m,
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        Remark = "Phân bổ cọc 10% xe Santa Fe"
+                    },
+                    new DealerPaymentDetail
+                    {
+                        PaymentNo = "PMT26090001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        Amount = 81400000m,
+                        Remark = "Phân bổ cọc 10% xe Creta"
+                    }
+                }
+            };
+
+            var pmt2 = new DealerPayment
+            {
+                OrgId = orgId,
+                PaymentNo = "PMT26090002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                ContractNo = "2603DRC00002",
+                PaymentType = WholesalePaymentType.PMT,
+                PaymentMethod = WholesalePaymentMethod.BankTransfer,
+                TotalAmount = 946000000m,
+                PaymentDate = DateTime.Today.AddDays(-2),
+                PaymentDueDate = DateTime.Today.AddDays(5),
+                PaymentEndDate = DateTime.Today.AddDays(30),
+                Status = WholesalePaymentStatus.Approved,
+                BankPaymentNo = "UNC-BIDV-88219",
+                BankCodeSend = "BIDV",
+                BankAccountSend = "1241000998877",
+                BankCodeReceive = "VCB",
+                BankAccountReceive = "0011001234567",
+                Funds = "1",
+                BankLending = "BIDV Thăng Long",
+                InterestRate = 7.5m,
+                LoanPeriod = 6,
+                GuaranteeType = "LC",
+                DepositPercent = 10m,
+                Remark = "Ủy nhiệm chi thanh toán lô xe Tucson mở LC ngân hàng BIDV đã được NPP duyệt chấp thuận, chuyển phòng kế toán hạch toán",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Now.AddDays(-2),
+                ApprovedBy = "NPP_SALES_DIRECTOR",
+                ApprovedAt = DateTime.Now.AddDays(-1),
+                Details = new List<DealerPaymentDetail>
+                {
+                    new DealerPaymentDetail
+                    {
+                        PaymentNo = "PMT26090002",
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        Amount = 946000000m,
+                        GuaranteeNo = "LC2603-BIDV-88910",
+                        Remark = "Thanh toán giá trị xe Tucson theo hạn mức tín dụng LC BIDV"
+                    }
+                }
+            };
+
+            var pmt3 = new DealerPayment
+            {
+                OrgId = orgId,
+                PaymentNo = "PMT26090003",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ContractNo = "2603DRC00003",
+                PaymentType = WholesalePaymentType.PMT,
+                PaymentMethod = WholesalePaymentMethod.BankTransfer,
+                TotalAmount = 99000000m,
+                PaymentDate = DateTime.Today,
+                PaymentDueDate = DateTime.Today.AddDays(7),
+                Status = WholesalePaymentStatus.Pending,
+                BankPaymentNo = "UNC-2609-AC003",
+                BankCodeSend = "VCB",
+                BankAccountSend = "001100998877",
+                BankCodeReceive = "VCB",
+                BankAccountReceive = "0011001234567",
+                Funds = "0",
+                DepositPercent = 20m,
+                Remark = "Đại lý Đông Đô lập ủy nhiệm chi nộp cọc 20% cho hợp đồng mua buôn Accent, chờ NPP kiểm tra và duyệt xác nhận",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Now,
+                Details = new List<DealerPaymentDetail>
+                {
+                    new DealerPaymentDetail
+                    {
+                        PaymentNo = "PMT26090003",
+                        CarId = "CAR2026-AC9011",
+                        Vin = "KMHE281BBSA667788",
+                        Model = "Accent 1.4 AT",
+                        Amount = 99000000m,
+                        Remark = "Tiền đặt cọc 20% xe Accent"
+                    }
+                }
+            };
+
+            db.DealerPayments.AddRange(pmt1, pmt2, pmt3);
             await db.SaveChangesAsync();
         }
     }

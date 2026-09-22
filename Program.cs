@@ -35,6 +35,7 @@ builder.Services.AddScoped<IContractCancelService, ContractCancelService>();
 builder.Services.AddScoped<ICarTransportMinutesService, CarTransportMinutesService>();
 builder.Services.AddScoped<IDealerContractService, DealerContractService>();
 builder.Services.AddScoped<IRetailContractService, RetailContractService>();
+builder.Services.AddScoped<IDealerPaymentService, DealerPaymentService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -917,6 +918,105 @@ app.MapPost("/api/retail-contracts/approve-multi", async (BatchApproveRetailCont
 app.MapPost("/api/retail-contracts/cancel-multi", async (BatchCancelRetailContractDto dto, IRetailContractService svc) =>
 {
     try { return Results.Ok(await svc.CancelMultiAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Thanh toán tiền xe Đại lý - NPP / Ủy nhiệm chi UNC (Dealer Payment - DMS.Sales Pmt_Payment / PmtPaymentController) =====
+app.MapPost("/api/dealer-payments", async (CreateDealerPaymentDto dto, IDealerPaymentService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-payments", async (IDealerPaymentService svc, string? status, string? dealer, string? paymentType, string? contractNo, string? paymentNo) =>
+    Results.Ok(await svc.ListAsync(status, dealer, paymentType, contractNo, paymentNo))).RequireAuthorization();
+
+app.MapGet("/api/dealer-payments/stats", async (IDealerPaymentService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/dealer-payments/{paymentNo}", async (string paymentNo, IDealerPaymentService svc) =>
+{
+    var r = await svc.DetailAsync(paymentNo);
+    return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-payments/{paymentNo}", async (string paymentNo, UpdateDealerPaymentDto dto, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(paymentNo, dto);
+        return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-payments/{paymentNo}/approve", async (string paymentNo, ApproveDealerPaymentDto? dto, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(paymentNo, dto);
+        return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-payments/{paymentNo}/confirm-accounting", async (string paymentNo, ConfirmAccountingRecordDto dto, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.ConfirmAccountingAsync(paymentNo, dto);
+        return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-payments/{paymentNo}/reject", async (string paymentNo, RejectDealerPaymentDto dto, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(paymentNo, dto);
+        return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-payments/{paymentNo}/cancel", async (string paymentNo, CancelDealerPaymentDto dto, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(paymentNo, dto);
+        return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-payments/{paymentNo}", async (string paymentNo, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(paymentNo);
+        return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-payments/{paymentNo}/cars", async (string paymentNo, AddDealerPaymentCarDto dto, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(paymentNo, dto);
+        return r is null ? Results.NotFound(new { paymentNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-payments/{paymentNo}/cars/{detailId:long}", async (string paymentNo, long detailId, IDealerPaymentService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(paymentNo, detailId);
+        return r is null ? Results.NotFound(new { paymentNo, detailId }) : Results.Ok(r);
+    }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 

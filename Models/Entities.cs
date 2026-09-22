@@ -640,3 +640,71 @@ public sealed class DlrRetailContractDtlHis
     public string? LoggedBy { get; set; }
     public DateTime LogDateTime { get; set; } = DateTime.Now;
 }
+
+/// <summary>Loại thanh toán tiền xe đại lý - NPP (DMS.Sales Pmt_Payment PaymentType: PMT = Thanh toán cọc / thông thường, PMA = Thanh toán điều chỉnh, PMC = Tất toán giải phóng xe).</summary>
+public enum WholesalePaymentType { PMT = 0, PMA = 1, PMC = 2 }
+
+/// <summary>Phương thức thanh toán tiền xe (DMS.Sales Pmt_Payment PaymentMethod: CK = Chuyển khoản, TM = Tiền mặt, TMCK = Tiền mặt + CK, TTD = Thẻ tín dụng).</summary>
+public enum WholesalePaymentMethod { BankTransfer = 0, Cash = 1, CashAndTransfer = 2, CreditCard = 3 }
+
+/// <summary>Trạng thái phiếu thanh toán (DMS.Sales Pmt_Payment PaymentStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [NPP duyệt], Finished = 'F' [Kế toán hoàn tất hạch toán chứng từ ERP/SAP], Rejected = 'R' [Từ chối], Cancelled = 'C' [Hủy]).</summary>
+public enum WholesalePaymentStatus { Pending = 0, Approved = 1, Finished = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Chứng từ / Phiếu thanh toán tiền mua buôn xe ô tô Đại lý - NPP / Ủy nhiệm chi UNC (DMS.Sales Pmt_Payment): quản lý thanh toán cọc xe, thanh toán đợt theo hợp đồng bán buôn, giải ngân qua ngân hàng bảo lãnh, phê duyệt cấp NPP và xác nhận số chứng từ hạch toán kế toán.</summary>
+public sealed class DealerPayment
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PaymentNo { get; set; } = ""; // Mã phiếu thanh toán / UNC (PK Pmt_Payment, vd: PMT2026-0001, UNC2609-0001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý nộp tiền
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string? ContractNo { get; set; } // Số hợp đồng mua buôn liên quan (DlrCtrNo / DealerContract)
+    public WholesalePaymentType PaymentType { get; set; } = WholesalePaymentType.PMT; // PMT | PMA | PMC
+    public WholesalePaymentMethod PaymentMethod { get; set; } = WholesalePaymentMethod.BankTransfer; // CK | TM | TMCK | TTD
+    public decimal TotalAmount { get; set; } // Tổng tiền thanh toán (VNĐ)
+    public DateTime PaymentDate { get; set; } = DateTime.Today; // Ngày thanh toán
+    public DateTime? PaymentDueDate { get; set; } // Ngày đến hạn thanh toán
+    public DateTime? PaymentEndDate { get; set; } // Ngày kết thúc hiệu lực thanh toán / bảo lãnh
+    public WholesalePaymentStatus Status { get; set; } = WholesalePaymentStatus.Pending; // P -> A -> F / R / C
+    public string? BankPaymentNo { get; set; } // Số ủy nhiệm chi UNC / mã giao dịch ngân hàng
+    public string? BankCodeSend { get; set; } // Mã ngân hàng chuyển tiền của đại lý
+    public string? BankAccountSend { get; set; } // Số tài khoản trích nợ của đại lý
+    public string? BankCodeReceive { get; set; } = "VCB"; // Mã ngân hàng thụ hưởng nhận tiền (NPP)
+    public string? BankAccountReceive { get; set; } = "0011001234567"; // Số tài khoản nhận tiền của NPP
+    public string? Funds { get; set; } = "0"; // Nguồn vốn: 0 = Vốn tự có, 1 = Vay ngân hàng giải ngân, 2 = Hạn mức tín dụng
+    public string? BankLending { get; set; } // Ngân hàng tài trợ cho vay giải ngân
+    public decimal? InterestRate { get; set; } // Lãi suất vay (%)
+    public int? LoanPeriod { get; set; } // Kỳ hạn vay (tháng)
+    public string? GuaranteeType { get; set; } // Loại bảo lãnh (BL, LC, UPAS) nếu thanh toán giải phóng bảo lãnh
+    public decimal DepositPercent { get; set; } = 10m; // Tỷ lệ cọc áp dụng (%)
+    public string? AccountingRecordNo { get; set; } // Số chứng từ kế toán ERP / SAP (bắt buộc khi kế toán hoàn tất)
+    public DateTime? AccountingRecordDate { get; set; } // Ngày hạch toán kế toán
+    public string? Remark { get; set; } // Ghi chú phiếu thanh toán
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt (RejectHQ/RejectDL)
+    public string? CancelReason { get; set; } // Lý do hủy phiếu (CancelHQ)
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? FinishedBy { get; set; }
+    public DateTime? FinishedAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<DealerPaymentDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô phân bổ thanh toán trong phiếu (DMS.Sales Pmt_PaymentDetail): phân bổ số tiền thanh toán cho từng xe / số khung VIN và liên kết bảo lãnh ngân hàng.</summary>
+public sealed class DealerPaymentDetail
+{
+    public long Id { get; set; }
+    public long PaymentId { get; set; }
+    public string PaymentNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung xe (17 ký tự)
+    public string Model { get; set; } = ""; // Model dòng xe (SantaFe, Tucson, Accent, Creta...)
+    public decimal Amount { get; set; } // Số tiền thanh toán phân bổ cho xe này (VNĐ)
+    public string? GuaranteeNo { get; set; } // Mã chứng thư bảo lãnh ngân hàng liên quan (nếu có)
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
