@@ -985,3 +985,61 @@ public sealed class PaymentGuaranteeExtDetail
     public GuaranteeExtDtlStatus Status { get; set; } = GuaranteeExtDtlStatus.Pending; // Trạng thái xe trong CV (P -> S / C)
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
+
+/// <summary>Trạng thái Phiếu yêu cầu kiểm tra xe trước khi giao PDI (DMS.Sales Dlr_PDIRequest DlrPDIReqStatus: Pending = 'P' [Chờ kiểm tra/chờ duyệt], Approved = 'A' [Nghiệm thu PDI đạt chuẩn], Cancelled = 'C' [Hủy yêu cầu]).</summary>
+public enum PdiRequestStatus { Pending = 0, Approved = 1, Cancelled = 2 }
+
+/// <summary>Trạng thái từng dòng xe trong phiếu yêu cầu PDI (DMS.Sales Dlr_PDIRequestDtl DlrPDIReqDtlStatus: Pending = 'P' [Chờ kiểm tra], Approved = 'A' [Đạt chuẩn PDI], Cancelled = 'C' [Hủy xe]).</summary>
+public enum PdiRequestDtlStatus { Pending = 0, Approved = 1, Cancelled = 2 }
+
+/// <summary>Yêu cầu kiểm tra xe trước khi giao PDI của Đại lý (DMS.Sales Dlr_PDIRequest / DlrPDIRequestController / DealerRetail.cs): quản lý quy trình kiểm tra chất lượng kỹ thuật xe ô tô mới trước khi bàn giao cho khách hàng (PDI - Pre-Delivery Inspection), yêu cầu lắp đặt phụ kiện (FlagAccessory), liên kết hợp đồng bán lẻ xe và đồng bộ lệnh dịch vụ xưởng RO.</summary>
+public sealed class PdiRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DlrPdiReqNo { get; set; } = ""; // Số yêu cầu PDI (DlrPdiReqNo: format {yyMM}PRN{seq:D5})
+    public string DealerCode { get; set; } = ""; // Mã đại lý lập yêu cầu
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public bool FlagAccessory { get; set; } // Lắp đặt phụ kiện kèm theo ('1' = Có, '0' = Không)
+    public PdiRequestStatus Status { get; set; } = PdiRequestStatus.Pending; // Trạng thái PDI: Pending, Approved, Cancelled
+    public int TotalCars { get; set; } // Tổng số lượng xe yêu cầu PDI
+    public string? Remark { get; set; } // Nội dung / Ghi chú kiểm tra
+    public DateTime? ApprovedDate { get; set; } // Ngày duyệt / nghiệm thu PDI
+    public string? ApprovedBy { get; set; } // Người duyệt / nghiệm thu PDI
+    public DateTime? CancelledDate { get; set; } // Ngày hủy yêu cầu PDI
+    public string? CancelledBy { get; set; } // Người thực hiện hủy
+    public string? CancelReason { get; set; } // Lý do hủy yêu cầu PDI
+    public string? CreatedBy { get; set; } // Người tạo yêu cầu
+    public DateTime CreatedDate { get; set; } = DateTime.Now; // Ngày tạo yêu cầu
+    public DateTime? LUDateTime { get; set; } // Ngày cập nhật cuối
+    public string? LUBy { get; set; } // Người cập nhật cuối
+
+    public List<PdiRequestDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Yêu cầu PDI (DMS.Sales Dlr_PDIRequestDtl): theo dõi từng số khung VIN, dòng xe, hợp đồng bán lẻ, mã xe hợp đồng CtrCarId, thông tin khách hàng, lệnh sửa chữa/báo giá xưởng RO (Repair Order) và kết quả kiểm tra.</summary>
+public sealed class PdiRequestDetail
+{
+    public long Id { get; set; }
+    public long PdiRequestId { get; set; }
+    public string DlrPdiReqNo { get; set; } = ""; // Số phiếu PDI
+    public string Vin { get; set; } = ""; // Số khung VIN (17 ký tự)
+    public string Model { get; set; } = ""; // Model tên xe (Santa Fe, Creta, Accent, Tucson...)
+    public string? ModelCode { get; set; } // Mã model
+    public string? SpecCode { get; set; } // Mã cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? ColorName { get; set; } // Tên màu ngoại thất/nội thất
+    public string DlrContractNo { get; set; } = ""; // Số hợp đồng bán lẻ xe
+    public string CtrCarId { get; set; } = ""; // Mã xe trong hợp đồng bán lẻ (vd: RC26090001.01)
+    public string? CustomerName { get; set; } // Tên khách hàng theo hợp đồng
+    public string? CustomerPhone { get; set; } // Số điện thoại khách hàng
+    public string? DealNo { get; set; } // Số giao dịch bán lẻ nếu có
+    public DateTime? DlvExpectedDate { get; set; } // Ngày giao xe dự kiến cho khách
+    public string? RONo { get; set; } // Số lệnh sửa chữa / báo giá RO dịch vụ (Repair Order No)
+    public DateTime? ROCreatedDate { get; set; } // Ngày tạo lệnh RO
+    public DateTime? ROFinishedDate { get; set; } // Ngày hoàn thành lệnh RO
+    public string ROStatus { get; set; } = "NORE"; // Trạng thái RO: NORE (chưa có), OPEN, COMPLETED
+    public PdiRequestDtlStatus Status { get; set; } = PdiRequestDtlStatus.Pending; // Trạng thái kiểm tra dòng xe
+    public string? InspectionResult { get; set; } // Kết quả kiểm tra: PASSED (Đạt chuẩn), PENDING_FIX (Cần khắc phục), FAILED
+    public string? Remark { get; set; } // Ghi chú chi tiết hạng mục / phụ kiện cần lắp
+}

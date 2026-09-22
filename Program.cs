@@ -40,6 +40,7 @@ builder.Services.AddScoped<IRetailDealService, RetailDealService>();
 builder.Services.AddScoped<IStorageRearrangeService, StorageRearrangeService>();
 builder.Services.AddScoped<ITransportRequestService, TransportRequestService>();
 builder.Services.AddScoped<IPaymentGuaranteeExtService, PaymentGuaranteeExtService>();
+builder.Services.AddScoped<IPdiRequestService, PdiRequestService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1436,6 +1437,98 @@ app.MapDelete("/api/guarantee-extensions/{extNo}/cars/{vin}", async (string extN
     {
         var r = await svc.RemoveCarAsync(extNo, vin);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Yêu cầu kiểm tra xe trước khi giao PDI (Pre-Delivery Inspection - DMS.Sales Dlr_PDIRequest + Dlr_PDIRequestDtl) =====
+app.MapPost("/api/pdi-requests", async (CreatePdiRequestDto dto, IPdiRequestService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/pdi-requests", async (IPdiRequestService svc, string? status, string? dealer, string? pdiReqNo, string? vin, string? contractNo, string? roStatus, bool? flagAccessory) =>
+    Results.Ok(await svc.ListAsync(status, dealer, pdiReqNo, vin, contractNo, roStatus, flagAccessory))).RequireAuthorization();
+
+app.MapGet("/api/pdi-requests/stats", async (IPdiRequestService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/pdi-requests/eligible-cars", async (IPdiRequestService svc, string? dealer, string? contractNo, string? vin) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealer, contractNo, vin))).RequireAuthorization();
+
+app.MapGet("/api/pdi-requests/{reqNo}", async (string reqNo, IPdiRequestService svc) =>
+{
+    var r = await svc.DetailAsync(reqNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/pdi-requests/{reqNo}", async (string reqNo, UpdatePdiRequestDto dto, IPdiRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(reqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/pdi-requests/{reqNo}/approve", async (string reqNo, ApprovePdiRequestDto? dto, IPdiRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(reqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/pdi-requests/{reqNo}/sync-ro", async (string reqNo, SyncPdiRoDto dto, IPdiRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.SyncROAsync(reqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/pdi-requests/{reqNo}/cancel", async (string reqNo, CancelPdiRequestDto dto, IPdiRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(reqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/pdi-requests/{reqNo}", async (string reqNo, IPdiRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(reqNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/pdi-requests/{reqNo}/cars", async (string reqNo, AddPdiCarDto dto, IPdiRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(reqNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/pdi-requests/{reqNo}/cars/{vin}", async (string reqNo, string vin, IPdiRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(reqNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu PDI {reqNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

@@ -39,6 +39,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<TransportRequestDetail> TransportRequestDetails => Set<TransportRequestDetail>();
     public DbSet<PaymentGuaranteeExt> GuaranteeExts => Set<PaymentGuaranteeExt>();
     public DbSet<PaymentGuaranteeExtDetail> GuaranteeExtDetails => Set<PaymentGuaranteeExtDetail>();
+    public DbSet<PdiRequest> PdiRequests => Set<PdiRequest>();
+    public DbSet<PdiRequestDetail> PdiRequestDetails => Set<PdiRequestDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -119,5 +121,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PaymentGuaranteeExt>().Property(x => x.Status).HasConversion<int>();
         b.Entity<PaymentGuaranteeExt>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.GrtClaimExtId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<PaymentGuaranteeExtDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PdiRequest>().HasIndex(x => new { x.OrgId, x.DlrPdiReqNo }).IsUnique();
+        b.Entity<PdiRequest>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PdiRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PdiRequestId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PdiRequestDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

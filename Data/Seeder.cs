@@ -777,6 +777,54 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(GrtClaimExtId) REFERENCES PaymentGuaranteeExts(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS PdiRequests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    DlrPdiReqNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    FlagAccessory INTEGER NOT NULL,
+                    Status INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    Remark TEXT,
+                    ApprovedDate TEXT,
+                    ApprovedBy TEXT,
+                    CancelledDate TEXT,
+                    CancelledBy TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedDate TEXT NOT NULL,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PdiRequests_OrgId_DlrPdiReqNo ON PdiRequests(OrgId, DlrPdiReqNo);
+
+                CREATE TABLE IF NOT EXISTS PdiRequestDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PdiRequestId INTEGER NOT NULL,
+                    DlrPdiReqNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    ModelCode TEXT,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    DlrContractNo TEXT NOT NULL,
+                    CtrCarId TEXT NOT NULL,
+                    CustomerName TEXT,
+                    CustomerPhone TEXT,
+                    DealNo TEXT,
+                    DlvExpectedDate TEXT,
+                    RONo TEXT,
+                    ROCreatedDate TEXT,
+                    ROFinishedDate TEXT,
+                    ROStatus TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    InspectionResult TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(PdiRequestId) REFERENCES PdiRequests(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -2743,6 +2791,162 @@ public static class Seeder
             };
 
             db.GuaranteeExts.AddRange(ext1, ext2, ext3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.PdiRequests.AnyAsync(o => o.OrgId == orgId))
+        {
+            var pdi1 = new PdiRequest
+            {
+                OrgId = orgId,
+                DlrPdiReqNo = "2609PRN00001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                FlagAccessory = true,
+                Status = PdiRequestStatus.Approved,
+                TotalCars = 2,
+                Remark = "Kiểm tra kỹ thuật PDI toàn diện và lắp gói phụ kiện dán phim cách nhiệt + lót sàn trước khi bàn giao xe",
+                ApprovedDate = DateTime.Now.AddDays(-1),
+                ApprovedBy = "NPP_PDI_LEAD",
+                CreatedBy = "DEALER_PDI_STAFF",
+                CreatedDate = DateTime.Now.AddDays(-3),
+                LUDateTime = DateTime.Now.AddDays(-1),
+                LUBy = "NPP_PDI_LEAD",
+                Details = new List<PdiRequestDetail>
+                {
+                    new PdiRequestDetail
+                    {
+                        DlrPdiReqNo = "2609PRN00001",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        ModelCode = "TM",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        ColorName = "Trắng ngọc trai / Đen",
+                        DlrContractNo = "RC26090001",
+                        CtrCarId = "RC26090001.01",
+                        CustomerName = "Trần Đình Trọng",
+                        CustomerPhone = "0912345678",
+                        DealNo = "DEAL26090001",
+                        DlvExpectedDate = DateTime.Today.AddDays(5),
+                        RONo = "RO-PDI-2609-0012",
+                        ROCreatedDate = DateTime.Now.AddDays(-2),
+                        ROFinishedDate = DateTime.Now.AddDays(-1),
+                        ROStatus = "COMPLETED",
+                        Status = PdiRequestDtlStatus.Approved,
+                        InspectionResult = "PASSED",
+                        Remark = "PDI hoàn tất 100 hạng mục kỹ thuật, lắp phụ kiện dán phim Lumbar chính hãng đạt chuẩn"
+                    },
+                    new PdiRequestDetail
+                    {
+                        DlrPdiReqNo = "2609PRN00001",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        ModelCode = "SU2b",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        ColorName = "Đỏ mận / Nâu",
+                        DlrContractNo = "RC26090001",
+                        CtrCarId = "RC26090001.02",
+                        CustomerName = "Trần Đình Trọng",
+                        CustomerPhone = "0912345678",
+                        DealNo = "DEAL26090001",
+                        DlvExpectedDate = DateTime.Today.AddDays(5),
+                        RONo = "RO-PDI-2609-0013",
+                        ROCreatedDate = DateTime.Now.AddDays(-2),
+                        ROFinishedDate = DateTime.Now.AddDays(-1),
+                        ROStatus = "COMPLETED",
+                        Status = PdiRequestDtlStatus.Approved,
+                        InspectionResult = "PASSED",
+                        Remark = "PDI hoàn tất không phát hiện lỗi kỹ thuật"
+                    }
+                }
+            };
+
+            var pdi2 = new PdiRequest
+            {
+                OrgId = orgId,
+                DlrPdiReqNo = "2609PRN00002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                FlagAccessory = false,
+                Status = PdiRequestStatus.Pending,
+                TotalCars = 1,
+                Remark = "Đại lý Nam Trung gửi đề nghị nghiệm thu PDI xe Custin giao doanh nghiệp",
+                CreatedBy = "DEALER_USER",
+                CreatedDate = DateTime.Now.AddDays(-1),
+                Details = new List<PdiRequestDetail>
+                {
+                    new PdiRequestDetail
+                    {
+                        DlrPdiReqNo = "2609PRN00002",
+                        Vin = "KMHE281BBSA556677",
+                        Model = "Custin 1.5T-GDi Cao Cấp",
+                        ModelCode = "KU",
+                        SpecCode = "CU15-PRE-01",
+                        ColorCode = "SL1",
+                        ColorName = "Bạc / Be xám",
+                        DlrContractNo = "RC26090002",
+                        CtrCarId = "RC26090002.01",
+                        CustomerName = "Công ty TNHH Vận tải Du lịch Sao Mai",
+                        CustomerPhone = "0904888999",
+                        DealNo = "DEAL26090003",
+                        DlvExpectedDate = DateTime.Today.AddDays(8),
+                        RONo = null,
+                        ROCreatedDate = null,
+                        ROFinishedDate = null,
+                        ROStatus = "NORE",
+                        Status = PdiRequestDtlStatus.Pending,
+                        InspectionResult = null,
+                        Remark = "Đang kiểm tra hệ thống phanh ABS, cân bằng điện tử ESP và áp suất lốp trước khi xuất bãi"
+                    }
+                }
+            };
+
+            var pdi3 = new PdiRequest
+            {
+                OrgId = orgId,
+                DlrPdiReqNo = "2609PRN00003",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                FlagAccessory = false,
+                Status = PdiRequestStatus.Cancelled,
+                TotalCars = 1,
+                Remark = "Yêu cầu PDI hủy do xe bị trầy xước nhẹ trong quá trình bốc dỡ cần sơn lại tại xưởng sơn",
+                CancelledDate = DateTime.Now.AddDays(-2),
+                CancelledBy = "DEALER_PDI_STAFF",
+                CancelReason = "Xe bị cọ xát nhẹ cản trước khi hạ sàn xe chuyên dùng, cần sơn lại trước khi tạo phiếu PDI mới",
+                CreatedBy = "DEALER_PDI_STAFF",
+                CreatedDate = DateTime.Now.AddDays(-4),
+                Details = new List<PdiRequestDetail>
+                {
+                    new PdiRequestDetail
+                    {
+                        DlrPdiReqNo = "2609PRN00003",
+                        Vin = "KMHE281BBSA667788",
+                        Model = "Accent 1.4 AT",
+                        ModelCode = "HC",
+                        SpecCode = "AC14-AT-01",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng tuyết",
+                        DlrContractNo = "RC26090003",
+                        CtrCarId = "RC26090003.01",
+                        CustomerName = "Lê Hoàng Yến",
+                        CustomerPhone = "0987654321",
+                        DealNo = null,
+                        DlvExpectedDate = DateTime.Today.AddDays(12),
+                        RONo = "RO-PAINT-2609-08",
+                        ROCreatedDate = DateTime.Now.AddDays(-3),
+                        ROFinishedDate = null,
+                        ROStatus = "OPEN",
+                        Status = PdiRequestDtlStatus.Cancelled,
+                        InspectionResult = "FAILED",
+                        Remark = "Xước cản trước bên phụ, chuyển xưởng làm đồng sơn"
+                    }
+                }
+            };
+
+            db.PdiRequests.AddRange(pdi1, pdi2, pdi3);
             await db.SaveChangesAsync();
         }
     }
