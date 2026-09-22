@@ -169,3 +169,54 @@ public sealed class PaymentGuaranteeDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Loại đề nghị giao/rút hồ sơ xe (DMS.Sales Car_DocReqList TypeCRR: Dealer = Đại lý rút hồ sơ giao khách, Normal = NPP bàn giao định kỳ, Special = Đề nghị hồ sơ đặc thù / thế chấp NH).</summary>
+public enum DocReqType { Dealer = 0, Normal = 1, Special = 2 }
+
+/// <summary>Trạng thái đề nghị giao/rút hồ sơ xe (DMS.Sales Car_DocReqList RequestStatus: Pending -> Approved1 (NPP duyệt danh sách) -> Approved2 (Đã bàn giao hồ sơ gốc), Rejected, Cancelled).</summary>
+public enum DocReqStatus { Pending = 0, Approved1 = 1, Approved2 = 2, Rejected = 3, Cancelled = 4 }
+
+/// <summary>Đề nghị giao hồ sơ xe / giải chấp ngân hàng (DMS.Sales Car_DocReqList): quản lý bàn giao hồ sơ gốc ô tô (CQ, hóa đơn gốc, tờ khai) cho đại lý/khách hàng.</summary>
+public sealed class CarDocRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DRListCode { get; set; } = "";
+    public string DealerCode { get; set; } = "";
+    public string DealerName { get; set; } = "";
+    public DocReqType RequestType { get; set; } = DocReqType.Dealer;
+    public DocReqStatus Status { get; set; } = DocReqStatus.Pending;
+    public string? LetterRepresentationNo { get; set; } // Số công văn / tờ trình ủy quyền
+    public DateTime? LetterRepresentationDate { get; set; } // Ngày công văn ủy quyền
+    public int LoanSupportDay { get; set; } // Số ngày hỗ trợ vay vốn
+    public int TotalCars { get; set; }
+    public string? Remark { get; set; }
+    public string? RejectReason { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? Approved1At { get; set; }
+    public DateTime? Approved2At { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<CarDocRequestDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết xe ô tô trong đề nghị giao hồ sơ (DMS.Sales Car_DocReqDtl).</summary>
+public sealed class CarDocRequestDetail
+{
+    public long Id { get; set; }
+    public long RequestId { get; set; }
+    public string Vin { get; set; } = "";
+    public string Model { get; set; } = "";
+    public string? EngineNo { get; set; }
+    public string? OrderNo { get; set; }
+    public string? DeliveryOrderNo { get; set; }
+    public string? BankCode { get; set; }
+    public string? BankGuaranteeNo { get; set; }
+    public string DocumentsStatus { get; set; } = "Full"; // Full | MissingCQ | WaitBankRelease
+    public DateTime? ExpectedDate { get; set; }
+    public DateTime? HandoverDate { get; set; } // DRFullDocDate - Ngày bàn giao đầy đủ hồ sơ gốc
+    public string? RecipientName { get; set; }
+    public string? RecipientPhone { get; set; }
+    public string? Remark { get; set; }
+}
+
+

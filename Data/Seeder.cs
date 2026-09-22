@@ -115,6 +115,46 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(GuaranteeId) REFERENCES PaymentGuarantees(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarDocRequests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    DRListCode TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    RequestType INTEGER NOT NULL,
+                    Status INTEGER NOT NULL,
+                    LetterRepresentationNo TEXT,
+                    LetterRepresentationDate TEXT,
+                    LoanSupportDay INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    Approved1At TEXT,
+                    Approved2At TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarDocRequests_OrgId_DRListCode ON CarDocRequests(OrgId, DRListCode);
+
+                CREATE TABLE IF NOT EXISTS CarDocRequestDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    RequestId INTEGER NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    EngineNo TEXT,
+                    OrderNo TEXT,
+                    DeliveryOrderNo TEXT,
+                    BankCode TEXT,
+                    BankGuaranteeNo TEXT,
+                    DocumentsStatus TEXT NOT NULL,
+                    ExpectedDate TEXT,
+                    HandoverDate TEXT,
+                    RecipientName TEXT,
+                    RecipientPhone TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(RequestId) REFERENCES CarDocRequests(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -394,6 +434,83 @@ public static class Seeder
             };
 
             db.PaymentGuarantees.AddRange(grt1, grt2);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.CarDocRequests.AnyAsync(o => o.OrgId == orgId))
+        {
+            var dr1 = new CarDocRequest
+            {
+                OrgId = orgId,
+                DRListCode = "DNGT2603010001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                RequestType = DocReqType.Dealer,
+                Status = DocReqStatus.Approved2,
+                LetterRepresentationNo = "CV-2026/03/HĐĐ-01",
+                LetterRepresentationDate = DateTime.Today.AddDays(-10),
+                LoanSupportDay = 0,
+                TotalCars = 1,
+                Remark = "Đề nghị rút bộ hồ sơ gốc phục vụ đăng ký xe lăn bánh cho khách hàng doanh nghiệp",
+                CreatedAt = DateTime.Now.AddDays(-5),
+                Approved1At = DateTime.Now.AddDays(-4),
+                Approved2At = DateTime.Now.AddDays(-2),
+                Details = new List<CarDocRequestDetail>
+                {
+                    new CarDocRequestDetail
+                    {
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        EngineNo = "G4KP-102941",
+                        OrderNo = "ORD2603010001",
+                        DeliveryOrderNo = "DO2603010001",
+                        BankCode = "VCB",
+                        BankGuaranteeNo = "BG2603-VCB-00128",
+                        DocumentsStatus = "Full",
+                        ExpectedDate = DateTime.Today.AddDays(-2),
+                        HandoverDate = DateTime.Today.AddDays(-2),
+                        RecipientName = "Trần Văn An (Đại diện đại lý)",
+                        RecipientPhone = "0912888999",
+                        Remark = "Đã bàn giao đầy đủ Hóa đơn GTGT số 0001234, CQ số 88921/ĐK và Tờ khai HQ"
+                    }
+                }
+            };
+
+            var dr2 = new CarDocRequest
+            {
+                OrgId = orgId,
+                DRListCode = "DNGT2603150002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                RequestType = DocReqType.Normal,
+                Status = DocReqStatus.Pending,
+                LetterRepresentationNo = "CV-2026/03/HNT-05",
+                LetterRepresentationDate = DateTime.Today.AddDays(-2),
+                LoanSupportDay = 30,
+                TotalCars = 1,
+                Remark = "Đề nghị giao hồ sơ xe Tucson theo hạn mức bảo lãnh ngân hàng hỗ trợ vốn lưu động",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                Details = new List<CarDocRequestDetail>
+                {
+                    new CarDocRequestDetail
+                    {
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        EngineNo = "G4NL-983102",
+                        OrderNo = "ORD2603010001",
+                        DeliveryOrderNo = "DO2602150002",
+                        BankCode = "BIDV",
+                        BankGuaranteeNo = "LC2603-BIDV-88910",
+                        DocumentsStatus = "Full",
+                        ExpectedDate = DateTime.Today.AddDays(3),
+                        RecipientName = "Nguyễn Văn Hùng",
+                        RecipientPhone = "0912345678",
+                        Remark = "Hồ sơ chờ NPP duyệt danh sách xuất chứng nhận chất lượng"
+                    }
+                }
+            };
+
+            db.CarDocRequests.AddRange(dr1, dr2);
             await db.SaveChangesAsync();
         }
     }

@@ -28,6 +28,7 @@ builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IDeliveryOrderService, DeliveryOrderService>();
 builder.Services.AddScoped<IDealerOrderService, DealerOrderService>();
 builder.Services.AddScoped<IPaymentGuaranteeService, PaymentGuaranteeService>();
+builder.Services.AddScoped<ICarDocRequestService, CarDocRequestService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -295,6 +296,85 @@ app.MapDelete("/api/guarantees/{guaranteeNo}/cars/{detailId:long}", async (strin
     {
         var r = await svc.RemoveCarAsync(guaranteeNo, detailId);
         return r is null ? Results.NotFound(new { guaranteeNo, detailId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Đề nghị giao hồ sơ xe / Rút hồ sơ / Giải chấp ngân hàng (Car Document Request - DMS.Sales Car_DocReqList) =====
+app.MapPost("/api/doc-requests", async (CreateCarDocRequestDto dto, ICarDocRequestService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/doc-requests", async (ICarDocRequestService svc, string? status, string? dealer, string? requestType) =>
+    Results.Ok(await svc.ListAsync(status, dealer, requestType))).RequireAuthorization();
+
+app.MapGet("/api/doc-requests/stats", async (ICarDocRequestService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/doc-requests/{drCode}", async (string drCode, ICarDocRequestService svc) =>
+{
+    var r = await svc.DetailAsync(drCode);
+    return r is null ? Results.NotFound(new { drListCode = drCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/doc-requests/{drCode}/approve1", async (string drCode, Approve1DocRequestDto? dto, ICarDocRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(drCode, dto);
+        return r is null ? Results.NotFound(new { drListCode = drCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/doc-requests/{drCode}/approve2", async (string drCode, Approve2DocRequestDto? dto, ICarDocRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(drCode, dto);
+        return r is null ? Results.NotFound(new { drListCode = drCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/doc-requests/{drCode}/reject", async (string drCode, RejectDocRequestDto dto, ICarDocRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(drCode, dto);
+        return r is null ? Results.NotFound(new { drListCode = drCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/doc-requests/{drCode}/cancel", async (string drCode, CancelDocRequestDto? dto, ICarDocRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(drCode, dto);
+        return r is null ? Results.NotFound(new { drListCode = drCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/doc-requests/{drCode}/cars", async (string drCode, AddCarDocRequestItemDto dto, ICarDocRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(drCode, dto);
+        return r is null ? Results.NotFound(new { drListCode = drCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/doc-requests/{drCode}/cars/{detailId:long}", async (string drCode, long detailId, ICarDocRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(drCode, detailId);
+        return r is null ? Results.NotFound(new { drListCode = drCode, detailId }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
