@@ -726,6 +726,57 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(TranspRequestId) REFERENCES TransportRequests(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS PaymentGuaranteeExts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    GrtClaimExtNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    NumberOfGuaranteeExt INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    TotalCarNoStart INTEGER NOT NULL,
+                    FlagisHTC TEXT NOT NULL,
+                    Status INTEGER NOT NULL,
+                    SignDateTime TEXT,
+                    SignBy TEXT,
+                    FileSigned TEXT,
+                    Remark TEXT,
+                    CancelReason TEXT,
+                    CancelDateTime TEXT,
+                    CancelBy TEXT,
+                    CreatedBy TEXT,
+                    CreatedDateTime TEXT NOT NULL,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentGuaranteeExts_OrgId_GrtClaimExtNo ON PaymentGuaranteeExts(OrgId, GrtClaimExtNo);
+
+                CREATE TABLE IF NOT EXISTS PaymentGuaranteeExtDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    GrtClaimExtId INTEGER NOT NULL,
+                    GrtClaimExtNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    Model TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    ContractNo TEXT,
+                    GuaranteeNo TEXT,
+                    BankGuaranteeNo TEXT,
+                    BankCode TEXT,
+                    BankCodeMonitor TEXT,
+                    GuaranteeType TEXT,
+                    DateOpen TEXT,
+                    GrtDateStart TEXT,
+                    GrtDateExpired TEXT,
+                    GrtDateEnd TEXT,
+                    GuaranteeValue REAL NOT NULL,
+                    UnitPriceActual REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(GrtClaimExtId) REFERENCES PaymentGuaranteeExts(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -2551,6 +2602,147 @@ public static class Seeder
             };
 
             db.TransportRequests.AddRange(tr1, tr2, tr3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.GuaranteeExts.AnyAsync(o => o.OrgId == orgId))
+        {
+            var ext1 = new PaymentGuaranteeExt
+            {
+                OrgId = orgId,
+                GrtClaimExtNo = "260310-001/CVGH/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                NumberOfGuaranteeExt = 30,
+                TotalCars = 1,
+                TotalCarNoStart = 0,
+                FlagisHTC = "1",
+                Status = GuaranteeExtStatus.Signed,
+                SignDateTime = DateTime.Now.AddDays(-2),
+                SignBy = "Phạm Quang Minh (Phó TGĐ Phân phối HTC)",
+                FileSigned = "/storage/grtclaimext/260310-001_CVGH_VN001_signed.pdf",
+                Remark = "Công văn xin gia hạn bảo lãnh thanh toán 30 ngày cho lô xe Santa Fe hợp đồng mua buôn 2603DRC00001",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedDateTime = DateTime.Now.AddDays(-4),
+                LUDateTime = DateTime.Now.AddDays(-2),
+                LUBy = "NPP_HQ_DIRECTOR",
+                Details = new List<PaymentGuaranteeExtDetail>
+                {
+                    new PaymentGuaranteeExtDetail
+                    {
+                        GrtClaimExtNo = "260310-001/CVGH/VN001",
+                        CarId = "CAR2026-SF0988",
+                        Vin = "KMHE281BBSA129841",
+                        Model = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WW2",
+                        ContractNo = "2603DRC00001",
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        BankCodeMonitor = "VCB_HO",
+                        GuaranteeType = "BL",
+                        DateOpen = DateTime.Today.AddDays(-20),
+                        GrtDateStart = DateTime.Today.AddDays(-15),
+                        GrtDateExpired = DateTime.Today.AddDays(5),
+                        GrtDateEnd = DateTime.Today.AddDays(35),
+                        GuaranteeValue = 1320000000m,
+                        UnitPriceActual = 1320000000m,
+                        Status = GuaranteeExtDtlStatus.Signed,
+                        Remark = "Đã được NPP ký số và ngân hàng Vietcombank chấp thuận gia hạn thời hạn trả chậm"
+                    }
+                }
+            };
+
+            var ext2 = new PaymentGuaranteeExt
+            {
+                OrgId = orgId,
+                GrtClaimExtNo = "260315-001/CVGH/VN002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                NumberOfGuaranteeExt = 15,
+                TotalCars = 1,
+                TotalCarNoStart = 1,
+                FlagisHTC = "2",
+                Status = GuaranteeExtStatus.Pending,
+                Remark = "Đề nghị phát hành và kích hoạt bảo lãnh mới cho xe Tucson mở LC ngân hàng BIDV",
+                CreatedBy = "DEALER_SALES_ADMIN",
+                CreatedDateTime = DateTime.Now.AddDays(-1),
+                Details = new List<PaymentGuaranteeExtDetail>
+                {
+                    new PaymentGuaranteeExtDetail
+                    {
+                        GrtClaimExtNo = "260315-001/CVGH/VN002",
+                        CarId = "CAR2026-TU1102",
+                        Vin = "KMHE281BBSA987654",
+                        Model = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        ContractNo = "2603DRC00002",
+                        GuaranteeNo = "LC2603-BIDV-0099",
+                        BankGuaranteeNo = "LC-BIDV-20260315",
+                        BankCode = "BIDV",
+                        BankCodeMonitor = "BIDV_THANG_LONG",
+                        GuaranteeType = "LC",
+                        DateOpen = DateTime.Today.AddDays(-3),
+                        GrtDateStart = null, // Chưa có ngày hiệu lực (TotalCarNoStart = 1)
+                        GrtDateExpired = DateTime.Today.AddDays(12),
+                        GrtDateEnd = DateTime.Today.AddDays(27),
+                        GuaranteeValue = 860000000m,
+                        UnitPriceActual = 860000000m,
+                        Status = GuaranteeExtDtlStatus.Pending,
+                        Remark = "Chờ ban lãnh đạo NPP ký điện tử công văn để ngân hàng giải tỏa ngày hiệu lực"
+                    }
+                }
+            };
+
+            var ext3 = new PaymentGuaranteeExt
+            {
+                OrgId = orgId,
+                GrtClaimExtNo = "260320-002/CVGH/VN001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                NumberOfGuaranteeExt = 30,
+                TotalCars = 1,
+                TotalCarNoStart = 0,
+                FlagisHTC = "1",
+                Status = GuaranteeExtStatus.Cancelled,
+                CancelReason = "Đại lý đã thanh toán tất toán toàn bộ tiền mặt mua xe, không cần gia hạn hạn mức bảo lãnh",
+                CancelDateTime = DateTime.Now.AddHours(-12),
+                CancelBy = "DEALER_ACCOUNTANT",
+                Remark = "Công văn xin gia hạn bảo lãnh xe Creta",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedDateTime = DateTime.Now.AddDays(-2),
+                LUDateTime = DateTime.Now.AddHours(-12),
+                LUBy = "DEALER_ACCOUNTANT",
+                Details = new List<PaymentGuaranteeExtDetail>
+                {
+                    new PaymentGuaranteeExtDetail
+                    {
+                        GrtClaimExtNo = "260320-002/CVGH/VN001",
+                        CarId = "CAR2026-CR0192",
+                        Vin = "KMHE281BBSA334455",
+                        Model = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        ColorCode = "R3R",
+                        ContractNo = "2603DRC00001",
+                        GuaranteeNo = "BG2603-VCB-00128",
+                        BankGuaranteeNo = "BL-VCB-20260301-88",
+                        BankCode = "VCB",
+                        GuaranteeType = "BL",
+                        DateOpen = DateTime.Today.AddDays(-20),
+                        GrtDateStart = DateTime.Today.AddDays(-15),
+                        GrtDateExpired = DateTime.Today.AddDays(10),
+                        GrtDateEnd = DateTime.Today.AddDays(40),
+                        GuaranteeValue = 740000000m,
+                        UnitPriceActual = 740000000m,
+                        Status = GuaranteeExtDtlStatus.Cancelled,
+                        Remark = "Đã hủy do đại lý thanh toán tiền mặt"
+                    }
+                }
+            };
+
+            db.GuaranteeExts.AddRange(ext1, ext2, ext3);
             await db.SaveChangesAsync();
         }
     }

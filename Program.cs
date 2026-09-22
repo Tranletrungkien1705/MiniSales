@@ -39,6 +39,7 @@ builder.Services.AddScoped<IDealerPaymentService, DealerPaymentService>();
 builder.Services.AddScoped<IRetailDealService, RetailDealService>();
 builder.Services.AddScoped<IStorageRearrangeService, StorageRearrangeService>();
 builder.Services.AddScoped<ITransportRequestService, TransportRequestService>();
+builder.Services.AddScoped<IPaymentGuaranteeExtService, PaymentGuaranteeExtService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -1356,6 +1357,85 @@ app.MapDelete("/api/transport-requests/{transpReqNo}/cars/{vin}", async (string 
     {
         var r = await svc.RemoveCarAsync(transpReqNo, vin);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu vận tải {transpReqNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Công văn Gia hạn & Phát hành Bảo lãnh thanh toán mua xe (Guarantee Extension - DMS.Sales Pmt_GrtClaimExt / PmtGrtClaimExtController / PaymentGrtExt.cs) =====
+app.MapPost("/api/guarantee-extensions", async (CreatePaymentGuaranteeExtDto dto, IPaymentGuaranteeExtService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/guarantee-extensions", async (IPaymentGuaranteeExtService svc, string? status, string? dealer, string? bankCode, string? flagisHTC, string? vin, string? grtClaimExtNo) =>
+    Results.Ok(await svc.ListAsync(status, dealer, bankCode, flagisHTC, vin, grtClaimExtNo))).RequireAuthorization();
+
+app.MapGet("/api/guarantee-extensions/stats", async (IPaymentGuaranteeExtService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/guarantee-extensions/{extNo}", async (string extNo, IPaymentGuaranteeExtService svc) =>
+{
+    var r = await svc.DetailAsync(extNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/guarantee-extensions/{extNo}", async (string extNo, UpdatePaymentGuaranteeExtDto dto, IPaymentGuaranteeExtService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(extNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantee-extensions/{extNo}/sign", async (string extNo, SignPaymentGuaranteeExtDto? dto, IPaymentGuaranteeExtService svc) =>
+{
+    try
+    {
+        var r = await svc.SignAndApproveAsync(extNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantee-extensions/{extNo}/cancel", async (string extNo, CancelPaymentGuaranteeExtDto dto, IPaymentGuaranteeExtService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(extNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/guarantee-extensions/{extNo}", async (string extNo, IPaymentGuaranteeExtService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(extNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/guarantee-extensions/{extNo}/cars", async (string extNo, AddCarToGuaranteeExtDto dto, IPaymentGuaranteeExtService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(extNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/guarantee-extensions/{extNo}/cars/{vin}", async (string extNo, string vin, IPaymentGuaranteeExtService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(extNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy công văn gia hạn bảo lãnh {extNo} hoặc xe VIN {vin}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

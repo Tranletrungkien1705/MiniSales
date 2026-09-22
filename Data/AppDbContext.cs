@@ -37,6 +37,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<StorageRearrangeDetail> StorageRearrangeDetails => Set<StorageRearrangeDetail>();
     public DbSet<TransportRequest> TransportRequests => Set<TransportRequest>();
     public DbSet<TransportRequestDetail> TransportRequestDetails => Set<TransportRequestDetail>();
+    public DbSet<PaymentGuaranteeExt> GuaranteeExts => Set<PaymentGuaranteeExt>();
+    public DbSet<PaymentGuaranteeExtDetail> GuaranteeExtDetails => Set<PaymentGuaranteeExtDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -113,5 +115,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<TransportRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.TranspRequestId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<TransportRequestDetail>().Property(x => x.TranspReqType).HasConversion<int>();
         b.Entity<TransportRequestDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentGuaranteeExt>().HasIndex(x => new { x.OrgId, x.GrtClaimExtNo }).IsUnique();
+        b.Entity<PaymentGuaranteeExt>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentGuaranteeExt>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.GrtClaimExtId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PaymentGuaranteeExtDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }
