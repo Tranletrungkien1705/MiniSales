@@ -66,6 +66,7 @@ builder.Services.AddScoped<IBankingTransactionService, BankingTransactionService
 builder.Services.AddScoped<ICustomsDeclarationService, CustomsDeclarationService>();
 builder.Services.AddScoped<IPaymentGPSService, PaymentGPSService>();
 builder.Services.AddScoped<IPaymentStorageService, PaymentStorageService>();
+builder.Services.AddScoped<IPaymentBDService, PaymentBDService>();
 builder.Services.AddScoped<ICarVinProfileService, CarVinProfileService>();
 builder.Services.AddScoped<IPerformanceInvoiceService, PerformanceInvoiceService>();
 builder.Services.AddScoped<IContractOverseaService, ContractOverseaService>();
@@ -5796,6 +5797,152 @@ app.MapDelete("/api/car-colors/{modelCode}/{colorCode}", async (string modelCode
         return r ? Results.Ok(new { deleted = true, modelCode, colorCode }) : Results.NotFound(new { modelCode, colorCode });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Bảng kê Quyết toán Chi phí Bảo dưỡng Xe Ô tô HTV - TCMS (Payment BD - DMS.Sales Pmt_PaymentBD / PaymentBD.cs) =====
+app.MapGet("/api/payment-bd/next-seq", async (IPaymentBDService svc) =>
+    Results.Ok(new { paymentBDNo = await svc.GetNextSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/payment-bd/master-costs", async (IPaymentBDService svc, string? storageCode) =>
+    Results.Ok(await svc.GetMasterCostsAsync(storageCode))).RequireAuthorization();
+
+app.MapGet("/api/payment-bd/eligible-cars", async (IPaymentBDService svc, DateTime pmtPeriodStart, DateTime pmtPeriodEnd, string? storageCode, string? modelCode) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(pmtPeriodStart, pmtPeriodEnd, storageCode, modelCode))).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/preview", async (PaymentBDPreviewRequestDto dto, IPaymentBDService svc) =>
+{
+    try { return Results.Ok(await svc.PreviewCalculationAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd", async (CreatePaymentBDDto dto, IPaymentBDService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-bd", async (IPaymentBDService svc, string? pmtMonth, PaymentBDStatus? status, string? paymentBDNo, string? storageCode, string? vin, PaymentBDSignStatus? htvSignStatus, PaymentBDSignStatus? tcmsSignStatus, int pageIndex = 0, int pageSize = 50) =>
+    Results.Ok(await svc.ListAsync(pmtMonth, status, paymentBDNo, storageCode, vin, htvSignStatus, tcmsSignStatus, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/payment-bd/stats", async (IPaymentBDService svc, string? pmtMonth) =>
+    Results.Ok(await svc.GetStatsAsync(pmtMonth))).RequireAuthorization();
+
+app.MapGet("/api/payment-bd/{paymentBDNo}", async (string paymentBDNo, IPaymentBDService svc) =>
+{
+    var r = await svc.DetailAsync(paymentBDNo);
+    return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/payment-bd/{paymentBDNo}", async (string paymentBDNo, UpdatePaymentBDDto dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/{paymentBDNo}/cars", async (string paymentBDNo, AddPaymentBDCarsDto dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-bd/{paymentBDNo}/cars/{vin}", async (string paymentBDNo, string vin, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(paymentBDNo, vin);
+        return r is null ? Results.NotFound(new { paymentBDNo, vin }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/{paymentBDNo}/approve1", async (string paymentBDNo, Approve1PaymentBDDto? dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/{paymentBDNo}/approve2", async (string paymentBDNo, Approve2PaymentBDDto? dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/approve2-batch", async (BatchApprove2PaymentBDDto dto, IPaymentBDService svc) =>
+{
+    try { return Results.Ok(await svc.BatchApprove2Async(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/{paymentBDNo}/tcms-sign", async (string paymentBDNo, TCMSSignPaymentBDDto dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.TCMSESignAsync(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/{paymentBDNo}/htv-sign", async (string paymentBDNo, HTVESignPaymentBDDto dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.HTVESignAsync(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/{paymentBDNo}/reject", async (string paymentBDNo, RejectPaymentBDDto dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-bd/{paymentBDNo}/cancel", async (string paymentBDNo, CancelPaymentBDDto dto, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(paymentBDNo, dto);
+        return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-bd/{paymentBDNo}", async (string paymentBDNo, IPaymentBDService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(paymentBDNo);
+        return r ? Results.Ok(new { deleted = true, paymentBDNo }) : Results.NotFound(new { paymentBDNo });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-bd/{paymentBDNo}/print", async (string paymentBDNo, IPaymentBDService svc) =>
+{
+    var r = await svc.GetPrintDataAsync(paymentBDNo);
+    return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
 }).RequireAuthorization();
 
 app.Run();

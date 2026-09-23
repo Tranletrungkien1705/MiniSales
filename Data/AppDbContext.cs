@@ -95,6 +95,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentStorageOrder> PaymentStorageOrders => Set<PaymentStorageOrder>();
     public DbSet<PaymentStorageDetail> PaymentStorageDetails => Set<PaymentStorageDetail>();
     public DbSet<InventoryCostMaster> InventoryCosts => Set<InventoryCostMaster>();
+    public DbSet<PaymentBDOrder> PaymentBDOrders => Set<PaymentBDOrder>();
+    public DbSet<PaymentBDDetail> PaymentBDDetails => Set<PaymentBDDetail>();
     public DbSet<CarVinProfile> CarVinProfiles => Set<CarVinProfile>();
     public DbSet<PerformanceInvoice> PerformanceInvoices => Set<PerformanceInvoice>();
     public DbSet<PerformanceInvoiceDetail> PerformanceInvoiceDetails => Set<PerformanceInvoiceDetail>();
@@ -409,6 +411,18 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PaymentStorageDetail>().HasIndex(x => x.StorageCode);
         b.Entity<InventoryCostMaster>().ToTable("InventoryCosts");
         b.Entity<InventoryCostMaster>().HasIndex(x => new { x.StorageCode, x.CostTypeCode, x.ModelCode }).IsUnique();
+        b.Entity<PaymentBDOrder>().ToTable("PaymentBDOrders");
+        b.Entity<PaymentBDOrder>().HasIndex(x => new { x.OrgId, x.PaymentBDNo }).IsUnique();
+        b.Entity<PaymentBDOrder>().HasIndex(x => new { x.OrgId, x.PmtMonth });
+        b.Entity<PaymentBDOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentBDOrder>().Property(x => x.HTVSignStatus).HasConversion<int>();
+        b.Entity<PaymentBDOrder>().Property(x => x.TCMSSignStatus).HasConversion<int>();
+        b.Entity<PaymentBDOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PaymentBDId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PaymentBDDetail>().ToTable("PaymentBDDetails");
+        b.Entity<PaymentBDDetail>().HasIndex(x => x.PaymentBDNo);
+        b.Entity<PaymentBDDetail>().HasIndex(x => x.Vin);
+        b.Entity<PaymentBDDetail>().HasIndex(x => x.RefNo);
+        b.Entity<PaymentBDDetail>().HasIndex(x => x.StorageCode);
         b.Entity<CarVinProfile>().ToTable("CarVinProfiles");
         b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.Vin }).IsUnique();
         b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.DealerCode });

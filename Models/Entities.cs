@@ -1702,6 +1702,8 @@ public sealed class CarVinInventory
     public string? MappedCarId { get; set; } // Mã CarId xe thương mại đang gán giữ VIN
     public string? DeclarationNo { get; set; } // Số tờ khai hải quan nếu là xe nhập khẩu CBU (CT_TKHQ)
     public DateTime? CustomsClearanceDate { get; set; } // Ngày thông quan hải quan chính thức
+    public string? LastPmtBDRefNo { get; set; } // Số bảng kê bảo dưỡng gần nhất (Car_VIN.PmtBDRefNo)
+    public DateTime? LastPmtBDDate { get; set; } // Ngày bảo dưỡng gần nhất (Car_VIN.PmtBDDate)
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 }
 
@@ -3146,6 +3148,110 @@ public sealed class InventoryCostMaster
     public decimal UnitPrice { get; set; } // Đơn giá chi phí (VNĐ/xe/ngày)
     public bool IsActive { get; set; } = true;
     public string? Remark { get; set; }
+}
+
+/// <summary>Trạng thái Bảng kê Quyết toán Chi phí Bảo dưỡng Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentBD: Pending = 'P' [Chờ duyệt cấp 1], Approved1 = 'A1' [Trưởng phòng bán hàng & kho duyệt cấp 1], Approved2 = 'A2' [Lãnh đạo HTC/HTV duyệt cấp 2], Finished = 'F' [Ký số 2 bên hoàn tất/quyết toán xong], Rejected = 'R' [Từ chối duyệt], Cancelled = 'C' [Đã hủy]).</summary>
+public enum PaymentBDStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Finished = 3,
+    Rejected = 4,
+    Cancelled = 5
+}
+
+/// <summary>Trạng thái ký số điện tử biên bản quyết toán chi phí bảo dưỡng (DMS.Sales HTVSignStatus / TCMSSignStatus: ChuaKy = 0 ['P'], DaKy = 1 ['A']).</summary>
+public enum PaymentBDSignStatus
+{
+    ChuaKy = 0,
+    DaKy = 1
+}
+
+/// <summary>Bảng kê Quyết toán Chi phí Bảo dưỡng Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentBD / PmtPaymentBDController / PaymentBD.cs / ChiPhiBaoDuong.HTV.TCMS.xlsx): Định kỳ hàng tháng hoặc theo kỳ liên tiếp, Nhà phân phối ô tô HTV và Công ty Cổ phần Vận hành Kho vận TCMS lập bảng kê đối soát thanh toán chi phí bảo dưỡng (bảo trì định kỳ 15 ngày/lần) cho các xe ô tô lưu bãi; kiểm tra tính liên tục không ngắt quãng giữa các kỳ tính (StartDTime = LastEndDTime + 1 ngày); quy trình phê duyệt đối soát 2 cấp 2 bên (Trưởng phòng bán hàng/kho duyệt cấp 1 Approve1HQ, Lãnh đạo HTC/HTV duyệt cấp 2 Approve2HQ, TCMS ký số điện tử TCMSESignHQ, HTV ký số điện tử HTVESignHQ và ghi mốc bảo dưỡng gần nhất về Car_VIN).</summary>
+public sealed class PaymentBDOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PaymentBDNo { get; set; } = ""; // Mã bảng kê ({yyMM}PBD{seq:D5}, vd: 2603PBD00001)
+    public string PmtMonth { get; set; } = ""; // Tháng thanh toán (yyyy-MM, vd: 2026-03)
+    public DateTime PmtPeriodStartDTime { get; set; } // Ngày bắt đầu kỳ tính (phải liên tiếp kỳ trước)
+    public DateTime PmtPeriodEndDTime { get; set; } // Ngày kết thúc kỳ tính (>= StartDTime)
+    public decimal VAT { get; set; } = 10m; // Thuế suất VAT (%)
+    public int TotalCars { get; set; } // Tổng số lượng xe tính phí trong bảng kê
+    public int TotalBDCount { get; set; } // Tổng số lần bảo dưỡng trong kỳ = SUM(Detail.BDCount)
+    public decimal AmountTotal { get; set; } // Tổng chi phí bảo dưỡng trước VAT = SUM(Detail.AmountTotal)
+    public decimal AmountVAT { get; set; } // Tiền thuế GTGT = AmountTotal * VAT / 100
+    public decimal AmountVATTotal { get; set; } // Tổng chi phí thanh toán sau VAT = AmountTotal + AmountVAT
+    public PaymentBDStatus Status { get; set; } = PaymentBDStatus.Pending;
+
+    // Ký số phía Nhà phân phối HTV:
+    public PaymentBDSignStatus HTVSignStatus { get; set; } = PaymentBDSignStatus.ChuaKy;
+    public DateTime? HTVSignDTime { get; set; }
+    public string? HTVSignBy { get; set; }
+
+    // Ký số phía Đơn vị dịch vụ quản lý kho bãi TCMS:
+    public PaymentBDSignStatus TCMSSignStatus { get; set; } = PaymentBDSignStatus.ChuaKy;
+    public DateTime? TCMSSignDTime { get; set; }
+    public string? TCMSSignBy { get; set; }
+
+    // File hợp đồng / biên bản điện tử:
+    public string? FilePath { get; set; } // File hợp đồng điện tử ký số
+    public string? FileUrl { get; set; }
+
+    public string? Remark { get; set; } // Ghi chú phiếu
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public string? CancelReason { get; set; } // Lý do hủy phiếu
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? Approve1At { get; set; }
+    public string? Approve1By { get; set; }
+    public DateTime? Approve2At { get; set; }
+    public string? Approve2By { get; set; }
+    public DateTime? RejectedAt { get; set; }
+    public string? RejectedBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+
+    public List<PaymentBDDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô tính phí bảo dưỡng trong kỳ (DMS.Sales Pmt_PaymentBDDetail): theo dõi từng số khung VIN 17 ký tự, số tham chiếu RefNo (lệnh xuất kho, điều chuyển, nhập cảng...), kho lưu bãi StorageCode, ngày vào kho StorageDateIn, ngày ra kho StorageDateOut, ngày hóa đơn nhà máy InvoiceFactoryDate, ngày bảo dưỡng kỳ gần nhất LatePmtBDDate, ngày bảo dưỡng lần 1 (BDDate1, mốc 15 ngày) và lần 2 (BDDate2, mốc 30 ngày), số lần bảo dưỡng trong kỳ BDCount, đơn giá UnitPrice và tiền bảo dưỡng BDAmount.</summary>
+public sealed class PaymentBDDetail
+{
+    public long Id { get; set; }
+    public long PaymentBDId { get; set; }
+    public string PaymentBDNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN, bắt buộc)
+    public string RefNo { get; set; } = ""; // Số tham chiếu giao dịch kho bãi (bắt buộc)
+    public string? CarId { get; set; } // Mã định danh xe hệ thống
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT...)
+    public string ModelName { get; set; } = ""; // Tên thương mại dòng xe
+    public string? SpecCode { get; set; } // Mã cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string StorageCode { get; set; } = ""; // Mã kho bãi (KHO_NB, KHO_DY, KHO_CANG_HP, KHO_CANG_CM...)
+    public string? StorageName { get; set; } // Tên kho bãi
+    public DateTime? StorageDateIn { get; set; } // Ngày xe nhập kho bãi
+    public DateTime? StorageDateOut { get; set; } // Ngày xe xuất khỏi kho bãi
+    public string? InvoiceFactoryDate { get; set; } // Ngày hóa đơn xuất xưởng nhà máy
+    public DateTime? LatePmtBDDate { get; set; } // Ngày bảo dưỡng kỳ gần nhất (mốc Car_VIN.PmtBDDate)
+    public DateTime? BDDate1 { get; set; } // Ngày bảo dưỡng lần 1 trong kỳ (mốc 15 ngày)
+    public DateTime? BDDate2 { get; set; } // Ngày bảo dưỡng lần 2 trong kỳ (mốc 30 ngày)
+    public int BDCount { get; set; } // Số lần bảo dưỡng trong kỳ này (0/1/2)
+    public decimal UnitPrice { get; set; } // Đơn giá bảo dưỡng (VNĐ/lần)
+    public decimal BDAmount { get; set; } // Tiền bảo dưỡng = BDCount * UnitPrice (VNĐ)
+    public decimal AmountTotal { get; set; } // Tổng tiền dòng xe = BDAmount (VNĐ)
+    public string? DealerCode { get; set; } // Mã đại lý đích / đại lý nhận xe
+    public string? DealerName { get; set; } // Tên đại lý
+    public string? PackingListNo { get; set; } // Số Packing List lô xe nhập khẩu
+    public string? DeliveryOrderNo { get; set; } // Số lệnh giao xe xuất kho
+    public string? StorageRearrangeNoIn { get; set; } // Số lệnh điều chuyển kho đến
+    public string? StorageRearrangeNoOut { get; set; } // Số lệnh điều chuyển kho đi
+    public string? RetrieveOrderNo { get; set; } // Số lệnh thu hồi xe
+    public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
 /// <summary>Trạng thái thế chấp / giải chấp hồ sơ gốc xe ô tô tại ngân hàng (DMS.Sales Car_VIN StatusMortageEnd: Free = '2' [Chưa thế chấp / tự do], Mortgaged = '0' [Đang thế chấp ngân hàng], Redeemed = '1' [Đã giải chấp hoàn tất]).</summary>

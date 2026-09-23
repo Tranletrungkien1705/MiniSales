@@ -2500,6 +2500,85 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_PaymentStorageDetails_RefNo ON PaymentStorageDetails(RefNo);
                 CREATE INDEX IF NOT EXISTS IX_PaymentStorageDetails_StorageCode ON PaymentStorageDetails(StorageCode);
 
+                CREATE TABLE IF NOT EXISTS PaymentBDOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PaymentBDNo TEXT NOT NULL,
+                    PmtMonth TEXT NOT NULL,
+                    PmtPeriodStartDTime TEXT NOT NULL,
+                    PmtPeriodEndDTime TEXT NOT NULL,
+                    VAT REAL NOT NULL DEFAULT 10,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    TotalBDCount INTEGER NOT NULL DEFAULT 0,
+                    AmountTotal REAL NOT NULL DEFAULT 0,
+                    AmountVAT REAL NOT NULL DEFAULT 0,
+                    AmountVATTotal REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    HTVSignStatus INTEGER NOT NULL DEFAULT 0,
+                    HTVSignDTime TEXT,
+                    HTVSignBy TEXT,
+                    TCMSSignStatus INTEGER NOT NULL DEFAULT 0,
+                    TCMSSignDTime TEXT,
+                    TCMSSignBy TEXT,
+                    FilePath TEXT,
+                    FileUrl TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    Approve1At TEXT,
+                    Approve1By TEXT,
+                    Approve2At TEXT,
+                    Approve2By TEXT,
+                    RejectedAt TEXT,
+                    RejectedBy TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentBDOrders_OrgId_PaymentBDNo ON PaymentBDOrders(OrgId, PaymentBDNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentBDOrders_OrgId_PmtMonth ON PaymentBDOrders(OrgId, PmtMonth);
+
+                CREATE TABLE IF NOT EXISTS PaymentBDDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PaymentBDId INTEGER NOT NULL,
+                    PaymentBDNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    RefNo TEXT NOT NULL,
+                    CarId TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    StorageCode TEXT NOT NULL,
+                    StorageName TEXT,
+                    StorageDateIn TEXT,
+                    StorageDateOut TEXT,
+                    InvoiceFactoryDate TEXT,
+                    LatePmtBDDate TEXT,
+                    BDDate1 TEXT,
+                    BDDate2 TEXT,
+                    BDCount INTEGER NOT NULL DEFAULT 0,
+                    UnitPrice REAL NOT NULL DEFAULT 0,
+                    BDAmount REAL NOT NULL DEFAULT 0,
+                    AmountTotal REAL NOT NULL DEFAULT 0,
+                    DealerCode TEXT,
+                    DealerName TEXT,
+                    PackingListNo TEXT,
+                    DeliveryOrderNo TEXT,
+                    StorageRearrangeNoIn TEXT,
+                    StorageRearrangeNoOut TEXT,
+                    RetrieveOrderNo TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(PaymentBDId) REFERENCES PaymentBDOrders(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_PaymentBDDetails_PaymentBDNo ON PaymentBDDetails(PaymentBDNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentBDDetails_Vin ON PaymentBDDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_PaymentBDDetails_RefNo ON PaymentBDDetails(RefNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentBDDetails_StorageCode ON PaymentBDDetails(StorageCode);
+
                 CREATE TABLE IF NOT EXISTS CarVinProfiles (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -3137,6 +3216,8 @@ public static class Seeder
         {
             await db.Database.ExecuteSqlRawAsync("ALTER TABLE CarVinInventories ADD COLUMN DeclarationNo TEXT;");
             await db.Database.ExecuteSqlRawAsync("ALTER TABLE CarVinInventories ADD COLUMN CustomsClearanceDate TEXT;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE CarVinInventories ADD COLUMN LastPmtBDRefNo TEXT;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE CarVinInventories ADD COLUMN LastPmtBDDate TEXT;");
         }
         catch
         {
@@ -12318,6 +12399,336 @@ public static class Seeder
                 };
 
                 db.PaymentStorageOrders.AddRange(pst1, pst2, pst3, pst4);
+            }
+
+            // Seed bảng kê quyết toán chi phí bảo dưỡng xe Pmt_PaymentBD
+            if (!await db.PaymentBDOrders.AnyAsync(o => o.OrgId == orgId))
+            {
+                var pbd1 = new PaymentBDOrder
+                {
+                    OrgId = orgId,
+                    PaymentBDNo = "2603PBD00001",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 1),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 15),
+                    VAT = 10m,
+                    TotalCars = 3,
+                    TotalBDCount = 4,
+                    AmountTotal = 2000000m,
+                    AmountVAT = 200000m,
+                    AmountVATTotal = 2200000m,
+                    Status = PaymentBDStatus.Finished,
+                    HTVSignStatus = PaymentBDSignStatus.DaKy,
+                    HTVSignDTime = new DateTime(2026, 3, 17, 10, 30, 0),
+                    HTVSignBy = "TGD_HTV_ESIGN",
+                    TCMSSignStatus = PaymentBDSignStatus.DaKy,
+                    TCMSSignDTime = new DateTime(2026, 3, 16, 15, 0, 0),
+                    TCMSSignBy = "GD_TCMS_ESIGN",
+                    FilePath = "/esign/htv/2603PBD00001_contract_signed.pdf",
+                    FileUrl = "/esign/htv/2603PBD00001_contract_signed.pdf",
+                    Remark = "Quyết toán chi phí bảo dưỡng định kỳ đợt 1 tháng 3/2026 tại Kho Ninh Bình và Duyên Yên",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = new DateTime(2026, 3, 15, 8, 0, 0),
+                    Approve1At = new DateTime(2026, 3, 15, 14, 0, 0),
+                    Approve1By = "TP_KHO_VAN_HTC",
+                    Approve2At = new DateTime(2026, 3, 16, 9, 30, 0),
+                    Approve2By = "LANH_DAO_HTC",
+                    Details = new List<PaymentBDDetail>
+                    {
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00001",
+                            Vin = "KMHE281BBSA129841",
+                            RefNo = "DO2603010001",
+                            CarId = "CAR2026-SF0101",
+                            ModelCode = "SANTAFE",
+                            ModelName = "Santa Fe 2.5 HTRAC",
+                            SpecCode = "SF25-PRE-01",
+                            ColorCode = "WW1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 2, 20),
+                            StorageDateOut = new DateTime(2026, 3, 15),
+                            InvoiceFactoryDate = "2026-02-15",
+                            LatePmtBDDate = null,
+                            BDDate1 = new DateTime(2026, 3, 7),
+                            BDDate2 = new DateTime(2026, 3, 15),
+                            BDCount = 2,
+                            UnitPrice = 500000m,
+                            BDAmount = 1000000m,
+                            AmountTotal = 1000000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            DeliveryOrderNo = "DO2603010001",
+                            Remark = "Bảo dưỡng 2 lần trong kỳ (mốc 15 và 30 ngày)"
+                        },
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00001",
+                            Vin = "KMHE281BBSA987654",
+                            RefNo = "DO2602150002",
+                            CarId = "CAR2026-TU1102",
+                            ModelCode = "TUCSON",
+                            ModelName = "Tucson 2.0 AT",
+                            SpecCode = "TU20-STD-01",
+                            ColorCode = "NKA",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 2, 25),
+                            StorageDateOut = new DateTime(2026, 3, 15),
+                            InvoiceFactoryDate = "2026-02-18",
+                            LatePmtBDDate = null,
+                            BDDate1 = new DateTime(2026, 3, 12),
+                            BDDate2 = null,
+                            BDCount = 1,
+                            UnitPrice = 500000m,
+                            BDAmount = 500000m,
+                            AmountTotal = 500000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            DeliveryOrderNo = "DO2602150002",
+                            Remark = "Bảo dưỡng 1 lần trong kỳ"
+                        },
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00001",
+                            Vin = "KMHE281BBSA667788",
+                            RefNo = "PMT26090003",
+                            CarId = "CAR2026-AC9011",
+                            ModelCode = "ACCENT",
+                            ModelName = "Accent 1.4 AT",
+                            SpecCode = "AC14-AT-01",
+                            ColorCode = "WH1",
+                            StorageCode = "KHO_DY",
+                            StorageName = "Kho Trung chuyển Duyên Yên",
+                            StorageDateIn = new DateTime(2026, 3, 1),
+                            StorageDateOut = new DateTime(2026, 3, 15),
+                            InvoiceFactoryDate = "2026-02-28",
+                            LatePmtBDDate = null,
+                            BDDate1 = new DateTime(2026, 3, 16),
+                            BDDate2 = null,
+                            BDCount = 1,
+                            UnitPrice = 500000m,
+                            BDAmount = 500000m,
+                            AmountTotal = 500000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            Remark = "Xe Accent chuyển kho Duyên Yên"
+                        }
+                    }
+                };
+
+                var pbd2 = new PaymentBDOrder
+                {
+                    OrgId = orgId,
+                    PaymentBDNo = "2603PBD00002",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 16),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 31),
+                    VAT = 10m,
+                    TotalCars = 2,
+                    TotalBDCount = 2,
+                    AmountTotal = 1000000m,
+                    AmountVAT = 100000m,
+                    AmountVATTotal = 1100000m,
+                    Status = PaymentBDStatus.Approved2,
+                    HTVSignStatus = PaymentBDSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentBDSignStatus.ChuaKy,
+                    Remark = "Bảng kê quyết toán bảo dưỡng đợt 2 tháng 3/2026 đã được Lãnh đạo HTC duyệt, chờ ký số 2 bên",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = new DateTime(2026, 3, 31, 10, 0, 0),
+                    Approve1At = new DateTime(2026, 3, 31, 14, 0, 0),
+                    Approve1By = "TP_KHO_VAN_HTC",
+                    Approve2At = new DateTime(2026, 3, 31, 16, 30, 0),
+                    Approve2By = "LANH_DAO_HTC",
+                    Details = new List<PaymentBDDetail>
+                    {
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00002",
+                            Vin = "KMHE281BBSA900101",
+                            RefNo = "REF-26030001",
+                            CarId = "CAR2026-PAL-001",
+                            ModelCode = "PALISADE",
+                            ModelName = "Hyundai Palisade 2.2D Prestige",
+                            SpecCode = "PAL-PRE-01",
+                            ColorCode = "WW1",
+                            StorageCode = "KHO_CANG_HP",
+                            StorageName = "Kho Bãi Cảng Hải Phòng Đình Vũ",
+                            StorageDateIn = new DateTime(2026, 3, 10),
+                            StorageDateOut = null,
+                            InvoiceFactoryDate = "2026-03-05",
+                            LatePmtBDDate = new DateTime(2026, 3, 7),
+                            BDDate1 = new DateTime(2026, 3, 25),
+                            BDDate2 = null,
+                            BDCount = 1,
+                            UnitPrice = 500000m,
+                            BDAmount = 500000m,
+                            AmountTotal = 500000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            PackingListNo = "2603PL0001",
+                            Remark = "Xe CBU lưu bãi cảng Đình Vũ"
+                        },
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00002",
+                            Vin = "KMHE281BBSA900102",
+                            RefNo = "REF-26030002",
+                            CarId = "CAR2026-IQ5-001",
+                            ModelCode = "IONIQ5",
+                            ModelName = "Hyundai Ioniq 5 Prestige",
+                            SpecCode = "IQ5-PRE-01",
+                            ColorCode = "SL1",
+                            StorageCode = "KHO_CANG_CM",
+                            StorageName = "Kho Bãi Cảng Cái Mép Vũng Tàu",
+                            StorageDateIn = new DateTime(2026, 3, 12),
+                            StorageDateOut = null,
+                            InvoiceFactoryDate = "2026-03-08",
+                            LatePmtBDDate = new DateTime(2026, 3, 10),
+                            BDDate1 = new DateTime(2026, 3, 27),
+                            BDDate2 = null,
+                            BDCount = 1,
+                            UnitPrice = 500000m,
+                            BDAmount = 500000m,
+                            AmountTotal = 500000m,
+                            DealerCode = "VS058",
+                            DealerName = "Hyundai Miền Nam",
+                            PackingListNo = "2603PL0001",
+                            Remark = "Xe điện Ioniq 5 lưu kho Cái Mép"
+                        }
+                    }
+                };
+
+                var pbd3 = new PaymentBDOrder
+                {
+                    OrgId = orgId,
+                    PaymentBDNo = "2603PBD00003",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 1),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 20),
+                    VAT = 10m,
+                    TotalCars = 1,
+                    TotalBDCount = 1,
+                    AmountTotal = 500000m,
+                    AmountVAT = 50000m,
+                    AmountVATTotal = 550000m,
+                    Status = PaymentBDStatus.Approved1,
+                    HTVSignStatus = PaymentBDSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentBDSignStatus.ChuaKy,
+                    Remark = "Bảng kê bảo dưỡng lô xe Stargazer đã được Trưởng phòng bán hàng & kho duyệt cấp 1",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = DateTime.Today.AddDays(-5),
+                    Approve1At = DateTime.Today.AddDays(-4),
+                    Approve1By = "TP_KHO_VAN_HTC",
+                    Details = new List<PaymentBDDetail>
+                    {
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00003",
+                            Vin = "KMHE281BBSA900401",
+                            RefNo = "REF-26030003",
+                            CarId = "CAR2026-SG-001",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X Cao Cấp",
+                            SpecCode = "SG-PRE-01",
+                            ColorCode = "WW1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 3, 1),
+                            StorageDateOut = new DateTime(2026, 3, 20),
+                            InvoiceFactoryDate = "2026-02-26",
+                            LatePmtBDDate = null,
+                            BDDate1 = new DateTime(2026, 3, 16),
+                            BDDate2 = null,
+                            BDCount = 1,
+                            UnitPrice = 500000m,
+                            BDAmount = 500000m,
+                            AmountTotal = 500000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            Remark = "Lô xe Stargazer lưu kho bãi"
+                        }
+                    }
+                };
+
+                var pbd4 = new PaymentBDOrder
+                {
+                    OrgId = orgId,
+                    PaymentBDNo = "2603PBD00004",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 21),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 31),
+                    VAT = 10m,
+                    TotalCars = 2,
+                    TotalBDCount = 1,
+                    AmountTotal = 500000m,
+                    AmountVAT = 50000m,
+                    AmountVATTotal = 550000m,
+                    Status = PaymentBDStatus.Pending,
+                    HTVSignStatus = PaymentBDSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentBDSignStatus.ChuaKy,
+                    Remark = "Bảng kê nháp đang kiểm tra đối soát số lần bảo dưỡng với TCMS",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = DateTime.Today.AddDays(-1),
+                    Details = new List<PaymentBDDetail>
+                    {
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00004",
+                            Vin = "KMHE281BBSA900402",
+                            RefNo = "REF-26030004",
+                            CarId = "CAR2026-SG-002",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X Tiêu Chuẩn",
+                            SpecCode = "SG-STD-01",
+                            ColorCode = "BK1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 3, 21),
+                            StorageDateOut = null,
+                            InvoiceFactoryDate = "2026-03-18",
+                            LatePmtBDDate = null,
+                            BDDate1 = new DateTime(2026, 3, 30),
+                            BDDate2 = null,
+                            BDCount = 1,
+                            UnitPrice = 500000m,
+                            BDAmount = 500000m,
+                            AmountTotal = 500000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            Remark = "Chờ đối soát"
+                        },
+                        new()
+                        {
+                            PaymentBDNo = "2603PBD00004",
+                            Vin = "KMHE281BBSA900103",
+                            RefNo = "REF-26030005",
+                            CarId = "CAR2026-CR-003",
+                            ModelCode = "CRETA",
+                            ModelName = "Hyundai Creta 1.5 Cao Cấp",
+                            SpecCode = "CR15-PRE-01",
+                            ColorCode = "GY1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 3, 22),
+                            StorageDateOut = null,
+                            InvoiceFactoryDate = "2026-03-19",
+                            LatePmtBDDate = null,
+                            BDDate1 = null,
+                            BDDate2 = null,
+                            BDCount = 0,
+                            UnitPrice = 500000m,
+                            BDAmount = 0m,
+                            AmountTotal = 0m,
+                            DealerCode = "VN012",
+                            DealerName = "Hyundai Lê Văn Lương",
+                            Remark = "Chưa đủ 15 ngày lưu kho, chưa phát sinh bảo dưỡng"
+                        }
+                    }
+                };
+
+                db.PaymentBDOrders.AddRange(pbd1, pbd2, pbd3, pbd4);
             }
 
             if (!await db.CarVinProfiles.AnyAsync(o => o.OrgId == orgId))
