@@ -3192,6 +3192,34 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_StorageTransactions_OrgId_StorageCode ON StorageTransactions(OrgId, StorageCode);
                 CREATE INDEX IF NOT EXISTS IX_StorageTransactions_OrgId_StorageCodeTo ON StorageTransactions(OrgId, StorageCodeTo);
 
+                CREATE TABLE IF NOT EXISTS InsuranceCompanies (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    InsCompanyCode TEXT NOT NULL,
+                    InsCompanyName TEXT NOT NULL,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    Remark TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_InsuranceCompanies_OrgId_InsCompanyCode ON InsuranceCompanies(OrgId, InsCompanyCode);
+
+                CREATE TABLE IF NOT EXISTS InsuranceTypes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    InsCompanyCode TEXT NOT NULL,
+                    InsTypeCode TEXT NOT NULL,
+                    EffectiveDate TEXT NOT NULL,
+                    InsTypeName TEXT NOT NULL,
+                    Rate REAL NOT NULL,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    Remark TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_InsuranceTypes_OrgId_InsCompanyCode_InsTypeCode_EffectiveDate ON InsuranceTypes(OrgId, InsCompanyCode, InsTypeCode, EffectiveDate);
+                CREATE INDEX IF NOT EXISTS IX_InsuranceTypes_OrgId_InsCompanyCode ON InsuranceTypes(OrgId, InsCompanyCode);
+
                 CREATE TABLE IF NOT EXISTS CustomerVisits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -14397,6 +14425,27 @@ public static class Seeder
                             new StorageTransaction { OrgId = orgId, Vin = "RLUGT41DBST012694", RefNo = "2609PL0001", RefType = StorageTransactionRefType.PL, StorageCode = "K01", StorageCodeTo = "K02", DTimeFrom = DateTime.Now.AddDays(-40), DTimeTo = DateTime.Now.AddDays(-35), RefNoTo = "2609BBGN0001", FlagInDay = "0", Remark = "Điều chuyển từ K01 sang K02", CreatedBy = "HQ_STORAGE_USER", CreatedDTime = DateTime.Now.AddDays(-40), LogLUBy = "HQ_STORAGE_USER", LogLUDateTime = DateTime.Now.AddDays(-35) },
                             new StorageTransaction { OrgId = orgId, Vin = "RLUGT41DBST012695", RefNo = "2609BBGN0001", RefType = StorageTransactionRefType.BBGN, StorageCode = "K02", StorageCodeTo = null, DTimeFrom = DateTime.Now.AddDays(-20), DTimeTo = null, RefNoTo = null, FlagInDay = "0", Remark = "Nhập kho theo biên bản giao nhận", CreatedBy = "HQ_STORAGE_USER", CreatedDTime = DateTime.Now.AddDays(-20), LogLUBy = "HQ_STORAGE_USER", LogLUDateTime = DateTime.Now.AddDays(-20) },
                             new StorageTransaction { OrgId = orgId, Vin = "RLUGT41DBST012696", RefNo = "2609PL0002", RefType = StorageTransactionRefType.PL, StorageCode = "K03", StorageCodeTo = "K03", DTimeFrom = DateTime.Now.AddDays(-10), DTimeTo = DateTime.Now.AddDays(-10), RefNoTo = "2609BBGN0002", FlagInDay = "1", Remark = "Nhập xuất trong ngày — chỉ tính phí lưu kho cho kho xuất", CreatedBy = "HQ_STORAGE_USER", CreatedDTime = DateTime.Now.AddDays(-10), LogLUBy = "HQ_STORAGE_USER", LogLUDateTime = DateTime.Now.AddDays(-10) }
+                        );
+                    }
+                    // Danh mục Công ty Bảo hiểm (Mst_InsuranceCompany / Master.1.cs / Mst_InsuranceCompany_Get|Update|Delete)
+                    if (!await db.InsuranceCompanies.AnyAsync(o => o.OrgId == orgId))
+                    {
+                        db.InsuranceCompanies.AddRange(
+                            new InsuranceCompany { OrgId = orgId, InsCompanyCode = "BIC", InsCompanyName = "Tổng Công ty Bảo hiểm BIDV (BIC)", FlagActive = "1", Remark = "Đối tác bảo hiểm xe vận chuyển", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                            new InsuranceCompany { OrgId = orgId, InsCompanyCode = "PTI", InsCompanyName = "Tổng Công ty Cổ phần Bảo hiểm Bưu điện (PTI)", FlagActive = "1", Remark = "Đối tác bảo hiểm vật chất xe", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                            new InsuranceCompany { OrgId = orgId, InsCompanyCode = "PJICO", InsCompanyName = "Tổng Công ty Cổ phần Bảo hiểm Petrolimex (PJICO)", FlagActive = "1", Remark = null, LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
+                            new InsuranceCompany { OrgId = orgId, InsCompanyCode = "BV", InsCompanyName = "Tổng Công ty Bảo hiểm Bảo Việt", FlagActive = "0", Remark = "Tạm ngừng hợp tác", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
+                        );
+                    }
+                    // Danh mục Loại Bảo hiểm (Mst_InsuranceType / Master.1.cs / Mst_InsuranceType_Get|Update|Delete)
+                    if (!await db.InsuranceTypes.AnyAsync(o => o.OrgId == orgId))
+                    {
+                        db.InsuranceTypes.AddRange(
+                            new InsuranceType { OrgId = orgId, InsCompanyCode = "BIC", InsTypeCode = "BHVC", EffectiveDate = DateTime.Now.AddDays(-60).Date, InsTypeName = "Bảo hiểm vật chất xe", Rate = 1.5m, FlagActive = "1", Remark = null, LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                            new InsuranceType { OrgId = orgId, InsCompanyCode = "BIC", InsTypeCode = "BHTNDS", EffectiveDate = DateTime.Now.AddDays(-60).Date, InsTypeName = "Bảo hiểm trách nhiệm dân sự", Rate = 0.8m, FlagActive = "1", Remark = null, LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                            new InsuranceType { OrgId = orgId, InsCompanyCode = "PTI", InsTypeCode = "BHVC", EffectiveDate = DateTime.Now.AddDays(-60).Date, InsTypeName = "Bảo hiểm vật chất xe", Rate = 1.6m, FlagActive = "1", Remark = null, LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                            new InsuranceType { OrgId = orgId, InsCompanyCode = "PJICO", InsTypeCode = "BHVT", EffectiveDate = DateTime.Now.AddDays(-45).Date, InsTypeName = "Bảo hiểm vận tải hàng hóa", Rate = 0.5m, FlagActive = "1", Remark = null, LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
+                            new InsuranceType { OrgId = orgId, InsCompanyCode = "BV", InsTypeCode = "BHVC", EffectiveDate = DateTime.Now.AddDays(-30).Date, InsTypeName = "Bảo hiểm vật chất xe", Rate = 1.4m, FlagActive = "0", Remark = "Ngừng áp dụng", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
                         );
                     }
                     await db.SaveChangesAsync();

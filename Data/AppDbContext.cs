@@ -140,6 +140,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<MaintainTaskItem> MaintainTaskItems => Set<MaintainTaskItem>();
     public DbSet<DealerInventoryThreshold> DealerInventoryThresholds => Set<DealerInventoryThreshold>();
     public DbSet<StorageTransaction> StorageTransactions => Set<StorageTransaction>();
+    public DbSet<InsuranceCompany> InsuranceCompanies => Set<InsuranceCompany>();
+    public DbSet<InsuranceType> InsuranceTypes => Set<InsuranceType>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -657,5 +659,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<StorageTransaction>().HasIndex(x => new { x.OrgId, x.StorageCode });
         b.Entity<StorageTransaction>().HasIndex(x => new { x.OrgId, x.StorageCodeTo });
         b.Entity<StorageTransaction>().Property(x => x.RefType).HasConversion<int>();
+
+        b.Entity<InsuranceCompany>().ToTable("InsuranceCompanies");
+        b.Entity<InsuranceCompany>().HasIndex(x => new { x.OrgId, x.InsCompanyCode }).IsUnique();
+
+        b.Entity<InsuranceType>().ToTable("InsuranceTypes");
+        b.Entity<InsuranceType>().HasIndex(x => new { x.OrgId, x.InsCompanyCode, x.InsTypeCode, x.EffectiveDate }).IsUnique();
+        b.Entity<InsuranceType>().HasIndex(x => new { x.OrgId, x.InsCompanyCode });
     }
 }

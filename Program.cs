@@ -92,6 +92,7 @@ builder.Services.AddScoped<IStorageMasterService, StorageMasterService>();
 builder.Services.AddScoped<IMaintainTaskService, MaintainTaskService>();
 builder.Services.AddScoped<IDealerInventoryThresholdService, DealerInventoryThresholdService>();
 builder.Services.AddScoped<IStorageTransactionService, StorageTransactionService>();
+builder.Services.AddScoped<IInsuranceMasterService, InsuranceMasterService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -6192,6 +6193,89 @@ app.MapPost("/api/storage-transactions", async (List<StorageTransactionRowDto> r
 {
     try { return Results.Ok(await svc.CreateAsync(rows, u.Identity?.Name ?? u.FindFirst("name")?.Value)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Danh mục Công ty Bảo hiểm & Loại Bảo hiểm (Mst_InsuranceCompany + Mst_InsuranceType - DMS.Sales Master.1.cs) =====
+app.MapPost("/api/insurance-companies", async (CreateInsuranceCompanyDto dto, IInsuranceMasterService svc) =>
+{
+    try { return Results.Ok(await svc.CreateCompanyAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/insurance-companies/import", async (List<InsuranceCompanyImportRowDto> rows, IInsuranceMasterService svc) =>
+{
+    try { return Results.Ok(await svc.ImportCompaniesAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/insurance-companies", async (IInsuranceMasterService svc, string? keyWord, string? flagActive) =>
+    Results.Ok(await svc.SearchCompaniesAsync(keyWord, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/insurance-companies/stats", async (IInsuranceMasterService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/insurance-companies/{insCompanyCode}", async (string insCompanyCode, IInsuranceMasterService svc) =>
+{
+    var r = await svc.GetCompanyAsync(insCompanyCode);
+    return r is null ? Results.NotFound(new { insCompanyCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/insurance-companies/{insCompanyCode}", async (string insCompanyCode, UpdateInsuranceCompanyDto dto, IInsuranceMasterService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateCompanyAsync(insCompanyCode, dto);
+        return r is null ? Results.NotFound(new { insCompanyCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/insurance-companies/{insCompanyCode}", async (string insCompanyCode, IInsuranceMasterService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteCompanyAsync(insCompanyCode);
+        return r ? Results.Ok(new { deleted = true, insCompanyCode }) : Results.NotFound(new { insCompanyCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Loại Bảo hiểm (Mst_InsuranceType) =====
+app.MapPost("/api/insurance-types", async (CreateInsuranceTypeDto dto, IInsuranceMasterService svc) =>
+{
+    try { return Results.Ok(await svc.CreateTypeAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/insurance-types/import", async (List<InsuranceTypeImportRowDto> rows, IInsuranceMasterService svc) =>
+{
+    try { return Results.Ok(await svc.ImportTypesAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/insurance-types", async (IInsuranceMasterService svc, string? keyWord, string? insCompanyCode, string? flagActive) =>
+    Results.Ok(await svc.SearchTypesAsync(keyWord, insCompanyCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/insurance-types/{insCompanyCode}/{insTypeCode}", async (string insCompanyCode, string insTypeCode, DateTime effectiveDate, IInsuranceMasterService svc) =>
+{
+    var r = await svc.GetTypeAsync(insCompanyCode, insTypeCode, effectiveDate);
+    return r is null ? Results.NotFound(new { insCompanyCode, insTypeCode, effectiveDate }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/insurance-types/{insCompanyCode}/{insTypeCode}", async (string insCompanyCode, string insTypeCode, DateTime effectiveDate, UpdateInsuranceTypeDto dto, IInsuranceMasterService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateTypeAsync(insCompanyCode, insTypeCode, effectiveDate, dto);
+        return r is null ? Results.NotFound(new { insCompanyCode, insTypeCode, effectiveDate }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/insurance-types/{insCompanyCode}/{insTypeCode}", async (string insCompanyCode, string insTypeCode, DateTime effectiveDate, IInsuranceMasterService svc) =>
+{
+    var r = await svc.DeleteTypeAsync(insCompanyCode, insTypeCode, effectiveDate);
+    return r ? Results.Ok(new { deleted = true, insCompanyCode, insTypeCode, effectiveDate }) : Results.NotFound(new { insCompanyCode, insTypeCode, effectiveDate });
 }).RequireAuthorization();
 
 app.Run();

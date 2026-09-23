@@ -4533,3 +4533,31 @@ public sealed class StorageTransaction
     public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
 }
+/// <summary>Công ty bảo hiểm đối tác (DMS.Sales Mst_InsuranceCompany / Master.1.cs / Mst_InsuranceCompany_Get|Update|Delete): danh mục công ty bảo hiểm cung cấp dịch vụ bảo hiểm xe cho đại lý. Khóa nghiệp vụ = InsCompanyCode. Bắt buộc InsCompanyCode + InsCompanyName + FlagActive (Mst_InsuranceCompany_Update_InvalidInput).</summary>
+public sealed class InsuranceCompany
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string InsCompanyCode { get; set; } = ""; // Mã công ty bảo hiểm (khóa nghiệp vụ duy nhất)
+    public string InsCompanyName { get; set; } = ""; // Tên công ty bảo hiểm (bắt buộc)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực ('1' = active, '0' = inactive)
+    public string? Remark { get; set; } // Ghi chú
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}
+
+/// <summary>Loại bảo hiểm / gói bảo hiểm (DMS.Sales Mst_InsuranceType / Master.1.cs / Mst_InsuranceType_Get|Update|Delete): gói bảo hiểm cụ thể do một công ty bảo hiểm cung cấp. Khóa nghiệp vụ = (InsCompanyCode, InsTypeCode, EffectiveDate); FK InsCompanyCode phải tồn tại trong Mst_InsuranceCompany. Bắt buộc InsCompanyCode + InsTypeCode + EffectiveDate + InsTypeName + Rate (0..100) + FlagActive.</summary>
+public sealed class InsuranceType
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string InsCompanyCode { get; set; } = ""; // Mã công ty bảo hiểm (FK Mst_InsuranceCompany, khóa chính 1)
+    public string InsTypeCode { get; set; } = ""; // Mã loại bảo hiểm (khóa chính 2)
+    public DateTime EffectiveDate { get; set; } = DateTime.Now; // Ngày hiệu lực (khóa chính 3)
+    public string InsTypeName { get; set; } = ""; // Tên loại bảo hiểm (bắt buộc)
+    public decimal Rate { get; set; } // Tỷ lệ phí bảo hiểm (%) — bắt buộc, 0..100
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực ('1' = active, '0' = inactive)
+    public string? Remark { get; set; } // Ghi chú
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}
