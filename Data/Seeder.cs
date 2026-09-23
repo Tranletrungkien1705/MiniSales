@@ -2842,6 +2842,20 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_PaymentAVNDetails_PaymentAVNNo ON PaymentAVNDetails(PaymentAVNNo);
                 CREATE INDEX IF NOT EXISTS IX_PaymentAVNDetails_Vin ON PaymentAVNDetails(Vin);
                 CREATE INDEX IF NOT EXISTS IX_PaymentAVNDetails_AvnCode ON PaymentAVNDetails(AvnCode);
+
+                CREATE TABLE IF NOT EXISTS WarrantyExpires (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT,
+                    WarrantyExpires REAL NOT NULL DEFAULT 0,
+                    WarrantyKM REAL NOT NULL DEFAULT 0,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    Remark TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_WarrantyExpires_OrgId_ModelCode ON WarrantyExpires(OrgId, ModelCode);
             ");
         }
         catch
@@ -13237,6 +13251,17 @@ public static class Seeder
                         PerformedBy = "CHUYEN_VIEN_DIEU_PHOI_NPP",
                         PerformedAt = DateTime.Now.AddDays(-2)
                     }
+                );
+            }
+
+            // Định mức bảo hành xe ô tô theo dòng xe (Mst_WarrantyExpires / Master.cs)
+            if (!await db.WarrantyExpires.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.WarrantyExpires.AddRange(
+                    new WarrantyExpiresMaster { OrgId = orgId, ModelCode = "SF25", ModelName = "Santa Fe 2.5 HTRAC", WarrantyExpires = 60m, WarrantyKM = 100000m, FlagActive = "1", Remark = "Bảo hành 5 năm hoặc 100.000 km", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new WarrantyExpiresMaster { OrgId = orgId, ModelCode = "TU20", ModelName = "Tucson 2.0 AT", WarrantyExpires = 60m, WarrantyKM = 100000m, FlagActive = "1", Remark = "Bảo hành 5 năm hoặc 100.000 km", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new WarrantyExpiresMaster { OrgId = orgId, ModelCode = "CR15", ModelName = "Creta 1.5 Cao Cấp", WarrantyExpires = 60m, WarrantyKM = 100000m, FlagActive = "1", Remark = "Bảo hành 5 năm hoặc 100.000 km", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new WarrantyExpiresMaster { OrgId = orgId, ModelCode = "AC14", ModelName = "Accent 1.4 AT", WarrantyExpires = 36m, WarrantyKM = 100000m, FlagActive = "1", Remark = "Bảo hành 3 năm hoặc 100.000 km", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 

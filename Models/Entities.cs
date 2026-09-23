@@ -3840,3 +3840,18 @@ public sealed class CarPriceUpdateLog
     public string? PerformedBy { get; set; } // Người thực hiện cập nhật
     public DateTime PerformedAt { get; set; } = DateTime.Now; // Thời điểm thực hiện
 }
+
+/// <summary>Định mức bảo hành xe ô tô theo dòng xe (DMS.Sales Mst_WarrantyExpires / Master.cs / Mst_WarrantyExpires_Get|Create|Update|Delete|Import): danh mục quy định thời hạn bảo hành (số tháng) và số km giới hạn bảo hành áp dụng cho từng model xe. Khi Đại lý lập giao dịch bán lẻ (DLS_Deal), hệ thống tra cứu định mức này theo ModelCode để tự động điền WarrantyExpires / WarrantyKM và tính ngày hết hạn bảo hành (WarrantyExpiresDate = ngày bàn giao + số tháng).</summary>
+public sealed class WarrantyExpiresMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ModelCode { get; set; } = ""; // Mã dòng xe (khóa chính nghiệp vụ, tham chiếu Mst_CarModel.ModelCode)
+    public string? ModelName { get; set; } // Tên dòng xe (tra cứu từ Mst_CarModel)
+    public decimal WarrantyExpires { get; set; } // Thời hạn bảo hành theo số tháng (>= 0)
+    public decimal WarrantyKM { get; set; } // Số km giới hạn bảo hành (>= 0)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public string? Remark { get; set; } // Ghi chú
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}

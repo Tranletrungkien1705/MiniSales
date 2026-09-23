@@ -74,6 +74,7 @@ builder.Services.AddScoped<IPaymentAVNService, PaymentAVNService>();
 builder.Services.AddScoped<IPaymentPDIService, PaymentPDIService>();
 builder.Services.AddScoped<IDealerCustomerService, DealerCustomerService>();
 builder.Services.AddScoped<ICarPriceUpdateService, CarPriceUpdateService>();
+builder.Services.AddScoped<IWarrantyExpiresService, WarrantyExpiresService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5051,6 +5052,51 @@ app.MapGet("/api/car-price-updates/logs", async (ICarPriceUpdateService svc, str
 
 app.MapGet("/api/car-price-updates/stats", async (ICarPriceUpdateService svc) =>
     Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+// ===== Định mức Bảo hành Xe Ô tô theo dòng xe (Warranty Expires Master - DMS.Sales Mst_WarrantyExpires / Master.cs) =====
+app.MapGet("/api/warranty-expires", async (IWarrantyExpiresService svc, string? modelCode, string? flagActive) =>
+    Results.Ok(await svc.SearchAsync(modelCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/warranty-expires/stats", async (IWarrantyExpiresService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/warranty-expires/{modelCode}", async (string modelCode, IWarrantyExpiresService svc) =>
+{
+    var r = await svc.GetByModelAsync(modelCode);
+    return r is null ? Results.NotFound(new { modelCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/warranty-expires", async (CreateWarrantyExpiresDto dto, IWarrantyExpiresService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/warranty-expires/{modelCode}", async (string modelCode, UpdateWarrantyExpiresDto dto, IWarrantyExpiresService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(modelCode, dto);
+        return r is null ? Results.NotFound(new { modelCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/warranty-expires/{modelCode}", async (string modelCode, IWarrantyExpiresService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteAsync(modelCode);
+        return ok ? Results.Ok(new { success = true, modelCode }) : Results.NotFound(new { modelCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/warranty-expires/import", async (List<WarrantyExpiresImportRowDto> rows, IWarrantyExpiresService svc) =>
+{
+    try { return Results.Ok(await svc.ImportAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
 
 app.Run();
 
