@@ -2141,11 +2141,90 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_PackingListDetails_PackingListNo ON PackingListDetails(PackingListNo);
                 CREATE INDEX IF NOT EXISTS IX_PackingListDetails_Vin ON PackingListDetails(Vin);
                 CREATE INDEX IF NOT EXISTS IX_PackingListDetails_ModelCode ON PackingListDetails(ModelCode);
+
+                CREATE TABLE IF NOT EXISTS CustomsDeclarations (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    DeclarationNo TEXT NOT NULL,
+                    PortCode TEXT NOT NULL,
+                    PortName TEXT,
+                    ContractNo TEXT,
+                    OpenDate TEXT NOT NULL,
+                    TaxPaymentDate TEXT,
+                    TaxReceiptNo TEXT,
+                    TaxPayerBank TEXT,
+                    CustomsOffice TEXT,
+                    Channel INTEGER NOT NULL DEFAULT 1,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    DutiableAmount REAL NOT NULL DEFAULT 0,
+                    ImportTaxAmount REAL NOT NULL DEFAULT 0,
+                    SpecialConsumptionTaxAmount REAL NOT NULL DEFAULT 0,
+                    VatAmount REAL NOT NULL DEFAULT 0,
+                    TotalTaxAmount REAL NOT NULL DEFAULT 0,
+                    CustomsClearanceDate TEXT,
+                    CustomsOfficer TEXT,
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    SubmittedBy TEXT,
+                    SubmittedAt TEXT,
+                    TaxPaidBy TEXT,
+                    ClearedBy TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT,
+                    CancelReason TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CustomsDeclarations_OrgId_DeclarationNo ON CustomsDeclarations(OrgId, DeclarationNo);
+                CREATE INDEX IF NOT EXISTS IX_CustomsDeclarations_OrgId_PortCode ON CustomsDeclarations(OrgId, PortCode);
+                CREATE INDEX IF NOT EXISTS IX_CustomsDeclarations_OrgId_ContractNo ON CustomsDeclarations(OrgId, ContractNo);
+
+                CREATE TABLE IF NOT EXISTS CustomsDeclarationDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    DeclarationId INTEGER NOT NULL,
+                    DeclarationNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    EngineNo TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    PackingListNo TEXT,
+                    LCNo TEXT,
+                    ContractNo TEXT,
+                    DutiableValue REAL NOT NULL DEFAULT 0,
+                    ImportTax REAL NOT NULL DEFAULT 0,
+                    SpecialConsumptionTax REAL NOT NULL DEFAULT 0,
+                    Vat REAL NOT NULL DEFAULT 0,
+                    TotalTax REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    TaxPaymentDate TEXT,
+                    ClearedAt TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(DeclarationId) REFERENCES CustomsDeclarations(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_CustomsDeclarationDetails_DeclarationNo ON CustomsDeclarationDetails(DeclarationNo);
+                CREATE INDEX IF NOT EXISTS IX_CustomsDeclarationDetails_Vin ON CustomsDeclarationDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_CustomsDeclarationDetails_ModelCode ON CustomsDeclarationDetails(ModelCode);
             ");
         }
         catch
         {
             // Bỏ qua nếu DB là Postgres hoặc đã có bảng
+        }
+
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE CarVinInventories ADD COLUMN DeclarationNo TEXT;");
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE CarVinInventories ADD COLUMN CustomsClearanceDate TEXT;");
+        }
+        catch
+        {
+            // Bỏ qua nếu cột đã tồn tại
         }
 
         try
@@ -10199,6 +10278,390 @@ public static class Seeder
             };
 
             db.BankingTransactions.AddRange(bkt1, bkt2, bkt3, bkt4, bkt5);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.CustomsDeclarations.AnyAsync(x => x.OrgId == orgId))
+        {
+            // Seed 4 Tờ khai Hải quan mẫu đại diện cho 4 trạng thái và 4 luồng/cảng nhập khẩu
+            var tk1 = new CustomsDeclaration
+            {
+                OrgId = orgId,
+                DeclarationNo = "2603TK00001",
+                PortCode = "HPH",
+                PortName = "Cảng Hải Phòng (Đình Vũ / Lạch Huyện)",
+                ContractNo = "HMC-2026-VN01",
+                OpenDate = DateTime.Today.AddDays(-15),
+                TaxPaymentDate = DateTime.Today.AddDays(-12),
+                TaxReceiptNo = "BLT-20260308-HPH01",
+                TaxPayerBank = "Vietcombank - Chi nhánh Thăng Long",
+                CustomsOffice = "Chi cục Hải quan Cửa khẩu Cảng Hải Phòng KV3",
+                Channel = CustomsChannel.Green,
+                Status = CustomsDeclarationStatus.Cleared,
+                TotalCars = 3,
+                DutiableAmount = 2550000000m,
+                ImportTaxAmount = 1275000000m,
+                SpecialConsumptionTaxAmount = 2295000000m,
+                VatAmount = 612000000m,
+                TotalTaxAmount = 4182000000m,
+                CustomsClearanceDate = DateTime.Today.AddDays(-12),
+                CustomsOfficer = "Vũ Hải Đăng - Hải quan KV3 Đình Vũ",
+                Remark = "Lô xe Palisade CBU nhập khẩu từ Ulsan Hàn Quốc, đã hoàn tất nộp thuế và thông quan giải phóng xe",
+                CreatedBy = "HQ_LOGISTICS",
+                CreatedAt = DateTime.Today.AddDays(-15),
+                SubmittedBy = "HQ_LOGISTICS",
+                SubmittedAt = DateTime.Today.AddDays(-14),
+                TaxPaidBy = "HQ_FINANCE",
+                ClearedBy = "Vũ Hải Đăng",
+                Details = new List<CustomsDeclarationDetail>
+                {
+                    new()
+                    {
+                        DeclarationNo = "2603TK00001",
+                        Vin = "KMHE281BBSA900101",
+                        EngineNo = "D4HB-900101",
+                        ModelCode = "PALISADE",
+                        ModelName = "Hyundai Palisade 2.2D Prestige",
+                        SpecCode = "PAL-PRE-01",
+                        SpecDescription = "Palisade 2.2 Diesel Prestige 6 chỗ",
+                        ColorCode = "WW1",
+                        ColorName = "Trắng ngọc trai",
+                        PackingListNo = "2603PL0001",
+                        LCNo = "LC26010088",
+                        ContractNo = "HMC-2026-VN01",
+                        DutiableValue = 850000000m,
+                        ImportTax = 425000000m,
+                        SpecialConsumptionTax = 765000000m,
+                        Vat = 204000000m,
+                        TotalTax = 1394000000m,
+                        Status = CustomsDeclarationDetailStatus.Cleared,
+                        TaxPaymentDate = DateTime.Today.AddDays(-12),
+                        ClearedAt = DateTime.Today.AddDays(-12),
+                        Remark = "Thông quan luồng xanh, đủ điều kiện lưu hành"
+                    },
+                    new()
+                    {
+                        DeclarationNo = "2603TK00001",
+                        Vin = "KMHE281BBSA900102",
+                        EngineNo = "D4HB-900102",
+                        ModelCode = "PALISADE",
+                        ModelName = "Hyundai Palisade 2.2D Exclusive",
+                        SpecCode = "PAL-EXC-01",
+                        SpecDescription = "Palisade 2.2 Diesel Exclusive 7 chỗ",
+                        ColorCode = "BK1",
+                        ColorName = "Đen Abyss",
+                        PackingListNo = "2603PL0001",
+                        LCNo = "LC26010088",
+                        ContractNo = "HMC-2026-VN01",
+                        DutiableValue = 850000000m,
+                        ImportTax = 425000000m,
+                        SpecialConsumptionTax = 765000000m,
+                        Vat = 204000000m,
+                        TotalTax = 1394000000m,
+                        Status = CustomsDeclarationDetailStatus.Cleared,
+                        TaxPaymentDate = DateTime.Today.AddDays(-12),
+                        ClearedAt = DateTime.Today.AddDays(-12),
+                        Remark = "Thông quan luồng xanh, đủ điều kiện lưu hành"
+                    },
+                    new()
+                    {
+                        DeclarationNo = "2603TK00001",
+                        Vin = "KMHE281BBSA900103",
+                        EngineNo = "G6DN-900103",
+                        ModelCode = "PALISADE",
+                        ModelName = "Hyundai Palisade 3.8 V6 Exclusive",
+                        SpecCode = "PAL-V6-01",
+                        SpecDescription = "Palisade 3.8 V6 Xăng Cao Cấp 7 chỗ",
+                        ColorCode = "BL2",
+                        ColorName = "Xanh Moonlight",
+                        PackingListNo = "2603PL0001",
+                        LCNo = "LC26010088",
+                        ContractNo = "HMC-2026-VN01",
+                        DutiableValue = 850000000m,
+                        ImportTax = 425000000m,
+                        SpecialConsumptionTax = 765000000m,
+                        Vat = 204000000m,
+                        TotalTax = 1394000000m,
+                        Status = CustomsDeclarationDetailStatus.Cleared,
+                        TaxPaymentDate = DateTime.Today.AddDays(-12),
+                        ClearedAt = DateTime.Today.AddDays(-12),
+                        Remark = "Thông quan luồng xanh, đủ điều kiện lưu hành"
+                    }
+                }
+            };
+
+            var tk2 = new CustomsDeclaration
+            {
+                OrgId = orgId,
+                DeclarationNo = "2603TK00002",
+                PortCode = "SGN",
+                PortName = "Cảng Cát Lái - TP. Hồ Chí Minh",
+                ContractNo = "HMC-2026-VN02",
+                OpenDate = DateTime.Today.AddDays(-8),
+                TaxPaymentDate = DateTime.Today.AddDays(-5),
+                TaxReceiptNo = "BLT-20260315-SGN02",
+                TaxPayerBank = "BIDV - Chi nhánh TP. Hồ Chí Minh",
+                CustomsOffice = "Chi cục Hải quan Cửa khẩu Cảng Sài Gòn KV1",
+                Channel = CustomsChannel.Yellow,
+                Status = CustomsDeclarationStatus.TaxPaid,
+                TotalCars = 2,
+                DutiableAmount = 1240000000m,
+                ImportTaxAmount = 620000000m,
+                SpecialConsumptionTaxAmount = 744000000m,
+                VatAmount = 260400000m,
+                TotalTaxAmount = 1624400000m,
+                Remark = "Lô xe MPV Custin CBU cập cảng Cát Lái, đã nộp thuế đầy đủ vào Kho bạc Nhà nước, chờ kiểm tra hồ sơ thông quan",
+                CreatedBy = "HQ_LOGISTICS",
+                CreatedAt = DateTime.Today.AddDays(-8),
+                SubmittedBy = "HQ_LOGISTICS",
+                SubmittedAt = DateTime.Today.AddDays(-7),
+                TaxPaidBy = "HQ_FINANCE",
+                Details = new List<CustomsDeclarationDetail>
+                {
+                    new()
+                    {
+                        DeclarationNo = "2603TK00002",
+                        Vin = "KMHE281BBSA900201",
+                        EngineNo = "G4NN-900201",
+                        ModelCode = "CUSTIN",
+                        ModelName = "Hyundai Custin 2.0T Cao Cấp",
+                        SpecCode = "CS20-PRE-01",
+                        SpecDescription = "Custin 2.0 Turbo Bản Cao Cấp 7 chỗ",
+                        ColorCode = "WW1",
+                        ColorName = "Trắng tuyết",
+                        PackingListNo = "2603PL0002",
+                        LCNo = "LC26010092",
+                        ContractNo = "HMC-2026-VN02",
+                        DutiableValue = 620000000m,
+                        ImportTax = 310000000m,
+                        SpecialConsumptionTax = 372000000m,
+                        Vat = 130200000m,
+                        TotalTax = 812200000m,
+                        Status = CustomsDeclarationDetailStatus.TaxPaid,
+                        TaxPaymentDate = DateTime.Today.AddDays(-5),
+                        Remark = "Đã nộp thuế vào NSNN, chờ công chức hải quan ký thông quan"
+                    },
+                    new()
+                    {
+                        DeclarationNo = "2603TK00002",
+                        Vin = "KMHE281BBSA900202",
+                        EngineNo = "G4FS-900202",
+                        ModelCode = "CUSTIN",
+                        ModelName = "Hyundai Custin 1.5T Đặc Biệt",
+                        SpecCode = "CS15-SPC-01",
+                        SpecDescription = "Custin 1.5 Turbo Bản Đặc Biệt 7 chỗ",
+                        ColorCode = "GY1",
+                        ColorName = "Xám Kim Loại",
+                        PackingListNo = "2603PL0002",
+                        LCNo = "LC26010092",
+                        ContractNo = "HMC-2026-VN02",
+                        DutiableValue = 620000000m,
+                        ImportTax = 310000000m,
+                        SpecialConsumptionTax = 372000000m,
+                        Vat = 130200000m,
+                        TotalTax = 812200000m,
+                        Status = CustomsDeclarationDetailStatus.TaxPaid,
+                        TaxPaymentDate = DateTime.Today.AddDays(-5),
+                        Remark = "Đã nộp thuế vào NSNN, chờ công chức hải quan ký thông quan"
+                    }
+                }
+            };
+
+            var tk3 = new CustomsDeclaration
+            {
+                OrgId = orgId,
+                DeclarationNo = "2603TK00003",
+                PortCode = "CM",
+                PortName = "Cảng Quốc tế Cái Mép - Bà Rịa Vũng Tàu",
+                ContractNo = "HMC-2026-VN03",
+                OpenDate = DateTime.Today.AddDays(-4),
+                TaxPayerBank = "VietinBank - Chi nhánh Vũng Tàu",
+                CustomsOffice = "Chi cục Hải quan Cửa khẩu Cảng Cái Mép",
+                Channel = CustomsChannel.Yellow,
+                Status = CustomsDeclarationStatus.Submitted,
+                TotalCars = 2,
+                DutiableAmount = 1800000000m,
+                ImportTaxAmount = 900000000m,
+                SpecialConsumptionTaxAmount = 81000000m,
+                VatAmount = 278100000m,
+                TotalTaxAmount = 1259100000m,
+                Remark = "Lô xe điện Ioniq 5 CBU công nghệ cao, thuế suất TTĐB ưu đãi 3%, đã nộp tờ khai điện tử VNACCS đang chờ duyệt biểu thuế",
+                CreatedBy = "HQ_LOGISTICS",
+                CreatedAt = DateTime.Today.AddDays(-4),
+                SubmittedBy = "HQ_LOGISTICS",
+                SubmittedAt = DateTime.Today.AddDays(-3),
+                Details = new List<CustomsDeclarationDetail>
+                {
+                    new()
+                    {
+                        DeclarationNo = "2603TK00003",
+                        Vin = "KMHE281BBSA900301",
+                        EngineNo = "EM07-900301",
+                        ModelCode = "IONIQ5",
+                        ModelName = "Hyundai Ioniq 5 Prestige",
+                        SpecCode = "IQ5-PRE-01",
+                        SpecDescription = "Ioniq 5 EV Prestige pin 72.6 kWh",
+                        ColorCode = "WW1",
+                        ColorName = "Trắng Atlas",
+                        PackingListNo = "2603PL0003",
+                        LCNo = "LC26010095",
+                        ContractNo = "HMC-2026-VN03",
+                        DutiableValue = 900000000m,
+                        ImportTax = 450000000m,
+                        SpecialConsumptionTax = 40500000m,
+                        Vat = 139050000m,
+                        TotalTax = 629550000m,
+                        Status = CustomsDeclarationDetailStatus.Pending,
+                        Remark = "Chờ lệnh trích nộp thuế từ ngân hàng"
+                    },
+                    new()
+                    {
+                        DeclarationNo = "2603TK00003",
+                        Vin = "KMHE281BBSA900302",
+                        EngineNo = "EM07-900302",
+                        ModelCode = "IONIQ5",
+                        ModelName = "Hyundai Ioniq 5 Exclusive",
+                        SpecCode = "IQ5-EXC-01",
+                        SpecDescription = "Ioniq 5 EV Exclusive pin 58 kWh",
+                        ColorCode = "SL1",
+                        ColorName = "Bạc Gravity Gold",
+                        PackingListNo = "2603PL0003",
+                        LCNo = "LC26010095",
+                        ContractNo = "HMC-2026-VN03",
+                        DutiableValue = 900000000m,
+                        ImportTax = 450000000m,
+                        SpecialConsumptionTax = 40500000m,
+                        Vat = 139050000m,
+                        TotalTax = 629550000m,
+                        Status = CustomsDeclarationDetailStatus.Pending,
+                        Remark = "Chờ lệnh trích nộp thuế từ ngân hàng"
+                    }
+                }
+            };
+
+            var tk4 = new CustomsDeclaration
+            {
+                OrgId = orgId,
+                DeclarationNo = "2603TK00004",
+                PortCode = "HPH",
+                PortName = "Cảng Hải Phòng (Đình Vũ / Lạch Huyện)",
+                ContractNo = "HMC-2026-VN04",
+                OpenDate = DateTime.Today.AddDays(-1),
+                TaxPayerBank = "Vietcombank",
+                CustomsOffice = "Chi cục Hải quan Cửa khẩu Cảng Hải Phòng KV3",
+                Channel = CustomsChannel.Red,
+                Status = CustomsDeclarationStatus.Draft,
+                TotalCars = 2,
+                DutiableAmount = 840000000m,
+                ImportTaxAmount = 420000000m,
+                SpecialConsumptionTaxAmount = 441000000m,
+                VatAmount = 170100000m,
+                TotalTaxAmount = 1031100000m,
+                Remark = "Lô xe Stargazer X CBU đang lập hồ sơ nháp, dự kiến chuyển giao cán bộ kiểm hóa luồng đỏ",
+                CreatedBy = "HQ_LOGISTICS",
+                CreatedAt = DateTime.Today.AddDays(-1),
+                Details = new List<CustomsDeclarationDetail>
+                {
+                    new()
+                    {
+                        DeclarationNo = "2603TK00004",
+                        Vin = "KMHE281BBSA900401",
+                        EngineNo = "G4FL-900401",
+                        ModelCode = "STARGAZER",
+                        ModelName = "Hyundai Stargazer X Cao Cấp",
+                        SpecCode = "SG-PRE-01",
+                        SpecDescription = "Stargazer X 1.5 CVT Bản Cao Cấp 7 chỗ",
+                        ColorCode = "WW1",
+                        ColorName = "Trắng mờ",
+                        PackingListNo = "2603PL0004",
+                        LCNo = "LC26010099",
+                        ContractNo = "HMC-2026-VN04",
+                        DutiableValue = 420000000m,
+                        ImportTax = 210000000m,
+                        SpecialConsumptionTax = 220500000m,
+                        Vat = 85050000m,
+                        TotalTax = 515550000m,
+                        Status = CustomsDeclarationDetailStatus.Pending,
+                        Remark = "Hồ sơ nháp, chuẩn bị truyền VNACCS"
+                    },
+                    new()
+                    {
+                        DeclarationNo = "2603TK00004",
+                        Vin = "KMHE281BBSA900402",
+                        EngineNo = "G4FL-900402",
+                        ModelCode = "STARGAZER",
+                        ModelName = "Hyundai Stargazer X Tiêu Chuẩn",
+                        SpecCode = "SG-STD-01",
+                        SpecDescription = "Stargazer X 1.5 CVT Bản Tiêu Chuẩn 7 chỗ",
+                        ColorCode = "BK1",
+                        ColorName = "Đen Midnight",
+                        PackingListNo = "2603PL0004",
+                        LCNo = "LC26010099",
+                        ContractNo = "HMC-2026-VN04",
+                        DutiableValue = 420000000m,
+                        ImportTax = 210000000m,
+                        SpecialConsumptionTax = 220500000m,
+                        Vat = 85050000m,
+                        TotalTax = 515550000m,
+                        Status = CustomsDeclarationDetailStatus.Pending,
+                        Remark = "Hồ sơ nháp, chuẩn bị truyền VNACCS"
+                    }
+                }
+            };
+
+            db.CustomsDeclarations.AddRange(tk1, tk2, tk3, tk4);
+
+            // Đồng bộ DeclarationNo cho các xe trong kho xe CarVinInventory
+            var v1 = await db.CarVinInventories.FirstOrDefaultAsync(x => x.OrgId == orgId && x.Vin == "KMHE281BBSA900101");
+            if (v1 != null) { v1.DeclarationNo = "2603TK00001"; v1.CustomsClearanceDate = DateTime.Today.AddDays(-12); }
+            var v2 = await db.CarVinInventories.FirstOrDefaultAsync(x => x.OrgId == orgId && x.Vin == "KMHE281BBSA900102");
+            if (v2 != null) { v2.DeclarationNo = "2603TK00001"; v2.CustomsClearanceDate = DateTime.Today.AddDays(-12); }
+            var v3 = await db.CarVinInventories.FirstOrDefaultAsync(x => x.OrgId == orgId && x.Vin == "KMHE281BBSA900103");
+            if (v3 != null) { v3.DeclarationNo = "2603TK00001"; v3.CustomsClearanceDate = DateTime.Today.AddDays(-12); }
+
+            // Bổ sung thêm 2 xe CBU khả dụng chưa mở tờ khai để phục vụ test chức năng lập tờ khai mới
+            if (!await db.CarVinInventories.AnyAsync(x => x.OrgId == orgId && x.Vin == "KMHE281BBSC990001"))
+            {
+                db.CarVinInventories.AddRange(
+                    new CarVinInventory
+                    {
+                        OrgId = orgId,
+                        Vin = "KMHE281BBSC990001",
+                        ModelCode = "PALISADE",
+                        ModelName = "Hyundai Palisade 2.2D Prestige",
+                        SpecCode = "PAL-PRE-01",
+                        SpecDescription = "Palisade 2.2 Diesel Prestige 6 chỗ",
+                        ColorCode = "WW1",
+                        ColorName = "Trắng ngọc trai",
+                        EngineNo = "D4HB-990001",
+                        StorageCode = "KHO_CANG_HP",
+                        StorageName = "Kho Bãi Cảng Hải Phòng Đình Vũ",
+                        AssemblyStatus = "CBU",
+                        ProductionMonth = "202602",
+                        Status = CarVinStatus.Available,
+                        CreatedAt = DateTime.Today.AddDays(-3)
+                    },
+                    new CarVinInventory
+                    {
+                        OrgId = orgId,
+                        Vin = "KMHE281BBSC990002",
+                        ModelCode = "IONIQ5",
+                        ModelName = "Hyundai Ioniq 5 Prestige",
+                        SpecCode = "IQ5-PRE-01",
+                        SpecDescription = "Ioniq 5 EV Prestige pin 72.6 kWh",
+                        ColorCode = "SL1",
+                        ColorName = "Bạc Gravity Gold",
+                        EngineNo = "EM07-990002",
+                        StorageCode = "KHO_CANG_CM",
+                        StorageName = "Kho Bãi Cảng Cái Mép Vũng Tàu",
+                        AssemblyStatus = "CBU",
+                        ProductionMonth = "202602",
+                        Status = CarVinStatus.Available,
+                        CreatedAt = DateTime.Today.AddDays(-3)
+                    }
+                );
+            }
+
             await db.SaveChangesAsync();
         }
     }

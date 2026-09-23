@@ -1698,6 +1698,8 @@ public sealed class CarVinInventory
     public string? ProductionMonth { get; set; } // Tháng sản xuất (YYYYMM)
     public CarVinStatus Status { get; set; } = CarVinStatus.Available; // Trạng thái tồn kho
     public string? MappedCarId { get; set; } // Mã CarId xe thương mại đang gán giữ VIN
+    public string? DeclarationNo { get; set; } // Số tờ khai hải quan nếu là xe nhập khẩu CBU (CT_TKHQ)
+    public DateTime? CustomsClearanceDate { get; set; } // Ngày thông quan hải quan chính thức
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 }
 
@@ -2812,6 +2814,102 @@ public sealed class BankingTransactionAttachFile
     public string? Remark { get; set; } // Ghi chú tài liệu
     public DateTime UploadedAt { get; set; } = DateTime.Now;
     public string? UploadedBy { get; set; }
+}
+
+/// <summary>Trạng thái tờ khai hải quan xe ô tô nhập khẩu (DMS.Sales CT_TKHQ: Draft = 'Draft' [Nháp/mới lập], Submitted = 'Submitted' [Đã nộp tờ khai hải quan điện tử VNACCS], TaxPaid = 'TaxPaid' [Đã nộp thuế vào NSNN], Cleared = 'Cleared' [Đã hoàn tất thông quan hải quan/giải phóng xe], Cancelled = 'Cancelled' [Đã hủy tờ khai]).</summary>
+public enum CustomsDeclarationStatus
+{
+    Draft = 0,
+    Submitted = 1,
+    TaxPaid = 2,
+    Cleared = 3,
+    Cancelled = 4
+}
+
+/// <summary>Phân luồng hải quan điện tử (VNACCS/VCIS: Green = Luồng xanh [Thông quan tự động], Yellow = Luồng vàng [Kiểm tra hồ sơ], Red = Luồng đỏ [Kiểm tra hồ sơ và kiểm hóa thực tế lô xe]).</summary>
+public enum CustomsChannel
+{
+    Green = 0,
+    Yellow = 1,
+    Red = 2
+}
+
+/// <summary>Trạng thái từng dòng xe ô tô trong tờ khai hải quan (DMS.Sales Car_VIN_TKHQ / CT_TKHQ Detail Status: Pending = 0 [Chờ xử lý hải quan], TaxPaid = 1 [Đã nộp thuế], Cleared = 2 [Đã thông quan], Released = 3 [Đã xuất bãi cảng], Cancelled = 4 [Đã hủy]).</summary>
+public enum CustomsDeclarationDetailStatus
+{
+    Pending = 0,
+    TaxPaid = 1,
+    Cleared = 2,
+    Released = 3,
+    Cancelled = 4
+}
+
+/// <summary>Quản lý Tờ khai Hải quan Xe Ô tô Nhập khẩu (DMS.Sales CT_TKHQ + Car_VIN_TKHQ / CTTKHQController.cs / CTTKHQ.txt / Contract.cs / 05_QUAN_LY_XE.md): Quản lý khai báo hải quan điện tử cho các lô xe ô tô nguyên chiếc (CBU) cập cảng biển (Hải Phòng - HPH, Cát Lái - SGN, Cái Mép - CM...), liên kết danh sách số khung xe VIN 17 ký tự, số hợp đồng ngoại thương (ContractNo) và thư tín dụng (LCNo), theo dõi phân luồng hải quan (Green/Yellow/Red), cập nhật ngày nộp thuế nhập khẩu và thuế TTĐB vào ngân sách nhà nước (UpdateTaxPaymentDateHQ), thẩm định và nghiệm thu thông quan chính thức (Customs Clearance) để giải phóng lô xe khỏi kho cảng, đủ điều kiện pháp lý để đưa vào phân bổ Map VIN hoặc xuất kho giao cho đại lý.</summary>
+public sealed class CustomsDeclaration
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DeclarationNo { get; set; } = ""; // Số tờ khai hải quan ({yyMM}TK{seq:D5} hoặc mã tờ khai hải quan điện tử 12 chữ số)
+    public string PortCode { get; set; } = ""; // Cảng làm thủ tục hải quan (HPH, SGN, CM, DAN...)
+    public string? PortName { get; set; } // Tên cảng biển tiếp nhận
+    public string? ContractNo { get; set; } // Số hợp đồng ngoại thương liên quan (CT_ContractOversea)
+    public DateTime OpenDate { get; set; } = DateTime.Today; // Ngày mở tờ khai hải quan
+    public DateTime? TaxPaymentDate { get; set; } // Ngày nộp thuế hải quan (UpdateTaxPaymentDateHQ)
+    public string? TaxReceiptNo { get; set; } // Số chứng từ / biên lai nộp thuế kho bạc nhà nước
+    public string? TaxPayerBank { get; set; } // Ngân hàng trích nộp thuế (Vietcombank, BIDV, VietinBank...)
+    public string? CustomsOffice { get; set; } // Chi cục hải quan cửa khẩu thụ lý
+    public CustomsChannel Channel { get; set; } = CustomsChannel.Yellow; // Phân luồng tờ khai (Xanh, Vàng, Đỏ)
+    public CustomsDeclarationStatus Status { get; set; } = CustomsDeclarationStatus.Draft; // Trạng thái tờ khai
+    public int TotalCars { get; set; } // Tổng số lượng xe ô tô trong tờ khai
+    public decimal DutiableAmount { get; set; } // Tổng trị giá tính thuế (CIF quy đổi VNĐ)
+    public decimal ImportTaxAmount { get; set; } // Thuế nhập khẩu ô tô
+    public decimal SpecialConsumptionTaxAmount { get; set; } // Thuế tiêu thụ đặc biệt (SCT)
+    public decimal VatAmount { get; set; } // Thuế giá trị gia tăng (VAT hàng nhập khẩu)
+    public decimal TotalTaxAmount { get; set; } // Tổng số tiền thuế các loại phải nộp = ImportTax + SCT + VAT
+    public DateTime? CustomsClearanceDate { get; set; } // Ngày cấp phép thông quan chính thức
+    public string? CustomsOfficer { get; set; } // Hải quan viên thụ lý / kiểm hóa
+    public string? Remark { get; set; } // Ghi chú tờ khai hải quan
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? SubmittedBy { get; set; }
+    public DateTime? SubmittedAt { get; set; }
+    public string? TaxPaidBy { get; set; }
+    public string? ClearedBy { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelReason { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<CustomsDeclarationDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong tờ khai hải quan nhập khẩu (DMS.Sales Car_VIN_TKHQ / CT_TKHQ Detail): Quản lý từng số khung xe VIN 17 ký tự, số máy, model xe, bản cấu hình spec, màu ngoại thất, số Packing List và LC liên kết, trị giá tính thuế CIF, thuế nhập khẩu, thuế tiêu thụ đặc biệt, thuế GTGT và trạng thái thông quan của xe.</summary>
+public sealed class CustomsDeclarationDetail
+{
+    public long Id { get; set; }
+    public long DeclarationId { get; set; }
+    public string DeclarationNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN)
+    public string? EngineNo { get; set; } // Số máy
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, PALISADE, IONIQ5...)
+    public string ModelName { get; set; } = ""; // Tên model xe
+    public string? SpecCode { get; set; } // Mã bản cấu hình
+    public string? SpecDescription { get; set; } // Mô tả bản cấu hình
+    public string? ColorCode { get; set; } // Mã màu ngoại thất
+    public string? ColorName { get; set; } // Tên màu ngoại thất
+    public string? PackingListNo { get; set; } // Số Packing List lô xe nhập khẩu
+    public string? LCNo { get; set; } // Số LC thanh toán quốc tế
+    public string? ContractNo { get; set; } // Số hợp đồng ngoại thương
+    public decimal DutiableValue { get; set; } // Trị giá tính thuế của xe (VNĐ)
+    public decimal ImportTax { get; set; } // Thuế nhập khẩu của xe
+    public decimal SpecialConsumptionTax { get; set; } // Thuế TTĐB của xe
+    public decimal Vat { get; set; } // Thuế GTGT của xe
+    public decimal TotalTax { get; set; } // Tổng tiền thuế của xe
+    public CustomsDeclarationDetailStatus Status { get; set; } = CustomsDeclarationDetailStatus.Pending;
+    public DateTime? TaxPaymentDate { get; set; } // Ngày nộp thuế của xe
+    public DateTime? ClearedAt { get; set; } // Ngày thông quan của xe
+    public string? Remark { get; set; }
 }
 
 

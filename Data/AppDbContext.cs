@@ -87,6 +87,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<BankingTransaction> BankingTransactions => Set<BankingTransaction>();
     public DbSet<BankingTransactionDetail> BankingTransactionDetails => Set<BankingTransactionDetail>();
     public DbSet<BankingTransactionAttachFile> BankingTransactionAttachFiles => Set<BankingTransactionAttachFile>();
+    public DbSet<CustomsDeclaration> CustomsDeclarations => Set<CustomsDeclaration>();
+    public DbSet<CustomsDeclarationDetail> CustomsDeclarationDetails => Set<CustomsDeclarationDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -327,5 +329,17 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<BankingTransactionAttachFile>().ToTable("BankingTransactionAttachFiles");
         b.Entity<BankingTransactionAttachFile>().HasIndex(x => x.RQ_BankingTransNo);
         b.Entity<BankingTransactionAttachFile>().Property(x => x.FileType).HasConversion<int>();
+        b.Entity<CustomsDeclaration>().ToTable("CustomsDeclarations");
+        b.Entity<CustomsDeclaration>().HasIndex(x => new { x.OrgId, x.DeclarationNo }).IsUnique();
+        b.Entity<CustomsDeclaration>().HasIndex(x => new { x.OrgId, x.PortCode });
+        b.Entity<CustomsDeclaration>().HasIndex(x => new { x.OrgId, x.ContractNo });
+        b.Entity<CustomsDeclaration>().Property(x => x.Channel).HasConversion<int>();
+        b.Entity<CustomsDeclaration>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CustomsDeclaration>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.DeclarationId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CustomsDeclarationDetail>().ToTable("CustomsDeclarationDetails");
+        b.Entity<CustomsDeclarationDetail>().HasIndex(x => x.DeclarationNo);
+        b.Entity<CustomsDeclarationDetail>().HasIndex(x => x.Vin);
+        b.Entity<CustomsDeclarationDetail>().HasIndex(x => x.ModelCode);
+        b.Entity<CustomsDeclarationDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

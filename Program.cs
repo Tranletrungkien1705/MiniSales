@@ -63,6 +63,7 @@ builder.Services.AddScoped<ISalesPolicyService, SalesPolicyService>();
 builder.Services.AddScoped<IPlanEstimateOrderService, PlanEstimateOrderService>();
 builder.Services.AddScoped<IPackingListService, PackingListService>();
 builder.Services.AddScoped<IBankingTransactionService, BankingTransactionService>();
+builder.Services.AddScoped<ICustomsDeclarationService, CustomsDeclarationService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -3801,6 +3802,122 @@ app.MapPost("/api/banking-transactions/{transNo}/sign-file", async (string trans
     {
         var r = await svc.SignBankFileAsync(transNo, dto);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Tờ khai Hải quan Xe Ô tô Nhập khẩu (Customs Declaration - DMS.Sales CT_TKHQ + Car_VIN / CTTKHQController.cs / CTTKHQ.txt / Contract.cs / 05_QUAN_LY_XE.md) =====
+app.MapGet("/api/customs-declarations/seq", async (ICustomsDeclarationService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/customs-declarations/ports", (ICustomsDeclarationService svc) =>
+    Results.Ok(svc.GetPorts())).RequireAuthorization();
+
+app.MapGet("/api/customs-declarations/eligible-vins", async (ICustomsDeclarationService svc) =>
+    Results.Ok(await svc.GetEligibleVinsAsync())).RequireAuthorization();
+
+app.MapGet("/api/customs-declarations/stats", async (ICustomsDeclarationService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/customs-declarations", async (
+    ICustomsDeclarationService svc,
+    string? status,
+    string? portCode,
+    string? contractNo,
+    string? declarationNo,
+    DateTime? openDateFrom,
+    DateTime? openDateTo,
+    CustomsChannel? channel) =>
+    Results.Ok(await svc.ListAsync(status, portCode, contractNo, declarationNo, openDateFrom, openDateTo, channel))).RequireAuthorization();
+
+app.MapGet("/api/customs-declarations/{declarationNo}", async (string declarationNo, ICustomsDeclarationService svc) =>
+{
+    var r = await svc.DetailAsync(declarationNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/customs-declarations", async (CreateCustomsDeclarationDto dto, ICustomsDeclarationService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/customs-declarations/{declarationNo}", async (string declarationNo, UpdateCustomsDeclarationDto dto, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(declarationNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/customs-declarations/{declarationNo}/submit", async (string declarationNo, SubmitCustomsDeclarationDto? dto, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var r = await svc.SubmitAsync(declarationNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/customs-declarations/{declarationNo}/tax-payment", async (string declarationNo, UpdateTaxPaymentDateDto dto, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateTaxPaymentDateAsync(declarationNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/customs-declarations/{declarationNo}/clear", async (string declarationNo, ClearCustomsDto? dto, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var r = await svc.ClearCustomsAsync(declarationNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/customs-declarations/{declarationNo}/cars", async (string declarationNo, AddDeclarationCarsDto dto, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(declarationNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/customs-declarations/{declarationNo}/cars/{vin}", async (string declarationNo, string vin, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(declarationNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/customs-declarations/{declarationNo}/cancel", async (string declarationNo, CancelCustomsDeclarationDto dto, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(declarationNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy tờ khai hải quan {declarationNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/customs-declarations/{declarationNo}", async (string declarationNo, ICustomsDeclarationService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(declarationNo);
+        return ok ? Results.Ok(new { success = true, declarationNo }) : Results.NotFound(new { error = $"Không tìm thấy tờ khai {declarationNo}" });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
