@@ -116,6 +116,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<TransporterMaster> Transporters => Set<TransporterMaster>();
     public DbSet<TransporterCar> TransporterCars => Set<TransporterCar>();
     public DbSet<TransporterDriver> TransporterDrivers => Set<TransporterDriver>();
+    public DbSet<QuotaMaster> Quotas => Set<QuotaMaster>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -517,5 +518,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<TransporterDriver>().ToTable("TransporterDrivers");
         b.Entity<TransporterDriver>().HasIndex(x => new { x.OrgId, x.TransporterCode, x.DriverId }).IsUnique();
         b.Entity<TransporterDriver>().HasIndex(x => new { x.OrgId, x.TransporterCode });
+
+        b.Entity<QuotaMaster>().ToTable("Quotas");
+        b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.DealerCode, x.SpecCode }).IsUnique();
+        b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.SpecCode });
     }
 }

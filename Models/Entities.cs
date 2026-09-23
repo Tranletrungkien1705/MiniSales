@@ -3952,3 +3952,22 @@ public sealed class TransporterDriver
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người cập nhật gần nhất
 }
+
+/// <summary>Hạn mức đặt hàng xe theo Đại lý & Quy cách (DMS.Sales Mng_Quota / Master.cs / Mng_Quota_Get|Create|Update|Delete|Import): danh mục quy định số lượng xe tối đa (QtyQuota) mà mỗi Đại lý được phép đặt cho từng quy cách xe (SpecCode). Khóa nghiệp vụ = (DealerCode, SpecCode). FK DealerCode phải tồn tại và đang hoạt động (Mst_Dealer). Khi tạo/import, QtyQuota phải là số >= 0. Update chỉ cho sửa QtyQuota (Master Fixed Updateable Scope).</summary>
+public sealed class QuotaMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DealerCode { get; set; } = ""; // Mã đại lý (khóa nghiệp vụ, tham chiếu Mst_Dealer.DealerCode)
+    public string? DealerName { get; set; } // Tên đại lý (tra cứu từ Mst_Dealer)
+    public string SpecCode { get; set; } = ""; // Mã quy cách xe (khóa nghiệp vụ, tham chiếu Mst_CarSpec.SpecCode)
+    public string? SpecDescription { get; set; } // Mô tả quy cách xe (tra cứu từ Mst_CarSpec)
+    public string? ModelCode { get; set; } // Mã dòng xe (tra cứu từ Mst_CarModel qua SpecCode)
+    public string? ModelName { get; set; } // Tên dòng xe (tra cứu từ Mst_CarModel)
+    public decimal QtyQuota { get; set; } // Số lượng hạn mức đặt hàng (>= 0)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public string? UpdateBy { get; set; } // Người cập nhật hạn mức gần nhất
+    public DateTime? UpdateDTime { get; set; } // Thời điểm cập nhật hạn mức gần nhất
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}

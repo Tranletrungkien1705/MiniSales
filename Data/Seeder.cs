@@ -2953,6 +2953,26 @@ public static class Seeder
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_TransporterDrivers_OrgId_TransporterCode_DriverId ON TransporterDrivers(OrgId, TransporterCode, DriverId);
                 CREATE INDEX IF NOT EXISTS IX_TransporterDrivers_OrgId_TransporterCode ON TransporterDrivers(OrgId, TransporterCode);
+
+                CREATE TABLE IF NOT EXISTS Quotas (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    SpecCode TEXT NOT NULL,
+                    SpecDescription TEXT,
+                    ModelCode TEXT,
+                    ModelName TEXT,
+                    QtyQuota REAL NOT NULL DEFAULT 0,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    UpdateBy TEXT,
+                    UpdateDTime TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_Quotas_OrgId_DealerCode_SpecCode ON Quotas(OrgId, DealerCode, SpecCode);
+                CREATE INDEX IF NOT EXISTS IX_Quotas_OrgId_DealerCode ON Quotas(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_Quotas_OrgId_SpecCode ON Quotas(OrgId, SpecCode);
             ");
         }
         catch
@@ -13388,6 +13408,17 @@ public static class Seeder
                     new CustomerVisit { OrgId = orgId, CtmVisitCode = "CV26090001", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", Gender = CustomerVisitGender.Male, RangeAgeCode = "25-34", ModelCode = "SF25", ModelName = "Santa Fe 2.5 HTRAC", VisitDTime = DateTime.Now.AddDays(-5), FlagActive = "1", Remark = "Khách quan tâm Santa Fe", CreatedBy = "CHUYEN_VIEN_DL", CreatedAt = DateTime.Now.AddDays(-5), LogLUBy = "CHUYEN_VIEN_DL", LogLUDTime = DateTime.Now.AddDays(-5) },
                     new CustomerVisit { OrgId = orgId, CtmVisitCode = "CV26090002", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", Gender = CustomerVisitGender.Female, RangeAgeCode = "35-44", ModelCode = "TU20", ModelName = "Tucson 2.0 AT", VisitDTime = DateTime.Now.AddDays(-3), FlagActive = "1", Remark = "Khách xem Tucson", CreatedBy = "CHUYEN_VIEN_DL", CreatedAt = DateTime.Now.AddDays(-3), LogLUBy = "CHUYEN_VIEN_DL", LogLUDTime = DateTime.Now.AddDays(-3) },
                     new CustomerVisit { OrgId = orgId, CtmVisitCode = "CV26090003", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", Gender = CustomerVisitGender.Male, RangeAgeCode = "45-54", ModelCode = "CR15", ModelName = "Creta 1.5 Cao Cấp", VisitDTime = DateTime.Now.AddDays(-1), FlagActive = "1", Remark = "Khách xem Creta", CreatedBy = "CHUYEN_VIEN_DL", CreatedAt = DateTime.Now.AddDays(-1), LogLUBy = "CHUYEN_VIEN_DL", LogLUDTime = DateTime.Now.AddDays(-1) }
+                );
+            }
+
+            // Hạn mức đặt hàng xe theo Đại lý & Quy cách (Mng_Quota / Master.cs / Mng_Quota_Get|Create|Update|Delete|Import)
+            if (!await db.Quotas.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.Quotas.AddRange(
+                    new QuotaMaster { OrgId = orgId, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", SpecCode = "SF25-2.5T-AWD", SpecDescription = "Santa Fe 2.5 Turbo AWD Calligraphy", ModelCode = "SF25", ModelName = "Santa Fe 2.5 HTRAC", QtyQuota = 20m, FlagActive = "1", UpdateBy = "CHUYEN_VIEN_NPP", UpdateDTime = DateTime.Now.AddDays(-20), LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new QuotaMaster { OrgId = orgId, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", SpecCode = "TU20-2.0AT", SpecDescription = "Tucson 2.0 AT Tiêu chuẩn", ModelCode = "TU20", ModelName = "Tucson 2.0 AT", QtyQuota = 35m, FlagActive = "1", UpdateBy = "CHUYEN_VIEN_NPP", UpdateDTime = DateTime.Now.AddDays(-20), LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new QuotaMaster { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", SpecCode = "CR15-1.5AT", SpecDescription = "Creta 1.5 AT Cao Cấp", ModelCode = "CR15", ModelName = "Creta 1.5 Cao Cấp", QtyQuota = 25m, FlagActive = "1", UpdateBy = "CHUYEN_VIEN_NPP", UpdateDTime = DateTime.Now.AddDays(-15), LogLUDateTime = DateTime.Now.AddDays(-15), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new QuotaMaster { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", SpecCode = "AC14-1.4AT", SpecDescription = "Accent 1.4 AT Đặc biệt", ModelCode = "AC14", ModelName = "Accent 1.4 AT", QtyQuota = 40m, FlagActive = "1", UpdateBy = "CHUYEN_VIEN_NPP", UpdateDTime = DateTime.Now.AddDays(-15), LogLUDateTime = DateTime.Now.AddDays(-15), LogLUBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 

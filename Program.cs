@@ -78,6 +78,7 @@ builder.Services.AddScoped<IWarrantyExpiresService, WarrantyExpiresService>();
 builder.Services.AddScoped<IDealerZoneService, DealerZoneService>();
 builder.Services.AddScoped<ICustomerVisitService, CustomerVisitService>();
 builder.Services.AddScoped<ITransporterService, TransporterService>();
+builder.Services.AddScoped<IQuotaService, QuotaService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5334,6 +5335,51 @@ app.MapDelete("/api/transporter-drivers/{transporterCode}/{driverId}", async (st
         var ok = await svc.DeleteDriverAsync(transporterCode, driverId);
         return ok ? Results.Ok(new { success = true, transporterCode, driverId }) : Results.NotFound(new { transporterCode, driverId });
     }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Hạn mức đặt hàng xe theo Đại lý & Quy cách (Dealer Order Quota - DMS.Sales Mng_Quota / Master.cs / Mng_Quota_Get|Create|Update|Delete|Import) =====
+app.MapGet("/api/quotas", async (IQuotaService svc, string? keyWord, string? dealerCode, string? specCode, string? flagActive) =>
+    Results.Ok(await svc.SearchAsync(keyWord, dealerCode, specCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/quotas/stats", async (IQuotaService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/quotas/{dealerCode}/{specCode}", async (string dealerCode, string specCode, IQuotaService svc) =>
+{
+    var r = await svc.GetAsync(dealerCode, specCode);
+    return r is null ? Results.NotFound(new { dealerCode, specCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/quotas", async (CreateQuotaDto dto, IQuotaService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/quotas/{dealerCode}/{specCode}", async (string dealerCode, string specCode, UpdateQuotaDto dto, IQuotaService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(dealerCode, specCode, dto);
+        return r is null ? Results.NotFound(new { dealerCode, specCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/quotas/{dealerCode}/{specCode}", async (string dealerCode, string specCode, IQuotaService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteAsync(dealerCode, specCode);
+        return ok ? Results.Ok(new { success = true, dealerCode, specCode }) : Results.NotFound(new { dealerCode, specCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/quotas/import", async (List<QuotaImportRowDto> rows, IQuotaService svc) =>
+{
+    try { return Results.Ok(await svc.ImportAsync(rows)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
