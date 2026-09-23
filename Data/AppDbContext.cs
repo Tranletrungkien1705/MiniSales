@@ -132,6 +132,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<TransportFeeVersion> TransportFeeVersions => Set<TransportFeeVersion>();
     public DbSet<TransportFeeDetail> TransportFeeDetails => Set<TransportFeeDetail>();
     public DbSet<TransportFeeHistory> TransportFeeHistories => Set<TransportFeeHistory>();
+    public DbSet<SalesMan> SalesMen => Set<SalesMan>();
+    public DbSet<SalesManHistoryInactive> SalesManHistoryInactives => Set<SalesManHistoryInactive>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -609,5 +611,17 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<TransportFeeDetail>().HasIndex(x => x.ModelCode);
         b.Entity<TransportFeeHistory>().ToTable("TransportFeeHistories");
         b.Entity<TransportFeeHistory>().HasIndex(x => new { x.OrgId, x.TFVCode });
+
+        b.Entity<SalesMan>().ToTable("SalesMen");
+        b.Entity<SalesMan>().HasIndex(x => new { x.OrgId, x.SMCode }).IsUnique();
+        b.Entity<SalesMan>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<SalesMan>().HasIndex(x => new { x.OrgId, x.SMHyundaiCode });
+        b.Entity<SalesMan>().Property(x => x.SMStatus).HasConversion<int>();
+        b.Entity<SalesMan>().Property(x => x.SMType).HasConversion<int>();
+
+        b.Entity<SalesManHistoryInactive>().ToTable("SalesManHistoryInactives");
+        b.Entity<SalesManHistoryInactive>().HasIndex(x => new { x.OrgId, x.SMCode });
+        b.Entity<SalesManHistoryInactive>().HasIndex(x => new { x.OrgId, x.SMHyundaiCode });
+        b.Entity<SalesManHistoryInactive>().Property(x => x.SMStatus).HasConversion<int>();
     }
 }

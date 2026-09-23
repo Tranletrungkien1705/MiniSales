@@ -4367,3 +4367,74 @@ public sealed class TransportFeeHistory
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log
     public string? LogLUBy { get; set; } // Người ghi log
 }
+/// <summary>Trạng thái nhân viên bán hàng đại lý (DMS.Sales Mst_SalesMan.SMStatus / TConst.SMStatus: NGHIVIEC = '0' [Nghỉ việc], CHINGTHUC = '1' [Chính thức], THUVIEC = '2' [Thử việc], CTVIEN = '3' [Cộng tác viên]).</summary>
+public enum SalesManStatus { Resigned = 0, Official = 1, Probation = 2, Collaborator = 3 }
+
+/// <summary>Loại nhân viên bán hàng đại lý (DMS.Sales Mst_SalesMan.SMType / TConst.SMType: GD = Giám đốc, TPBH = Trưởng phòng bán hàng, TPDV = Trưởng phòng dịch vụ, TVBH = Tư vấn bán hàng, GVDTNB = Giảng viên đào tạo nội bộ).</summary>
+public enum SalesManType { Director = 0, SalesManager = 1, ServiceManager = 2, SalesConsultant = 3, Trainer = 4 }
+
+/// <summary>Nhân viên bán hàng đại lý (DMS.Sales Mst_SalesMan / MasterData.HR.cs / Mst_SalesMan_Get|CreateMulti|Update|UpdateStatus|CreateAfterApprove|UpdateMultiByHTV): quản lý hồ sơ nhân sự bán hàng của đại lý (tư vấn bán hàng, trưởng phòng, giám đốc...). Khóa nghiệp vụ = SMCode. Trạng thái SMStatus điều khiển cờ hiệu lực FlagActive (NGHIVIEC -> FlagActive='0').</summary>
+public sealed class SalesMan
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SMCode { get; set; } = ""; // Mã nhân viên bán hàng (khóa nghiệp vụ duy nhất)
+    public string? SMHyundaiCode { get; set; } // Mã nhân viên Hyundai (mã định danh trên hệ thống HMC)
+    public string DealerCode { get; set; } = ""; // Mã đại lý (Mst_Dealer, phải tồn tại + active)
+    public string? DealerName { get; set; } // Tên đại lý (tra cứu từ dữ liệu đại lý)
+    public string SMName { get; set; } = ""; // Họ tên nhân viên (bắt buộc)
+    public string SMGender { get; set; } = "M"; // Giới tính (M = Nam, F = Nữ)
+    public DateTime? SMDateOfBirth { get; set; } // Ngày sinh (bắt buộc)
+    public string? SMPhoneNo { get; set; } // Số điện thoại (bắt buộc)
+    public string? SMEmail { get; set; } // Email (bắt buộc với loại nhân viên có FlagEmail = 1)
+    public string? SMAddress { get; set; } // Địa chỉ (bắt buộc)
+    public string? ProvinceCode { get; set; } // Mã tỉnh/thành (Mst_Province, phải tồn tại + active)
+    public string? QualificationCode { get; set; } // Mã trình độ (Mst_Qualification, phải tồn tại + active)
+    public string? SMSpecialized { get; set; } // Chuyên môn (bắt buộc)
+    public string? SMYearExperence { get; set; } // Số năm kinh nghiệm
+    public DateTime? SMStartDate { get; set; } // Ngày bắt đầu làm việc (bắt buộc)
+    public DateTime? SMEndDate { get; set; } // Ngày nghỉ việc (bắt buộc khi NGHIVIEC)
+    public string? DepartmentCode { get; set; } // Mã bộ phận (Mst_Department, phải tồn tại + active)
+    public string? SMPosition { get; set; } // Chức vụ (Mst_Position, phải tồn tại + active)
+    public string? SMPostionCode { get; set; } // Mã vị trí (Mst_Position, phải tồn tại + active)
+    public SalesManType SMType { get; set; } = SalesManType.SalesConsultant; // Loại nhân viên bán hàng
+    public string? CertificateCode { get; set; } // Mã chứng chỉ
+    public SalesManStatus SMStatus { get; set; } = SalesManStatus.Probation; // Trạng thái nhân viên
+    public string? SMReason { get; set; } // Lý do nghỉ việc (bắt buộc khi NGHIVIEC)
+    public string? SMDesc { get; set; } // Mô tả chi tiết lý do nghỉ việc (bắt buộc khi NGHIVIEC)
+    public string? IdentityCardNo { get; set; } // Số CMND/CCCD (bắt buộc)
+    public string? WebsiteLink { get; set; } // Link website (bắt buộc với TVBH)
+    public string? FacebookLink { get; set; } // Link Facebook (bắt buộc với TVBH)
+    public string? FanpageLink { get; set; } // Link Fanpage (bắt buộc với TVBH)
+    public string? GroupLink { get; set; } // Link Group (bắt buộc với TVBH)
+    public string? ZaloLink { get; set; } // Link Zalo (bắt buộc với TVBH)
+    public string? DealerSaleCode { get; set; } // Mã điểm bán hàng (Mst_DealerSale, bắt buộc với TVBH/GVDTNB)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang làm việc, 0 = đã nghỉ việc)
+    public string? CreatedBy { get; set; } // Người tạo
+    public DateTime CreatedAt { get; set; } = DateTime.Now; // Thời điểm tạo
+    public string? UpdateBy { get; set; } // Người cập nhật gần nhất
+    public DateTime? UpdateDTime { get; set; } // Thời điểm cập nhật gần nhất
+    public string? UpdateStatusBy { get; set; } // Người cập nhật trạng thái gần nhất
+    public DateTime? UpdateStatusDtime { get; set; } // Thời điểm cập nhật trạng thái gần nhất
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}
+
+/// <summary>Lịch sử nhân viên bán hàng nghỉ việc (DMS.Sales Mst_SalesManHistoryInactive / MasterData.HR.cs / Mst_SalesMan_UpdateStatusX): lưu vết snapshot nhân viên tại thời điểm chuyển sang nghỉ việc (NGHIVIEC), phục vụ tra cứu lịch sử và kiểm tra ràng buộc ngày bắt đầu làm lại.</summary>
+public sealed class SalesManHistoryInactive
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SMCode { get; set; } = ""; // Mã nhân viên bán hàng
+    public string? SMHyundaiCode { get; set; } // Mã nhân viên Hyundai
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public SalesManStatus SMStatus { get; set; } // Trạng thái nhân viên tại thời điểm nghỉ việc
+    public string? IdentityCardNo { get; set; } // Số CMND/CCCD
+    public string SMFlagActive { get; set; } = "1"; // Cờ hiệu lực tại thời điểm nghỉ việc
+    public DateTime? SMStartDate { get; set; } // Ngày bắt đầu làm việc
+    public DateTime? SMEndDate { get; set; } // Ngày nghỉ việc
+    public string? SMReason { get; set; } // Lý do nghỉ việc
+    public string? SMDesc { get; set; } // Mô tả chi tiết lý do nghỉ việc
+    public DateTime InactiveDateTime { get; set; } = DateTime.Now; // Thời điểm ghi nhận nghỉ việc
+    public string? InactiveBy { get; set; } // Người ghi nhận nghỉ việc
+}

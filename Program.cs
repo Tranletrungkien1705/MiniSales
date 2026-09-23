@@ -87,6 +87,7 @@ builder.Services.AddScoped<IDelayTransportService, DelayTransportService>();
 builder.Services.AddScoped<IBankService, BankService>();
 builder.Services.AddScoped<ITransportFeeService, TransportFeeService>();
 builder.Services.AddScoped<ICarModelService, CarModelService>();
+builder.Services.AddScoped<ISalesManService, SalesManService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5943,6 +5944,60 @@ app.MapGet("/api/payment-bd/{paymentBDNo}/print", async (string paymentBDNo, IPa
 {
     var r = await svc.GetPrintDataAsync(paymentBDNo);
     return r is null ? Results.NotFound(new { paymentBDNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+// ===== Quản lý Nhân viên Bán hàng Đại lý (Mst_SalesMan - DMS.Sales MasterData.HR.cs) =====
+app.MapPost("/api/salesmen", async (CreateSalesManDto dto, ISalesManService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/salesmen/multi", async (List<CreateSalesManDto> rows, ISalesManService svc) =>
+{
+    try { return Results.Ok(await svc.CreateMultiAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/salesmen", async (ISalesManService svc, string? smCode, string? dealer, string? smStatus, string? smType, string? flagActive) =>
+    Results.Ok(await svc.SearchAsync(smCode, dealer, smStatus, smType, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/salesmen/stats", async (ISalesManService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/salesmen/history", async (ISalesManService svc, string? smCode, string? smHyundaiCode) =>
+    Results.Ok(await svc.GetHistoryAsync(smCode, smHyundaiCode))).RequireAuthorization();
+
+app.MapGet("/api/salesmen/{smCode}", async (string smCode, ISalesManService svc) =>
+{
+    var r = await svc.GetAsync(smCode);
+    return r is null ? Results.NotFound(new { smCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/salesmen/{smCode}", async (string smCode, UpdateSalesManDto dto, ISalesManService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(smCode, dto);
+        return r is null ? Results.NotFound(new { smCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/salesmen/{smCode}/status", async (string smCode, UpdateSalesManStatusDto dto, ISalesManService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateStatusAsync(smCode, dto);
+        return r is null ? Results.NotFound(new { smCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/salesmen/{smCode}", async (string smCode, ISalesManService svc) =>
+{
+    var r = await svc.DeleteAsync(smCode);
+    return r ? Results.Ok(new { deleted = true, smCode }) : Results.NotFound(new { smCode });
 }).RequireAuthorization();
 
 app.Run();

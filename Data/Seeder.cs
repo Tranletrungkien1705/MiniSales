@@ -3059,6 +3059,73 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_SalesManViolates_OrgId_SMCode ON SalesManViolates(OrgId, SMCode);
                 CREATE INDEX IF NOT EXISTS IX_SalesManViolates_OrgId_DealerCode ON SalesManViolates(OrgId, DealerCode);
 
+                CREATE TABLE IF NOT EXISTS SalesMen (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    SMCode TEXT NOT NULL,
+                    SMHyundaiCode TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    SMName TEXT NOT NULL,
+                    SMGender TEXT NOT NULL DEFAULT 'M',
+                    SMDateOfBirth TEXT,
+                    SMPhoneNo TEXT,
+                    SMEmail TEXT,
+                    SMAddress TEXT,
+                    ProvinceCode TEXT,
+                    QualificationCode TEXT,
+                    SMSpecialized TEXT,
+                    SMYearExperence TEXT,
+                    SMStartDate TEXT,
+                    SMEndDate TEXT,
+                    DepartmentCode TEXT,
+                    SMPosition TEXT,
+                    SMPostionCode TEXT,
+                    SMType INTEGER NOT NULL,
+                    CertificateCode TEXT,
+                    SMStatus INTEGER NOT NULL,
+                    SMReason TEXT,
+                    SMDesc TEXT,
+                    IdentityCardNo TEXT,
+                    WebsiteLink TEXT,
+                    FacebookLink TEXT,
+                    FanpageLink TEXT,
+                    GroupLink TEXT,
+                    ZaloLink TEXT,
+                    DealerSaleCode TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    UpdateBy TEXT,
+                    UpdateDTime TEXT,
+                    UpdateStatusBy TEXT,
+                    UpdateStatusDtime TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_SalesMen_OrgId_SMCode ON SalesMen(OrgId, SMCode);
+                CREATE INDEX IF NOT EXISTS IX_SalesMen_OrgId_DealerCode ON SalesMen(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_SalesMen_OrgId_SMHyundaiCode ON SalesMen(OrgId, SMHyundaiCode);
+
+                CREATE TABLE IF NOT EXISTS SalesManHistoryInactives (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    SMCode TEXT NOT NULL,
+                    SMHyundaiCode TEXT,
+                    DealerCode TEXT NOT NULL,
+                    SMStatus INTEGER NOT NULL,
+                    IdentityCardNo TEXT,
+                    SMFlagActive TEXT NOT NULL DEFAULT '1',
+                    SMStartDate TEXT,
+                    SMEndDate TEXT,
+                    SMReason TEXT,
+                    SMDesc TEXT,
+                    InactiveDateTime TEXT NOT NULL,
+                    InactiveBy TEXT
+                );
+                CREATE INDEX IF NOT EXISTS IX_SalesManHistoryInactives_OrgId_SMCode ON SalesManHistoryInactives(OrgId, SMCode);
+                CREATE INDEX IF NOT EXISTS IX_SalesManHistoryInactives_OrgId_SMHyundaiCode ON SalesManHistoryInactives(OrgId, SMHyundaiCode);
+
                 CREATE TABLE IF NOT EXISTS CustomerVisits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -14029,6 +14096,25 @@ public static class Seeder
                 db.SalesManViolates.AddRange(
                     new SalesManViolate { OrgId = orgId, SMCode = "SM001", ViolateNumber = 1, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", ViolateType = ViolateType.Temporary, ViolateDateStart = DateTime.Today.AddDays(-20), ViolateDateEnd = DateTime.Today.AddDays(10), SMHyundaiCode = "HD001", SMName = "Nguyễn Văn An", SMDateOfBirth = new DateTime(1990, 5, 12), IdentityCardNo = "001090012345", SMPhoneNo = "0912345678", SMType = "TVBH", SMStatus = "CHINGTHUC", Remark = "Vi phạm quy trình tư vấn bán hàng", FlagActive = "1", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddDays(-20), LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new SalesManViolate { OrgId = orgId, SMCode = "SM002", ViolateNumber = 1, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", ViolateType = ViolateType.Permanent, ViolateDateStart = DateTime.Today.AddDays(-15), ViolateDateEnd = null, SMHyundaiCode = "HD002", SMName = "Trần Thị Bình", SMDateOfBirth = new DateTime(1992, 8, 3), IdentityCardNo = "079092023456", SMPhoneNo = "0987654321", SMType = "TVBH", SMStatus = "CHINGTHUC", Remark = "Vi phạm nghiêm trọng — gian lận doanh số", FlagActive = "1", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddDays(-15), LogLUDateTime = DateTime.Now.AddDays(-15), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Nhân viên bán hàng đại lý (Mst_SalesMan / MasterData.HR.cs / Mst_SalesMan_Get|CreateMulti|Update|UpdateStatus)
+            if (!await db.SalesMen.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.SalesMen.AddRange(
+                    new SalesMan { OrgId = orgId, SMCode = "SM001", SMHyundaiCode = "HD001", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", SMName = "Nguyễn Văn An", SMGender = "M", SMDateOfBirth = new DateTime(1990, 5, 12), SMPhoneNo = "0912345678", SMEmail = "an.nguyen@dongdo.hyundai.vn", SMAddress = "12 Nguyễn Trãi, Thanh Xuân, Hà Nội", ProvinceCode = "01", QualificationCode = "DH", SMSpecialized = "Kinh doanh ô tô", SMYearExperence = "5", SMStartDate = DateTime.Today.AddYears(-3), DepartmentCode = "BPBH", SMPosition = "TPBH", SMPostionCode = "TPBH", SMType = SalesManType.SalesManager, CertificateCode = "CERT-TPBH-001", SMStatus = SalesManStatus.Official, IdentityCardNo = "001090012345", WebsiteLink = "https://dongdo.hyundai.vn", FacebookLink = "https://facebook.com/dongdohyundai", FanpageLink = "https://facebook.com/dongdohyundai.page", GroupLink = "https://facebook.com/groups/dongdohyundai", ZaloLink = "https://zalo.me/dongdohyundai", DealerSaleCode = "DS001", FlagActive = "1", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddDays(-90), LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new SalesMan { OrgId = orgId, SMCode = "SM003", SMHyundaiCode = "HD003", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", SMName = "Lê Thị Cẩm", SMGender = "F", SMDateOfBirth = new DateTime(1995, 3, 20), SMPhoneNo = "0938111222", SMEmail = "cam.le@dongdo.hyundai.vn", SMAddress = "45 Lê Văn Lương, Thanh Xuân, Hà Nội", ProvinceCode = "01", QualificationCode = "CD", SMSpecialized = "Tư vấn bán hàng", SMYearExperence = "2", SMStartDate = DateTime.Today.AddMonths(-8), DepartmentCode = "BPBH", SMPosition = "TVBH", SMPostionCode = "TVBH", SMType = SalesManType.SalesConsultant, CertificateCode = "CERT-TVBH-003", SMStatus = SalesManStatus.Probation, IdentityCardNo = "001195034567", WebsiteLink = "https://dongdo.hyundai.vn/cam", FacebookLink = "https://facebook.com/cam.le", FanpageLink = "https://facebook.com/cam.le.page", GroupLink = "https://facebook.com/groups/cam.le", ZaloLink = "https://zalo.me/camle", DealerSaleCode = "DS001", FlagActive = "1", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddMonths(-8), LogLUDateTime = DateTime.Now.AddMonths(-8), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new SalesMan { OrgId = orgId, SMCode = "SM004", SMHyundaiCode = "HD004", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", SMName = "Phạm Văn Dũng", SMGender = "M", SMDateOfBirth = new DateTime(1988, 11, 2), SMPhoneNo = "0909888777", SMEmail = "dung.pham@namtrung.hyundai.vn", SMAddress = "88 Trần Phú, Hải Châu, Đà Nẵng", ProvinceCode = "48", QualificationCode = "DH", SMSpecialized = "Quản lý bán hàng", SMYearExperence = "8", SMStartDate = DateTime.Today.AddYears(-5), DepartmentCode = "BPBH", SMPosition = "GD", SMPostionCode = "GD", SMType = SalesManType.Director, CertificateCode = "CERT-GD-004", SMStatus = SalesManStatus.Official, IdentityCardNo = "048088045678", FlagActive = "1", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddYears(-5), LogLUDateTime = DateTime.Now.AddYears(-5), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new SalesMan { OrgId = orgId, SMCode = "SM005", SMHyundaiCode = "HD005", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", SMName = "Hoàng Thị Lan", SMGender = "F", SMDateOfBirth = new DateTime(1993, 7, 15), SMPhoneNo = "0912777666", SMEmail = "lan.hoang@namtrung.hyundai.vn", SMAddress = "22 Nguyễn Văn Linh, Thanh Khê, Đà Nẵng", ProvinceCode = "48", QualificationCode = "CD", SMSpecialized = "Tư vấn bán hàng", SMYearExperence = "4", SMStartDate = DateTime.Today.AddYears(-2), SMEndDate = DateTime.Today.AddDays(-10), DepartmentCode = "BPBH", SMPosition = "TVBH", SMPostionCode = "TVBH", SMType = SalesManType.SalesConsultant, CertificateCode = "CERT-TVBH-005", SMStatus = SalesManStatus.Resigned, SMReason = "Nghỉ việc cá nhân", SMDesc = "Chuyển công tác sang địa phương khác", IdentityCardNo = "048093056789", WebsiteLink = "https://namtrung.hyundai.vn/lan", FacebookLink = "https://facebook.com/lan.hoang", FanpageLink = "https://facebook.com/lan.hoang.page", GroupLink = "https://facebook.com/groups/lan.hoang", ZaloLink = "https://zalo.me/lanhoang", DealerSaleCode = "DS002", FlagActive = "0", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddYears(-2), UpdateStatusBy = "CHUYEN_VIEN_NPP", UpdateStatusDtime = DateTime.Now.AddDays(-10), LogLUDateTime = DateTime.Now.AddDays(-10), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Lịch sử nhân viên bán hàng nghỉ việc (Mst_SalesManHistoryInactive / MasterData.HR.cs)
+            if (!await db.SalesManHistoryInactives.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.SalesManHistoryInactives.AddRange(
+                    new SalesManHistoryInactive { OrgId = orgId, SMCode = "SM005", SMHyundaiCode = "HD005", DealerCode = "VN002", SMStatus = SalesManStatus.Official, IdentityCardNo = "048093056789", SMFlagActive = "1", SMStartDate = DateTime.Today.AddYears(-2), SMEndDate = DateTime.Today.AddDays(-10), SMReason = "Nghỉ việc cá nhân", SMDesc = "Chuyển công tác sang địa phương khác", InactiveDateTime = DateTime.Now.AddDays(-10), InactiveBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 
