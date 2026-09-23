@@ -81,6 +81,7 @@ builder.Services.AddScoped<ITransporterService, TransporterService>();
 builder.Services.AddScoped<IQuotaService, QuotaService>();
 builder.Services.AddScoped<ISalesManViolateService, SalesManViolateService>();
 builder.Services.AddScoped<IRearrangeTransportRequestService, RearrangeTransportRequestService>();
+builder.Services.AddScoped<IOrderAllocationService, OrderAllocationService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5505,6 +5506,85 @@ app.MapDelete("/api/rearrange-transp-reqs/{srtReqNo}/cars/{vin}", async (string 
     {
         var r = await svc.RemoveCarAsync(srtReqNo, vin);
         return r is null ? Results.NotFound(new { srtReqNo, vin }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Phân bổ Nhu cầu / Cung cấp đơn đặt hàng xe (Order Demand/Supply Allocation - DMS.Sales DMS40_Ord_SalesOrderRoot_ApprAuto / DMS40.0.30.Order.cs) =====
+app.MapPost("/api/order-allocations", async (CreateOrderAllocationDto dto, IOrderAllocationService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/order-allocations", async (IOrderAllocationService svc, string? status, string? periodMonth, string? dealerCode, string? allocationNo) =>
+    Results.Ok(await svc.ListAsync(status, periodMonth, dealerCode, allocationNo))).RequireAuthorization();
+
+app.MapGet("/api/order-allocations/stats", async (IOrderAllocationService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/order-allocations/{allocationNo}", async (string allocationNo, IOrderAllocationService svc) =>
+{
+    var r = await svc.DetailAsync(allocationNo);
+    return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/order-allocations/{allocationNo}", async (string allocationNo, UpdateOrderAllocationDto dto, IOrderAllocationService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(allocationNo, dto);
+        return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/order-allocations/{allocationNo}/allocate", async (string allocationNo, IOrderAllocationService svc) =>
+{
+    try
+    {
+        var r = await svc.AllocateAsync(allocationNo);
+        return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/order-allocations/{allocationNo}/finish", async (string allocationNo, IOrderAllocationService svc) =>
+{
+    try
+    {
+        var r = await svc.FinishAsync(allocationNo);
+        return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/order-allocations/{allocationNo}/reject", async (string allocationNo, RejectOrderAllocationDto dto, IOrderAllocationService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(allocationNo, dto);
+        return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/order-allocations/{allocationNo}/cancel", async (string allocationNo, CancelOrderAllocationDto dto, IOrderAllocationService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(allocationNo, dto);
+        return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/order-allocations/{allocationNo}", async (string allocationNo, IOrderAllocationService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteAsync(allocationNo);
+        return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

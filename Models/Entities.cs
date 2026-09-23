@@ -4055,3 +4055,82 @@ public sealed class RearrangeTransportRequestDetail
     public RearrangeTranspReqDtlStatus Status { get; set; } = RearrangeTranspReqDtlStatus.Pending;
     public string? Remark { get; set; }
 }
+
+/// <summary>Trạng thái dòng Nhu cầu đặt hàng (DMS.Sales DMS40_Ord_SalesOrderRoot_ApprDemand): Pending = 'P' [Chờ phân bổ], Allocated = 'A' [Đã phân bổ cung], Rejected = 'R' [Từ chối], Cancelled = 'C' [Đã hủy]).</summary>
+public enum OrderDemandStatus { Pending = 0, Allocated = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái dòng Cung cấp (DMS.Sales DMS40_Ord_SalesOrderRoot_ApprSupply1/2/3): Pending = 'P' [Chờ phân bổ], Allocated = 'A' [Đã phân bổ], Cancelled = 'C' [Đã hủy]).</summary>
+public enum OrderSupplyStatus { Pending = 0, Allocated = 1, Cancelled = 2 }
+
+/// <summary>Trạng thái phiên phân bổ Nhu cầu/Cung (DMS.Sales DMS40_Ord_SalesOrderRoot_ApprAuto): Draft = 'D' [Nháp], Allocated = 'A' [Đã phân bổ], Finished = 'F' [Hoàn tất], Cancelled = 'C' [Đã hủy]).</summary>
+public enum OrderAllocationStatus { Draft = 0, Allocated = 1, Finished = 2, Cancelled = 3 }
+
+/// <summary>Phiên phân bổ Nhu cầu/Cung đơn đặt hàng xe (DMS.Sales DMS40_Ord_SalesOrderRoot_ApprAuto / DMS40.0.30.Order.cs / 04_DON_HANG_DOANH_SO.md): gom nhu cầu (Demand) của các đại lý và cơ cấu cung (Supply) của NPP trong 1 kỳ tháng, chạy thuật toán phân bổ theo tỷ lệ (SupplyPercent / DemandPercent / Rank) để chốt số lượng xe cấp cho từng đại lý. Khóa nghiệp vụ = AllocationNo.</summary>
+public sealed class OrderAllocationSession
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string AllocationNo { get; set; } = ""; // Mã phiên phân bổ (PK, vd: {yyMM}ALC{seq:D4})
+    public string PeriodMonth { get; set; } = ""; // Kỳ tháng phân bổ (YYYYMM, vd: 202601)
+    public string? DealerCode { get; set; } // Mã đại lý (nếu phân bổ đơn lẻ theo 1 đại lý; null = phân bổ toàn bộ đại lý trong kỳ)
+    public string? SalesPolicyCode { get; set; } // Mã chính sách bán hàng áp dụng (Mst_SalesPolicy)
+    public OrderAllocationStatus Status { get; set; } = OrderAllocationStatus.Draft; // Trạng thái phiên phân bổ
+    public int TotalDemandQty { get; set; } // Tổng số lượng nhu cầu ban đầu (QtyInit)
+    public int TotalSupplyQty { get; set; } // Tổng số lượng cung khả dụng (QtyInit)
+    public int TotalAllocatedQty { get; set; } // Tổng số lượng đã phân bổ thực tế (QtyProcess)
+    public int TotalUnmetQty { get; set; } // Tổng số lượng nhu cầu không được đáp ứng (QtyRemain)
+    public string? Remark { get; set; } // Ghi chú phiên phân bổ
+    public string? RejectReason { get; set; } // Lý do từ chối
+    public string? CancelReason { get; set; } // Lý do hủy phiên
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? AllocatedBy { get; set; } // Người chạy phân bổ
+    public DateTime? AllocatedAt { get; set; }
+    public string? FinishedBy { get; set; } // Người chốt hoàn tất phân bổ
+    public DateTime? FinishedAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<OrderDemandAllocation> Demands { get; set; } = new();
+    public List<OrderSupplyAllocation> Supplies { get; set; } = new();
+}
+
+/// <summary>Dòng Nhu cầu đặt hàng của đại lý (DMS.Sales DMS40_Ord_SalesOrderRoot_ApprDemand): số lượng xe đại lý đề xuất mua theo Spec/Model/Color trong kỳ, kèm kết quả phân bổ (QtyProcess, QtyRemain, SupplyPercent, Rank).</summary>
+public sealed class OrderDemandAllocation
+{
+    public long Id { get; set; }
+    public long AllocationId { get; set; }
+    public string AllocationNo { get; set; } = "";
+    public string DealerCode { get; set; } = ""; // Mã đại lý đặt nhu cầu
+    public string PeriodMonth { get; set; } = ""; // Kỳ tháng (YYYYMM)
+    public string SpecCode { get; set; } = ""; // Mã phiên bản xe (Mst_CarSpec)
+    public string ModelCode { get; set; } = ""; // Mã model xe (Mst_CarModel)
+    public string? ColorCode { get; set; } // Mã màu xe (Mst_CarColor)
+    public string? AssemblyStatus { get; set; } // Loại lắp ráp (CBU / CKD)
+    public int QtyInit { get; set; } // Số lượng nhu cầu ban đầu
+    public int QtyProcess { get; set; } // Số lượng được phân bổ thực tế (QtyProcess1/2/3)
+    public int QtyRemain { get; set; } // Số lượng nhu cầu còn lại chưa được đáp ứng
+    public decimal DemandPercent { get; set; } // Tỷ lệ nhu cầu của đại lý so với tổng nhu cầu cùng Spec/Model/Color
+    public int Rank { get; set; } // Thứ hạng ưu tiên phân bổ (theo DemandPercent giảm dần)
+    public OrderDemandStatus Status { get; set; } = OrderDemandStatus.Pending;
+    public string? Remark { get; set; }
+}
+
+/// <summary>Dòng Cơ cấu Cung cấp của NPP (DMS.Sales DMS40_Ord_SalesOrderRoot_ApprSupply1/2/3): số lượng xe NPP có thể cung theo Spec/Model/Color trong kỳ, kèm tỷ lệ cung (SupplyPercent) và thứ hạng (Rank).</summary>
+public sealed class OrderSupplyAllocation
+{
+    public long Id { get; set; }
+    public long AllocationId { get; set; }
+    public string AllocationNo { get; set; } = "";
+    public string PeriodMonth { get; set; } = ""; // Kỳ tháng (YYYYMM)
+    public string SpecCode { get; set; } = ""; // Mã phiên bản xe
+    public string ModelCode { get; set; } = ""; // Mã model xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public int QtyInit { get; set; } // Số lượng cung cấp ban đầu
+    public int QtyProcess { get; set; } // Số lượng đã phân bổ cho các đại lý
+    public int QtyRemain { get; set; } // Số lượng cung còn lại chưa phân bổ
+    public decimal SupplyPercent { get; set; } // Tỷ lệ cung của dòng này so với tổng cung cùng Spec/Model/Color
+    public int Rank { get; set; } // Thứ hạng ưu tiên (theo SupplyPercent giảm dần)
+    public OrderSupplyStatus Status { get; set; } = OrderSupplyStatus.Pending;
+    public string? Remark { get; set; }
+}

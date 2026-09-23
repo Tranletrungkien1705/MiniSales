@@ -120,6 +120,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<SalesManViolate> SalesManViolates => Set<SalesManViolate>();
     public DbSet<RearrangeTransportRequest> RearrangeTransportRequests => Set<RearrangeTransportRequest>();
     public DbSet<RearrangeTransportRequestDetail> RearrangeTransportRequestDetails => Set<RearrangeTransportRequestDetail>();
+    public DbSet<OrderAllocationSession> OrderAllocationSessions => Set<OrderAllocationSession>();
+    public DbSet<OrderDemandAllocation> OrderDemandAllocations => Set<OrderDemandAllocation>();
+    public DbSet<OrderSupplyAllocation> OrderSupplyAllocations => Set<OrderSupplyAllocation>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -542,5 +545,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<RearrangeTransportRequestDetail>().HasIndex(x => x.SRTReqNo);
         b.Entity<RearrangeTransportRequestDetail>().HasIndex(x => x.Vin);
         b.Entity<RearrangeTransportRequestDetail>().Property(x => x.Status).HasConversion<int>();
+
+        b.Entity<OrderAllocationSession>().ToTable("OrderAllocationSessions");
+        b.Entity<OrderAllocationSession>().HasIndex(x => new { x.OrgId, x.AllocationNo }).IsUnique();
+        b.Entity<OrderAllocationSession>().HasIndex(x => new { x.OrgId, x.PeriodMonth });
+        b.Entity<OrderAllocationSession>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<OrderAllocationSession>().HasMany(x => x.Demands).WithOne().HasForeignKey(x => x.AllocationId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<OrderAllocationSession>().HasMany(x => x.Supplies).WithOne().HasForeignKey(x => x.AllocationId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<OrderDemandAllocation>().ToTable("OrderDemandAllocations");
+        b.Entity<OrderDemandAllocation>().HasIndex(x => x.AllocationNo);
+        b.Entity<OrderDemandAllocation>().HasIndex(x => x.DealerCode);
+        b.Entity<OrderDemandAllocation>().HasIndex(x => x.SpecCode);
+        b.Entity<OrderDemandAllocation>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<OrderSupplyAllocation>().ToTable("OrderSupplyAllocations");
+        b.Entity<OrderSupplyAllocation>().HasIndex(x => x.AllocationNo);
+        b.Entity<OrderSupplyAllocation>().HasIndex(x => x.SpecCode);
+        b.Entity<OrderSupplyAllocation>().Property(x => x.Status).HasConversion<int>();
     }
 }

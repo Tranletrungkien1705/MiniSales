@@ -13519,6 +13519,62 @@ public static class Seeder
                 );
             }
 
+            // Phân bổ Nhu cầu / Cung cấp đơn đặt hàng xe (DMS40_Ord_SalesOrderRoot_ApprAuto / DMS40.0.30.Order.cs / 04_DON_HANG_DOANH_SO.md)
+            if (!await db.OrderAllocationSessions.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.OrderAllocationSessions.AddRange(
+                    new OrderAllocationSession
+                    {
+                        OrgId = orgId,
+                        AllocationNo = "ALC26090001",
+                        PeriodMonth = "202601",
+                        SalesPolicyCode = "CSC",
+                        Status = OrderAllocationStatus.Draft,
+                        TotalDemandQty = 30,
+                        TotalSupplyQty = 20,
+                        TotalAllocatedQty = 0,
+                        TotalUnmetQty = 30,
+                        Remark = "Phân bổ nhu cầu/cung kỳ 202601 cho đại lý miền Bắc",
+                        CreatedBy = "HQ_SALES_USER",
+                        CreatedAt = DateTime.Now.AddDays(-2),
+                        Demands = new List<OrderDemandAllocation>
+                        {
+                            new OrderDemandAllocation { AllocationNo = "ALC26090001", DealerCode = "VN001", PeriodMonth = "202601", SpecCode = "SF25-2.5T-AWD", ModelCode = "SF25", ColorCode = "WHT", AssemblyStatus = "CBU", QtyInit = 10, QtyProcess = 0, QtyRemain = 10, Status = OrderDemandStatus.Pending },
+                            new OrderDemandAllocation { AllocationNo = "ALC26090001", DealerCode = "VN002", PeriodMonth = "202601", SpecCode = "SF25-2.5T-AWD", ModelCode = "SF25", ColorCode = "WHT", AssemblyStatus = "CBU", QtyInit = 20, QtyProcess = 0, QtyRemain = 20, Status = OrderDemandStatus.Pending }
+                        },
+                        Supplies = new List<OrderSupplyAllocation>
+                        {
+                            new OrderSupplyAllocation { AllocationNo = "ALC26090001", PeriodMonth = "202601", SpecCode = "SF25-2.5T-AWD", ModelCode = "SF25", ColorCode = "WHT", QtyInit = 20, QtyProcess = 0, QtyRemain = 20, Status = OrderSupplyStatus.Pending }
+                        }
+                    },
+                    new OrderAllocationSession
+                    {
+                        OrgId = orgId,
+                        AllocationNo = "ALC26090002",
+                        PeriodMonth = "202602",
+                        SalesPolicyCode = "STANDARD",
+                        Status = OrderAllocationStatus.Allocated,
+                        TotalDemandQty = 15,
+                        TotalSupplyQty = 15,
+                        TotalAllocatedQty = 15,
+                        TotalUnmetQty = 0,
+                        Remark = "Phân bổ nhu cầu/cung kỳ 202602 đã chạy phân bổ",
+                        CreatedBy = "HQ_SALES_USER",
+                        CreatedAt = DateTime.Now.AddDays(-5),
+                        AllocatedBy = "HQ_SALES_USER",
+                        AllocatedAt = DateTime.Now.AddDays(-4),
+                        Demands = new List<OrderDemandAllocation>
+                        {
+                            new OrderDemandAllocation { AllocationNo = "ALC26090002", DealerCode = "VN001", PeriodMonth = "202602", SpecCode = "TU20-2.0AT", ModelCode = "TU20", ColorCode = "BLK", AssemblyStatus = "CKD", QtyInit = 15, QtyProcess = 15, QtyRemain = 0, DemandPercent = 1m, Rank = 1, Status = OrderDemandStatus.Allocated }
+                        },
+                        Supplies = new List<OrderSupplyAllocation>
+                        {
+                            new OrderSupplyAllocation { AllocationNo = "ALC26090002", PeriodMonth = "202602", SpecCode = "TU20-2.0AT", ModelCode = "TU20", ColorCode = "BLK", QtyInit = 15, QtyProcess = 15, QtyRemain = 0, SupplyPercent = 1m, Rank = 1, Status = OrderSupplyStatus.Allocated }
+                        }
+                    }
+                );
+            }
+
             await db.SaveChangesAsync();
         }
     }
