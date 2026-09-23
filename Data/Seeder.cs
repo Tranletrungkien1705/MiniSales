@@ -14032,6 +14032,28 @@ public static class Seeder
                 );
             }
 
+            // Danh mục Tỉnh/Thành (Mst_Province / Master.cs / Mst_Province_Get) — FK cho Kho bãi
+            if (!await db.Provinces.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.Provinces.AddRange(
+                    new ProvinceMaster { OrgId = orgId, ProvinceCode = "HNI", ProvinceName = "Thành phố Hà Nội", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new ProvinceMaster { OrgId = orgId, ProvinceCode = "HCM", ProvinceName = "Thành phố Hồ Chí Minh", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new ProvinceMaster { OrgId = orgId, ProvinceCode = "DNG", ProvinceName = "Thành phố Đà Nẵng", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new ProvinceMaster { OrgId = orgId, ProvinceCode = "NBI", ProvinceName = "Tỉnh Ninh Bình", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" }
+                );
+            }
+
+            // Danh mục Kho bãi (Mst_Storage / Master.cs / Mst_Storage_Get|Create|Update|Delete|Import)
+            if (!await db.Storages.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.Storages.AddRange(
+                    new StorageMaster { OrgId = orgId, StorageCode = "K01", ProvinceCode = "HNI", ProvinceName = "Thành phố Hà Nội", StorageName = "Kho Đông Nam", StorageAddress = "Khu công nghiệp Đông Nam, Hà Nội", StorageType = StorageType.BT, FlagInventoryCost = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" },
+                    new StorageMaster { OrgId = orgId, StorageCode = "K02", ProvinceCode = "HCM", ProvinceName = "Thành phố Hồ Chí Minh", StorageName = "Kho Hà Phía", StorageAddress = "Hiệp Phước, Nhà Bè, TP.HCM", StorageType = StorageType.BT, FlagInventoryCost = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" },
+                    new StorageMaster { OrgId = orgId, StorageCode = "K03", ProvinceCode = "NBI", ProvinceName = "Tỉnh Ninh Bình", StorageName = "Kho Nội Bộ", StorageAddress = "Khu công nghiệp Gián Khẩu, Ninh Bình", StorageType = StorageType.BT, FlagInventoryCost = "0", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" },
+                    new StorageMaster { OrgId = orgId, StorageCode = "K04", ProvinceCode = "DNG", ProvinceName = "Thành phố Đà Nẵng", StorageName = "Xưởng Đóng Thùng Đà Nẵng", StorageAddress = "Khu công nghiệp Hòa Khánh, Đà Nẵng", StorageType = StorageType.DT, FlagInventoryCost = "0", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" }
+                );
+            }
+
             // Hạn mức độ trễ vận tải theo Kho & Đại lý (Mst_DelayTransports / Master.1.cs / MstDelayTransportsController)
             if (!await db.DelayTransports.AnyAsync(o => o.OrgId == orgId))
             {

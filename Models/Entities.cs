@@ -3990,6 +3990,37 @@ public sealed class DealerZone
     public string? LogLUBy { get; set; } // Người cập nhật gần nhất
 }
 
+/// <summary>Danh mục Tỉnh/Thành (DMS.Sales Mst_Province / Master.cs / Mst_Province_Get): danh mục tỉnh/thành phục vụ tra cứu tuyến vận tải và làm FK cho Kho bãi (Mst_Storage.ProvinceCode). ProvinceCode là khóa nghiệp vụ duy nhất; ProvinceName bắt buộc; FlagActive là cờ hiệu lực.</summary>
+public sealed class ProvinceMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ProvinceCode { get; set; } = ""; // Mã tỉnh/thành (khóa nghiệp vụ duy nhất, vd: HNI, HCM)
+    public string ProvinceName { get; set; } = ""; // Tên tỉnh/thành (bắt buộc)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
+/// <summary>Loại kho (DMS.Sales Mst_Storage.StorageType / TConst.MstStorageStorageType): DT = Kho đóng thùng (xưởng đóng thùng xe thương mại), BT = Kho bãi thường.</summary>
+public enum StorageType { DT = 0, BT = 1 }
+
+/// <summary>Danh mục Kho bãi (DMS.Sales Mst_Storage / Master.cs / Mst_Storage_Get|Create|Update|Delete|Import): danh sách các kho chứa xe của HTC (xe lưu tại kho trước khi xuất cho đại lý). StorageCode là khóa nghiệp vụ duy nhất; StorageName bắt buộc; ProvinceCode là FK bắt buộc tham chiếu Mst_Province; StorageType chỉ nhận DT (kho đóng thùng) / BT (kho bãi thường); FlagInventoryCost đánh dấu kho có tính chi phí lưu kho. Update chỉ cho sửa StorageName/StorageAddress/FlagInventoryCost (ProvinceCode/StorageType readonly sau khi tạo).</summary>
+public sealed class StorageMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string StorageCode { get; set; } = ""; // Mã kho (khóa nghiệp vụ duy nhất, vd: K01, K02)
+    public string ProvinceCode { get; set; } = ""; // Mã tỉnh/thành (FK bắt buộc, tham chiếu Mst_Province.ProvinceCode)
+    public string? ProvinceName { get; set; } // Tên tỉnh/thành (tra cứu từ Mst_Province)
+    public string StorageName { get; set; } = ""; // Tên kho (bắt buộc)
+    public string? StorageAddress { get; set; } // Địa chỉ kho
+    public StorageType StorageType { get; set; } = StorageType.BT; // Loại kho (DT = đóng thùng, BT = bãi thường)
+    public string FlagInventoryCost { get; set; } = "0"; // Cờ tính chi phí lưu kho (1 = có tính, 0 = không)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
 /// <summary>Hạn mức độ trễ vận tải theo Kho & Đại lý (DMS.Sales Mst_DelayTransports / Master.1.cs / MstDelayTransportsController / Mst_DelayTransports_Get|Create|Update|Delete|Import): danh mục quy định số ngày trễ vận tải tối đa (DelayTransport) được chấp nhận khi giao xe từ một Kho (StorageCode) tới một Đại lý (DealerCode). Khóa nghiệp vụ = (StorageCode, DealerCode). Dùng để đối soát phạt chậm vận tải (Pmt_TransportIns) và tính chi phí lưu kho (Pmt_PaymentStorage).</summary>
 public sealed class DelayTransportMaster
 {

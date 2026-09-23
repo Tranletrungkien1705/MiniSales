@@ -88,6 +88,7 @@ builder.Services.AddScoped<IBankService, BankService>();
 builder.Services.AddScoped<ITransportFeeService, TransportFeeService>();
 builder.Services.AddScoped<ICarModelService, CarModelService>();
 builder.Services.AddScoped<ISalesManService, SalesManService>();
+builder.Services.AddScoped<IStorageMasterService, StorageMasterService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5998,6 +5999,47 @@ app.MapDelete("/api/salesmen/{smCode}", async (string smCode, ISalesManService s
 {
     var r = await svc.DeleteAsync(smCode);
     return r ? Results.Ok(new { deleted = true, smCode }) : Results.NotFound(new { smCode });
+}).RequireAuthorization();
+
+// ===== Quản lý Kho bãi (Mst_Storage - DMS.Sales Master.cs) =====
+app.MapPost("/api/storages", async (CreateStorageDto dto, IStorageMasterService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/storages/import", async (List<StorageImportRowDto> rows, IStorageMasterService svc) =>
+{
+    try { return Results.Ok(await svc.ImportAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/storages", async (IStorageMasterService svc, string? storageCode, string? provinceCode, string? storageType, string? flagInventoryCost) =>
+    Results.Ok(await svc.SearchAsync(storageCode, provinceCode, storageType, flagInventoryCost))).RequireAuthorization();
+
+app.MapGet("/api/storages/stats", async (IStorageMasterService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/storages/{storageCode}", async (string storageCode, IStorageMasterService svc) =>
+{
+    var r = await svc.GetAsync(storageCode);
+    return r is null ? Results.NotFound(new { storageCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/storages/{storageCode}", async (string storageCode, UpdateStorageDto dto, IStorageMasterService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(storageCode, dto);
+        return r is null ? Results.NotFound(new { storageCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/storages/{storageCode}", async (string storageCode, IStorageMasterService svc) =>
+{
+    var r = await svc.DeleteAsync(storageCode);
+    return r ? Results.Ok(new { deleted = true, storageCode }) : Results.NotFound(new { storageCode });
 }).RequireAuthorization();
 
 app.Run();

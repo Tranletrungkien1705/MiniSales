@@ -114,6 +114,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<WarrantyExpiresMaster> WarrantyExpires => Set<WarrantyExpiresMaster>();
     public DbSet<ZoneMaster> Zones => Set<ZoneMaster>();
     public DbSet<DealerZone> DealerZones => Set<DealerZone>();
+    public DbSet<StorageMaster> Storages => Set<StorageMaster>();
+    public DbSet<ProvinceMaster> Provinces => Set<ProvinceMaster>();
     public DbSet<DelayTransportMaster> DelayTransports => Set<DelayTransportMaster>();
     public DbSet<CarModelMaster> CarModels => Set<CarModelMaster>();
     public DbSet<CarColorMaster> CarColors => Set<CarColorMaster>();
@@ -530,6 +532,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerZone>().HasIndex(x => new { x.OrgId, x.DealerCode, x.ZoneCode }).IsUnique();
         b.Entity<DealerZone>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<DealerZone>().HasIndex(x => new { x.OrgId, x.ZoneCode });
+
+        b.Entity<StorageMaster>().ToTable("Storages");
+        b.Entity<StorageMaster>().HasIndex(x => new { x.OrgId, x.StorageCode }).IsUnique();
+        b.Entity<StorageMaster>().HasIndex(x => new { x.OrgId, x.ProvinceCode });
+        b.Entity<StorageMaster>().Property(x => x.StorageType).HasConversion<int>();
+
+        b.Entity<ProvinceMaster>().ToTable("Provinces");
+        b.Entity<ProvinceMaster>().HasIndex(x => new { x.OrgId, x.ProvinceCode }).IsUnique();
 
         b.Entity<DelayTransportMaster>().ToTable("DelayTransports");
         b.Entity<DelayTransportMaster>().HasIndex(x => new { x.OrgId, x.StorageCode, x.DealerCode }).IsUnique();
