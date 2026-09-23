@@ -2856,6 +2856,34 @@ public static class Seeder
                     LogLUBy TEXT
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_WarrantyExpires_OrgId_ModelCode ON WarrantyExpires(OrgId, ModelCode);
+
+                CREATE TABLE IF NOT EXISTS Zones (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ZoneCode TEXT NOT NULL,
+                    ZoneName TEXT,
+                    Remark TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_Zones_OrgId_ZoneCode ON Zones(OrgId, ZoneCode);
+
+                CREATE TABLE IF NOT EXISTS DealerZones (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    ZoneCode TEXT NOT NULL,
+                    ZoneName TEXT,
+                    Remark TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerZones_OrgId_DealerCode_ZoneCode ON DealerZones(OrgId, DealerCode, ZoneCode);
+                CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_DealerCode ON DealerZones(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_ZoneCode ON DealerZones(OrgId, ZoneCode);
             ");
         }
         catch
@@ -13262,6 +13290,25 @@ public static class Seeder
                     new WarrantyExpiresMaster { OrgId = orgId, ModelCode = "TU20", ModelName = "Tucson 2.0 AT", WarrantyExpires = 60m, WarrantyKM = 100000m, FlagActive = "1", Remark = "Bảo hành 5 năm hoặc 100.000 km", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new WarrantyExpiresMaster { OrgId = orgId, ModelCode = "CR15", ModelName = "Creta 1.5 Cao Cấp", WarrantyExpires = 60m, WarrantyKM = 100000m, FlagActive = "1", Remark = "Bảo hành 5 năm hoặc 100.000 km", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new WarrantyExpiresMaster { OrgId = orgId, ModelCode = "AC14", ModelName = "Accent 1.4 AT", WarrantyExpires = 36m, WarrantyKM = 100000m, FlagActive = "1", Remark = "Bảo hành 3 năm hoặc 100.000 km", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Phân vùng HTV (Mst_Zone / DealerZone.cs / FrmMst_Zone)
+            if (!await db.Zones.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.Zones.AddRange(
+                    new ZoneMaster { OrgId = orgId, ZoneCode = "MB", ZoneName = "Miền Bắc", Remark = "Phân vùng kinh doanh miền Bắc", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" },
+                    new ZoneMaster { OrgId = orgId, ZoneCode = "MT", ZoneName = "Miền Trung", Remark = "Phân vùng kinh doanh miền Trung", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" },
+                    new ZoneMaster { OrgId = orgId, ZoneCode = "MN", ZoneName = "Miền Nam", Remark = "Phân vùng kinh doanh miền Nam", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" }
+                );
+            }
+
+            // Thiết lập phân vùng HTV cho đại lý (Mst_DealerZone / DealerZone.cs / FrmMst_DealerZone)
+            if (!await db.DealerZones.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.DealerZones.AddRange(
+                    new DealerZone { OrgId = orgId, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", ZoneCode = "MB", ZoneName = "Miền Bắc", Remark = "Đại lý khu vực Hà Nội", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" },
+                    new DealerZone { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", ZoneCode = "MN", ZoneName = "Miền Nam", Remark = "Đại lý khu vực phía Nam", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" }
                 );
             }
 

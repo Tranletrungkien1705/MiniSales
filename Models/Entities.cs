@@ -3855,3 +3855,31 @@ public sealed class WarrantyExpiresMaster
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người cập nhật gần nhất
 }
+
+/// <summary>Phân vùng HTV (DMS.Sales Mst_Zone / DealerZone.cs / FrmMst_Zone): danh mục phân vùng kinh doanh của HTV (vd: MB = Miền Bắc, MN = Miền Nam). ZoneCode là khóa nghiệp vụ duy nhất; WinForm chỉ cho sửa cờ hiệu lực FlagActive (ZoneCode/ZoneName readonly sau khi tạo).</summary>
+public sealed class ZoneMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ZoneCode { get; set; } = ""; // Mã phân vùng (khóa nghiệp vụ duy nhất, vd: MB, MN)
+    public string? ZoneName { get; set; } // Tên phân vùng (vd: Miền Bắc, Miền Nam)
+    public string? Remark { get; set; } // Ghi chú
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
+/// <summary>Thiết lập phân vùng HTV cho đại lý (DMS.Sales Mst_DealerZone / DealerZone.cs / FrmMst_DealerZone): gán 1 đại lý vào 1 phân vùng HTV. Khóa nghiệp vụ = (DealerCode, ZoneCode). Quy tắc: MỖI ĐẠI LÝ chỉ thuộc 1 phân vùng ACTIVE — khi gán phân vùng mới, các mapping active cũ của đại lý đó bị set FlagActive='0'.</summary>
+public sealed class DealerZone
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DealerCode { get; set; } = ""; // Mã đại lý (tham chiếu Mst_Dealer.DealerCode)
+    public string? DealerName { get; set; } // Tên đại lý (tra cứu từ Mst_Dealer)
+    public string ZoneCode { get; set; } = ""; // Mã phân vùng (tham chiếu Mst_Zone.ZoneCode)
+    public string? ZoneName { get; set; } // Tên phân vùng (tra cứu từ Mst_Zone)
+    public string? Remark { get; set; } // Ghi chú
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}

@@ -75,6 +75,7 @@ builder.Services.AddScoped<IPaymentPDIService, PaymentPDIService>();
 builder.Services.AddScoped<IDealerCustomerService, DealerCustomerService>();
 builder.Services.AddScoped<ICarPriceUpdateService, CarPriceUpdateService>();
 builder.Services.AddScoped<IWarrantyExpiresService, WarrantyExpiresService>();
+builder.Services.AddScoped<IDealerZoneService, DealerZoneService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5095,6 +5096,86 @@ app.MapDelete("/api/warranty-expires/{modelCode}", async (string modelCode, IWar
 app.MapPost("/api/warranty-expires/import", async (List<WarrantyExpiresImportRowDto> rows, IWarrantyExpiresService svc) =>
 {
     try { return Results.Ok(await svc.ImportAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Phân vùng HTV (HTV Zone Management - DMS.Sales Mst_Zone + Mst_DealerZone / DealerZone.cs) =====
+app.MapGet("/api/zones", async (IDealerZoneService svc, string? zoneCode, string? flagActive) =>
+    Results.Ok(await svc.SearchZonesAsync(zoneCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/zones/stats", async (IDealerZoneService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/zones/{zoneCode}", async (string zoneCode, IDealerZoneService svc) =>
+{
+    var r = await svc.GetZoneAsync(zoneCode);
+    return r is null ? Results.NotFound(new { zoneCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/zones", async (CreateZoneDto dto, IDealerZoneService svc) =>
+{
+    try { return Results.Ok(await svc.CreateZoneAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/zones/{zoneCode}", async (string zoneCode, UpdateZoneDto dto, IDealerZoneService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateZoneAsync(zoneCode, dto);
+        return r is null ? Results.NotFound(new { zoneCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/zones/{zoneCode}", async (string zoneCode, IDealerZoneService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteZoneAsync(zoneCode);
+        return ok ? Results.Ok(new { success = true, zoneCode }) : Results.NotFound(new { zoneCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-zones", async (IDealerZoneService svc, string? dealerCode, string? zoneCode, string? flagActive) =>
+    Results.Ok(await svc.SearchDealerZonesAsync(dealerCode, zoneCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/dealer-zones/{dealerCode}/{zoneCode}", async (string dealerCode, string zoneCode, IDealerZoneService svc) =>
+{
+    var r = await svc.GetDealerZoneAsync(dealerCode, zoneCode);
+    return r is null ? Results.NotFound(new { dealerCode, zoneCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-zones", async (CreateDealerZoneDto dto, IDealerZoneService svc) =>
+{
+    try { return Results.Ok(await svc.CreateDealerZoneAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-zones/{dealerCode}/{zoneCode}", async (string dealerCode, string zoneCode, UpdateDealerZoneDto dto, IDealerZoneService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateDealerZoneAsync(dealerCode, zoneCode, dto);
+        return r is null ? Results.NotFound(new { dealerCode, zoneCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-zones/{dealerCode}/{zoneCode}", async (string dealerCode, string zoneCode, IDealerZoneService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDealerZoneAsync(dealerCode, zoneCode);
+        return ok ? Results.Ok(new { success = true, dealerCode, zoneCode }) : Results.NotFound(new { dealerCode, zoneCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/dealer-zones/import", async (List<DealerZoneImportRowDto> rows, IDealerZoneService svc) =>
+{
+    try { return Results.Ok(await svc.ImportDealerZonesAsync(rows)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
