@@ -136,6 +136,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<TransportFeeHistory> TransportFeeHistories => Set<TransportFeeHistory>();
     public DbSet<SalesMan> SalesMen => Set<SalesMan>();
     public DbSet<SalesManHistoryInactive> SalesManHistoryInactives => Set<SalesManHistoryInactive>();
+    public DbSet<MaintainTask> MaintainTasks => Set<MaintainTask>();
+    public DbSet<MaintainTaskItem> MaintainTaskItems => Set<MaintainTaskItem>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -633,5 +635,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<SalesManHistoryInactive>().HasIndex(x => new { x.OrgId, x.SMCode });
         b.Entity<SalesManHistoryInactive>().HasIndex(x => new { x.OrgId, x.SMHyundaiCode });
         b.Entity<SalesManHistoryInactive>().Property(x => x.SMStatus).HasConversion<int>();
+
+        b.Entity<MaintainTask>().ToTable("MaintainTasks");
+        b.Entity<MaintainTask>().HasIndex(x => new { x.OrgId, x.MtnTkCode }).IsUnique();
+
+        b.Entity<MaintainTaskItem>().ToTable("MaintainTaskItems");
+        b.Entity<MaintainTaskItem>().HasIndex(x => new { x.OrgId, x.MtnTkCode, x.MtnTkItemCode }).IsUnique();
+        b.Entity<MaintainTaskItem>().HasIndex(x => new { x.OrgId, x.MtnTkCode });
     }
 }

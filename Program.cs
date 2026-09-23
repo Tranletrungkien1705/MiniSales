@@ -89,6 +89,7 @@ builder.Services.AddScoped<ITransportFeeService, TransportFeeService>();
 builder.Services.AddScoped<ICarModelService, CarModelService>();
 builder.Services.AddScoped<ISalesManService, SalesManService>();
 builder.Services.AddScoped<IStorageMasterService, StorageMasterService>();
+builder.Services.AddScoped<IMaintainTaskService, MaintainTaskService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -6040,6 +6041,89 @@ app.MapDelete("/api/storages/{storageCode}", async (string storageCode, IStorage
 {
     var r = await svc.DeleteAsync(storageCode);
     return r ? Results.Ok(new { deleted = true, storageCode }) : Results.NotFound(new { storageCode });
+}).RequireAuthorization();
+
+// ===== Danh mục Hạng mục Công việc Bảo dưỡng (Mst_MaintainTask + Mst_MaintainTaskItem - DMS.Sales Master.cs / Master.1.cs) =====
+app.MapPost("/api/maintain-tasks", async (CreateMaintainTaskDto dto, IMaintainTaskService svc) =>
+{
+    try { return Results.Ok(await svc.CreateTaskAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/maintain-tasks/import", async (List<MaintainTaskImportRowDto> rows, IMaintainTaskService svc) =>
+{
+    try { return Results.Ok(await svc.ImportTasksAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/maintain-tasks", async (IMaintainTaskService svc, string? keyWord, string? flagActive) =>
+    Results.Ok(await svc.SearchTasksAsync(keyWord, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/maintain-tasks/stats", async (IMaintainTaskService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/maintain-tasks/{mtnTkCode}", async (string mtnTkCode, IMaintainTaskService svc) =>
+{
+    var r = await svc.GetTaskAsync(mtnTkCode);
+    return r is null ? Results.NotFound(new { mtnTkCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/maintain-tasks/{mtnTkCode}", async (string mtnTkCode, UpdateMaintainTaskDto dto, IMaintainTaskService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateTaskAsync(mtnTkCode, dto);
+        return r is null ? Results.NotFound(new { mtnTkCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/maintain-tasks/{mtnTkCode}", async (string mtnTkCode, IMaintainTaskService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteTaskAsync(mtnTkCode);
+        return r ? Results.Ok(new { deleted = true, mtnTkCode }) : Results.NotFound(new { mtnTkCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Chi tiết Hạng mục Công việc Bảo dưỡng (Mst_MaintainTaskItem) =====
+app.MapPost("/api/maintain-task-items", async (CreateMaintainTaskItemDto dto, IMaintainTaskService svc) =>
+{
+    try { return Results.Ok(await svc.CreateItemAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/maintain-task-items/import", async (List<MaintainTaskItemImportRowDto> rows, IMaintainTaskService svc) =>
+{
+    try { return Results.Ok(await svc.ImportItemsAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/maintain-task-items", async (IMaintainTaskService svc, string? keyWord, string? mtnTkCode, string? flagActive) =>
+    Results.Ok(await svc.SearchItemsAsync(keyWord, mtnTkCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/maintain-task-items/{mtnTkCode}/{mtnTkItemCode}", async (string mtnTkCode, string mtnTkItemCode, IMaintainTaskService svc) =>
+{
+    var r = await svc.GetItemAsync(mtnTkCode, mtnTkItemCode);
+    return r is null ? Results.NotFound(new { mtnTkCode, mtnTkItemCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/maintain-task-items/{mtnTkCode}/{mtnTkItemCode}", async (string mtnTkCode, string mtnTkItemCode, UpdateMaintainTaskItemDto dto, IMaintainTaskService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateItemAsync(mtnTkCode, mtnTkItemCode, dto);
+        return r is null ? Results.NotFound(new { mtnTkCode, mtnTkItemCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/maintain-task-items/{mtnTkCode}/{mtnTkItemCode}", async (string mtnTkCode, string mtnTkItemCode, IMaintainTaskService svc) =>
+{
+    var r = await svc.DeleteItemAsync(mtnTkCode, mtnTkItemCode);
+    return r ? Results.Ok(new { deleted = true, mtnTkCode, mtnTkItemCode }) : Results.NotFound(new { mtnTkCode, mtnTkItemCode });
 }).RequireAuthorization();
 
 app.Run();

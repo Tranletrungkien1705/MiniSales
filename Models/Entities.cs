@@ -4468,4 +4468,29 @@ public sealed class SalesManHistoryInactive
     public string? SMDesc { get; set; } // Mô tả chi tiết lý do nghỉ việc
     public DateTime InactiveDateTime { get; set; } = DateTime.Now; // Thời điểm ghi nhận nghỉ việc
     public string? InactiveBy { get; set; } // Người ghi nhận nghỉ việc
+}/// <summary>Hạng mục công việc bảo dưỡng định kỳ (DMS.Sales Mst_MaintainTask / Master.cs / Mst_MaintainTask_Get|Create|Update|Delete|Import): danh mục loại công việc bảo dưỡng xe (thay dầu, kiểm tra phanh...). Khóa nghiệp vụ = MtnTkCode.</summary>
+public sealed class MaintainTask
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string MtnTkCode { get; set; } = ""; // Mã hạng mục công việc (khóa nghiệp vụ duy nhất)
+    public string MtnTkName { get; set; } = ""; // Tên hạng mục công việc (bắt buộc)
+    public string? MtnTkType { get; set; } // Loại hạng mục công việc
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực ('1' = active, '0' = inactive)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}
+
+/// <summary>Chi tiết hạng mục công việc bảo dưỡng (DMS.Sales Mst_MaintainTaskItem / Master.1.cs / Mst_MaintainTaskItem_Get|Create|Update|Delete|Import): nội dung công việc cụ thể thuộc một loại công việc bảo dưỡng. Khóa nghiệp vụ = (MtnTkCode, MtnTkItemCode); FK MtnTkCode phải tồn tại trong Mst_MaintainTask.</summary>
+public sealed class MaintainTaskItem
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string MtnTkCode { get; set; } = ""; // Mã loại công việc bảo dưỡng (FK Mst_MaintainTask, khóa chính 1)
+    public string MtnTkItemCode { get; set; } = ""; // Mã hạng mục công việc (khóa chính 2)
+    public string MtnTkItemName { get; set; } = ""; // Tên/nội dung hạng mục công việc (bắt buộc)
+    public int ViewIdx { get; set; } // Thứ tự hiển thị
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực ('1' = active, '0' = inactive)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
 }

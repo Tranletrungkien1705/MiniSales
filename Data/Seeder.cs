@@ -3126,6 +3126,32 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_SalesManHistoryInactives_OrgId_SMCode ON SalesManHistoryInactives(OrgId, SMCode);
                 CREATE INDEX IF NOT EXISTS IX_SalesManHistoryInactives_OrgId_SMHyundaiCode ON SalesManHistoryInactives(OrgId, SMHyundaiCode);
 
+                CREATE TABLE IF NOT EXISTS MaintainTasks (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    MtnTkCode TEXT NOT NULL,
+                    MtnTkName TEXT NOT NULL,
+                    MtnTkType TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_MaintainTasks_OrgId_MtnTkCode ON MaintainTasks(OrgId, MtnTkCode);
+
+                CREATE TABLE IF NOT EXISTS MaintainTaskItems (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    MtnTkCode TEXT NOT NULL,
+                    MtnTkItemCode TEXT NOT NULL,
+                    MtnTkItemName TEXT NOT NULL,
+                    ViewIdx INTEGER NOT NULL,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_MaintainTaskItems_OrgId_MtnTkCode_MtnTkItemCode ON MaintainTaskItems(OrgId, MtnTkCode, MtnTkItemCode);
+                CREATE INDEX IF NOT EXISTS IX_MaintainTaskItems_OrgId_MtnTkCode ON MaintainTaskItems(OrgId, MtnTkCode);
+
                 CREATE TABLE IF NOT EXISTS CustomerVisits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -14284,6 +14310,32 @@ public static class Seeder
                             new OrderSupplyAllocation { AllocationNo = "ALC26090002", PeriodMonth = "202602", SpecCode = "TU20-2.0AT", ModelCode = "TU20", ColorCode = "BLK", QtyInit = 15, QtyProcess = 15, QtyRemain = 0, SupplyPercent = 1m, Rank = 1, Status = OrderSupplyStatus.Allocated }
                         }
                     }
+                );
+            }
+
+            // Danh mục Hạng mục Công việc Bảo dưỡng (Mst_MaintainTask / Master.cs / Mst_MaintainTask_Get|Create|Update|Delete|Import)
+            if (!await db.MaintainTasks.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.MaintainTasks.AddRange(
+                    new MaintainTask { OrgId = orgId, MtnTkCode = "MTK001", MtnTkName = "Bảo dưỡng cấp 1 (1.000 km)", MtnTkType = "MAINTENANCE", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTask { OrgId = orgId, MtnTkCode = "MTK002", MtnTkName = "Bảo dưỡng cấp 2 (5.000 km)", MtnTkType = "MAINTENANCE", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTask { OrgId = orgId, MtnTkCode = "MTK003", MtnTkName = "Bảo dưỡng định kỳ lớn (20.000 km)", MtnTkType = "MAJOR", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTask { OrgId = orgId, MtnTkCode = "MTK004", MtnTkName = "Kiểm tra trước giao xe (PDI)", MtnTkType = "INSPECTION", FlagActive = "0", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Chi tiết Hạng mục Công việc Bảo dưỡng (Mst_MaintainTaskItem / Master.1.cs / Mst_MaintainTaskItem_Get|Create|Update|Delete|Import)
+            if (!await db.MaintainTaskItems.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.MaintainTaskItems.AddRange(
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK001", MtnTkItemCode = "ITEM001", MtnTkItemName = "Thay dầu động cơ", ViewIdx = 1, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK001", MtnTkItemCode = "ITEM002", MtnTkItemName = "Thay lọc dầu", ViewIdx = 2, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK001", MtnTkItemCode = "ITEM003", MtnTkItemName = "Kiểm tra áp suất lốp", ViewIdx = 3, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK002", MtnTkItemCode = "ITEM001", MtnTkItemName = "Thay dầu hộp số", ViewIdx = 1, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK002", MtnTkItemCode = "ITEM002", MtnTkItemName = "Kiểm tra hệ thống phanh", ViewIdx = 2, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK003", MtnTkItemCode = "ITEM001", MtnTkItemName = "Thay dây curoa cam", ViewIdx = 1, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK003", MtnTkItemCode = "ITEM002", MtnTkItemName = "Thay bugi", ViewIdx = 2, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK004", MtnTkItemCode = "ITEM001", MtnTkItemName = "Kiểm tra tổng quát trước giao xe", ViewIdx = 1, FlagActive = "0", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 
