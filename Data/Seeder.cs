@@ -2761,6 +2761,87 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_TransportInsOrderDetails_TransportInsNo ON TransportInsOrderDetails(TransportInsNo);
                 CREATE INDEX IF NOT EXISTS IX_TransportInsOrderDetails_Vin ON TransportInsOrderDetails(Vin);
                 CREATE INDEX IF NOT EXISTS IX_TransportInsOrderDetails_DlvMnNo ON TransportInsOrderDetails(DlvMnNo);
+
+                CREATE TABLE IF NOT EXISTS AvnUnitPrices (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    AvnCode TEXT NOT NULL,
+                    AvnName TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    UnitPrice REAL NOT NULL DEFAULT 0,
+                    EffStartDate TEXT NOT NULL,
+                    EffEndDate TEXT,
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    Remark TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_AvnUnitPrices_AvnCode ON AvnUnitPrices(AvnCode);
+
+                CREATE TABLE IF NOT EXISTS PaymentAVNOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PaymentAVNNo TEXT NOT NULL,
+                    PmtMonth TEXT NOT NULL,
+                    SupplierCode TEXT NOT NULL DEFAULT 'MOBIS-VN',
+                    SupplierName TEXT NOT NULL DEFAULT '',
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    AmountTotal REAL NOT NULL DEFAULT 0,
+                    VatRate REAL NOT NULL DEFAULT 10,
+                    UnitPriceVAT REAL NOT NULL DEFAULT 0,
+                    TotalAmountVAT REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    TCMSSignStatus INTEGER NOT NULL DEFAULT 0,
+                    TCMSSignDate TEXT,
+                    TCMSSignBy TEXT,
+                    HTVSignStatus INTEGER NOT NULL DEFAULT 0,
+                    HTVSignDate TEXT,
+                    HTVSignBy TEXT,
+                    FilePath TEXT,
+                    BankTxnRef TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    Approved1At TEXT,
+                    Approved1By TEXT,
+                    Approved2At TEXT,
+                    Approved2By TEXT,
+                    SettledAt TEXT,
+                    SettledBy TEXT,
+                    RejectedAt TEXT,
+                    RejectedBy TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentAVNOrders_OrgId_PaymentAVNNo ON PaymentAVNOrders(OrgId, PaymentAVNNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentAVNOrders_OrgId_PmtMonth ON PaymentAVNOrders(OrgId, PmtMonth);
+                CREATE INDEX IF NOT EXISTS IX_PaymentAVNOrders_OrgId_Status ON PaymentAVNOrders(OrgId, Status);
+
+                CREATE TABLE IF NOT EXISTS PaymentAVNDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PaymentAVNId INTEGER NOT NULL,
+                    PaymentAVNNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    CarId TEXT,
+                    EngineNo TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    AvnCode TEXT NOT NULL,
+                    SerialNo TEXT NOT NULL,
+                    UnitPriceAVN REAL NOT NULL DEFAULT 0,
+                    AVNDate TEXT,
+                    InStorageDate TEXT,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    FOREIGN KEY(PaymentAVNId) REFERENCES PaymentAVNOrders(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_PaymentAVNDetails_PaymentAVNNo ON PaymentAVNDetails(PaymentAVNNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentAVNDetails_Vin ON PaymentAVNDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_PaymentAVNDetails_AvnCode ON PaymentAVNDetails(AvnCode);
             ");
         }
         catch
@@ -12842,6 +12923,184 @@ public static class Seeder
                 };
 
                 db.TransportInsOrders.AddRange(ti1, ti2);
+            }
+
+            // Bảng kê Quyết toán Chi phí Thiết bị AVN (Audio-Visual Navigation) Xe Ô tô HTV - TCMS (Pmt_PaymentAVN)
+            if (!await db.AvnUnitPrices.AnyAsync())
+            {
+                db.AvnUnitPrices.AddRange(
+                    new AvnUnitPriceMaster { AvnCode = "AVN-STF-GEN5-PREM", AvnName = "AVN SantaFe Gen5 Premium 12.3 inch", ModelCode = "SANTAFE", UnitPrice = 12500000m, EffStartDate = new DateTime(2026, 1, 1), IsActive = true, Remark = "Đơn giá thiết bị AVN quy định theo dòng xe" },
+                    new AvnUnitPriceMaster { AvnCode = "AVN-TUC-GEN5-1025", AvnName = "AVN Tucson Gen5 10.25 inch", ModelCode = "TUCSON", UnitPrice = 11000000m, EffStartDate = new DateTime(2026, 1, 1), IsActive = true, Remark = "Đơn giá thiết bị AVN quy định theo dòng xe" },
+                    new AvnUnitPriceMaster { AvnCode = "AVN-CRT-1025-NAV", AvnName = "AVN Creta 10.25 inch Navi", ModelCode = "CRETA", UnitPrice = 9500000m, EffStartDate = new DateTime(2026, 1, 1), IsActive = true, Remark = "Đơn giá thiết bị AVN quy định theo dòng xe" },
+                    new AvnUnitPriceMaster { AvnCode = "AVN-ACC-GEN5-8IN", AvnName = "AVN Accent Gen5 8 inch", ModelCode = "ACCENT", UnitPrice = 8500000m, EffStartDate = new DateTime(2026, 1, 1), IsActive = true, Remark = "Đơn giá thiết bị AVN quy định theo dòng xe" },
+                    new AvnUnitPriceMaster { AvnCode = "AVN-ELN-1025-WIDESCREEN", AvnName = "AVN Elantra 10.25 inch Widescreen", ModelCode = "ELANTRA", UnitPrice = 9800000m, EffStartDate = new DateTime(2026, 1, 1), IsActive = true, Remark = "Đơn giá thiết bị AVN quy định theo dòng xe" }
+                );
+            }
+
+            if (!await db.PaymentAVNOrders.AnyAsync(o => o.OrgId == orgId))
+            {
+                var avn1 = new PaymentAVNOrder
+                {
+                    OrgId = orgId,
+                    PaymentAVNNo = "2603AVN0001",
+                    PmtMonth = "2026-03",
+                    SupplierCode = "MOBIS-VN",
+                    SupplierName = "Công ty TNHH Mobis Auto Parts Việt Nam",
+                    TotalCars = 3,
+                    AmountTotal = 32000000m,
+                    VatRate = 10m,
+                    UnitPriceVAT = 3200000m,
+                    TotalAmountVAT = 35200000m,
+                    Status = PaymentAVNStatus.HTVApproved,
+                    TCMSSignStatus = PaymentAVNSignStatus.ChuaKy,
+                    HTVSignStatus = PaymentAVNSignStatus.ChuaKy,
+                    Remark = "Bảng kê chi phí thiết bị AVN tháng 03/2026 chờ ký số 2 bên",
+                    CreatedBy = "TCMS_TELEMATICS_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-8),
+                    Approved1At = DateTime.Now.AddDays(-6),
+                    Approved1By = "TCMS_TELEMATICS_MANAGER",
+                    Approved2At = DateTime.Now.AddDays(-4),
+                    Approved2By = "HTV_SALES_MANAGER",
+                    LUDateTime = DateTime.Now.AddDays(-4),
+                    LUBy = "HTV_SALES_MANAGER",
+                    Details = new List<PaymentAVNDetail>
+                    {
+                        new PaymentAVNDetail
+                        {
+                            PaymentAVNNo = "2603AVN0001",
+                            Vin = "KMHGN41DBPU112233",
+                            CarId = "CAR2026-ST001",
+                            EngineNo = "G4KE-112233",
+                            ModelCode = "SANTAFE",
+                            ModelName = "SantaFe 2.5 Premium",
+                            SpecCode = "STF-PRE-01",
+                            ColorCode = "WHT",
+                            ColorName = "Trắng",
+                            AvnCode = "AVN-STF-GEN5-PREM",
+                            SerialNo = "SN-STF-112233",
+                            UnitPriceAVN = 12500000m,
+                            AVNDate = DateTime.Today.AddDays(-12),
+                            InStorageDate = DateTime.Today.AddDays(-10),
+                            Status = PaymentAVNDetailStatus.Approved,
+                            Remark = "Lắp AVN Gen5 Premium 12.3 inch"
+                        },
+                        new PaymentAVNDetail
+                        {
+                            PaymentAVNNo = "2603AVN0001",
+                            Vin = "KMHJ381BBPU445566",
+                            CarId = "CAR2026-TU002",
+                            EngineNo = "G4NN-445566",
+                            ModelCode = "TUCSON",
+                            ModelName = "Tucson 1.6 Turbo",
+                            SpecCode = "TUC-TURBO-01",
+                            ColorCode = "BLK",
+                            ColorName = "Đen",
+                            AvnCode = "AVN-TUC-GEN5-1025",
+                            SerialNo = "SN-TUC-445566",
+                            UnitPriceAVN = 11000000m,
+                            AVNDate = DateTime.Today.AddDays(-11),
+                            InStorageDate = DateTime.Today.AddDays(-9),
+                            Status = PaymentAVNDetailStatus.Approved,
+                            Remark = "Lắp AVN Tucson Gen5 10.25 inch"
+                        },
+                        new PaymentAVNDetail
+                        {
+                            PaymentAVNNo = "2603AVN0001",
+                            Vin = "KMHE281BBSA556677",
+                            CarId = "CAR2026-CR003",
+                            EngineNo = "G4FL-881920",
+                            ModelCode = "CRETA",
+                            ModelName = "Creta 1.5 Cao Cấp",
+                            SpecCode = "CR15-PRE-01",
+                            ColorCode = "RED",
+                            ColorName = "Đỏ",
+                            AvnCode = "AVN-CRT-1025-NAV",
+                            SerialNo = "SN-CRT-556677",
+                            UnitPriceAVN = 8500000m,
+                            AVNDate = DateTime.Today.AddDays(-10),
+                            InStorageDate = DateTime.Today.AddDays(-8),
+                            Status = PaymentAVNDetailStatus.Approved,
+                            Remark = "Lắp AVN Creta 10.25 inch Navi"
+                        }
+                    }
+                };
+
+                var avn2 = new PaymentAVNOrder
+                {
+                    OrgId = orgId,
+                    PaymentAVNNo = "2602AVN0002",
+                    PmtMonth = "2026-02",
+                    SupplierCode = "MOTREX-VN",
+                    SupplierName = "Công ty TNHH Motrex Việt Nam",
+                    TotalCars = 2,
+                    AmountTotal = 19500000m,
+                    VatRate = 10m,
+                    UnitPriceVAT = 1950000m,
+                    TotalAmountVAT = 21450000m,
+                    Status = PaymentAVNStatus.Settled,
+                    TCMSSignStatus = PaymentAVNSignStatus.DaKy,
+                    TCMSSignDate = DateTime.Now.AddDays(-22),
+                    TCMSSignBy = "TCMS_TELEMATICS_DIRECTOR",
+                    HTVSignStatus = PaymentAVNSignStatus.DaKy,
+                    HTVSignDate = DateTime.Now.AddDays(-21),
+                    HTVSignBy = "HTV_REP_KIM",
+                    FilePath = "/reports/payment-avn/2602AVN0002_FullySigned.pdf",
+                    BankTxnRef = "UNC-20260228-0007",
+                    Remark = "Bảng kê chi phí thiết bị AVN tháng 02/2026 đã ký số 2 bên và quyết toán xong",
+                    CreatedBy = "TCMS_TELEMATICS_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-28),
+                    Approved1At = DateTime.Now.AddDays(-26),
+                    Approved1By = "TCMS_TELEMATICS_MANAGER",
+                    Approved2At = DateTime.Now.AddDays(-24),
+                    Approved2By = "HTV_SALES_MANAGER",
+                    SettledAt = DateTime.Now.AddDays(-20),
+                    SettledBy = "HTV_CHIEF_ACCOUNTANT",
+                    LUDateTime = DateTime.Now.AddDays(-20),
+                    LUBy = "HTV_CHIEF_ACCOUNTANT",
+                    Details = new List<PaymentAVNDetail>
+                    {
+                        new PaymentAVNDetail
+                        {
+                            PaymentAVNNo = "2602AVN0002",
+                            Vin = "KMHE281BBSA112233",
+                            CarId = "CAR2026-AC001",
+                            EngineNo = "G4FA-109283",
+                            ModelCode = "ACCENT",
+                            ModelName = "Accent 1.5 AT",
+                            SpecCode = "AC15-AT-01",
+                            ColorCode = "SIL",
+                            ColorName = "Bạc",
+                            AvnCode = "AVN-ACC-GEN5-8IN",
+                            SerialNo = "SN-ACC-112233",
+                            UnitPriceAVN = 8500000m,
+                            AVNDate = DateTime.Today.AddDays(-35),
+                            InStorageDate = DateTime.Today.AddDays(-33),
+                            Status = PaymentAVNDetailStatus.Approved,
+                            Remark = "Đã quyết toán xong"
+                        },
+                        new PaymentAVNDetail
+                        {
+                            PaymentAVNNo = "2602AVN0002",
+                            Vin = "KMHLN4AJBPU778899",
+                            CarId = "CAR2026-EL004",
+                            EngineNo = "G4FM-778899",
+                            ModelCode = "ELANTRA",
+                            ModelName = "Elantra 2.0 Widescreen",
+                            SpecCode = "ELN-20-01",
+                            ColorCode = "GRY",
+                            ColorName = "Xám",
+                            AvnCode = "AVN-ELN-1025-WIDESCREEN",
+                            SerialNo = "SN-ELN-778899",
+                            UnitPriceAVN = 11000000m,
+                            AVNDate = DateTime.Today.AddDays(-34),
+                            InStorageDate = DateTime.Today.AddDays(-32),
+                            Status = PaymentAVNDetailStatus.Approved,
+                            Remark = "Đã quyết toán xong"
+                        }
+                    }
+                };
+
+                db.PaymentAVNOrders.AddRange(avn1, avn2);
             }
 
             await db.SaveChangesAsync();

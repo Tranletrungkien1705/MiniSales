@@ -70,6 +70,7 @@ builder.Services.AddScoped<ICarVinProfileService, CarVinProfileService>();
 builder.Services.AddScoped<IPerformanceInvoiceService, PerformanceInvoiceService>();
 builder.Services.AddScoped<IContractOverseaService, ContractOverseaService>();
 builder.Services.AddScoped<IPaymentTransportInsService, PaymentTransportInsService>();
+builder.Services.AddScoped<IPaymentAVNService, PaymentAVNService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -4821,6 +4822,164 @@ app.MapPost("/api/orgs/register", async (RegisterOrgDto dto, AppDbContext db) =>
     db.Orgs.Add(org); await db.SaveChangesAsync();
     return Results.Ok(new { orgId = org.Id, apiKey = org.ApiKey });
 });
+
+// ===== Quản lý Bảng kê Quyết toán Chi phí Thiết bị AVN (Audio-Visual Navigation) Xe Ô tô HTV - TCMS (AVN Payment Management - Pmt_PaymentAVN + Pmt_PaymentAVNDetail + Mst_UnitPriceAVN · PmtPaymentAVNController / Payment.cs / Pmt_PaymentAVN.txt) =====
+app.MapGet("/api/payment-avn/seq", async (IPaymentAVNService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/payment-avn/unit-prices", async (IPaymentAVNService svc) =>
+    Results.Ok(await svc.GetUnitPricesAsync())).RequireAuthorization();
+
+app.MapGet("/api/payment-avn/eligible-vins", async (string? pmtMonth, string? modelCode, IPaymentAVNService svc) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(pmtMonth ?? "", modelCode))).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/preview", async (PaymentAvnPreviewRequestDto dto, IPaymentAVNService svc) =>
+{
+    try { return Results.Ok(await svc.PreviewCalculationAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-avn/stats", async (string? pmtMonth, IPaymentAVNService svc) =>
+    Results.Ok(await svc.GetStatsAsync(pmtMonth))).RequireAuthorization();
+
+app.MapGet("/api/payment-avn", async (
+    string? pmtMonth,
+    PaymentAVNStatus? status,
+    string? paymentAVNNo,
+    PaymentAVNSignStatus? htvSignStatus,
+    PaymentAVNSignStatus? tcmsSignStatus,
+    int pageIndex = 0,
+    int pageSize = 50,
+    IPaymentAVNService svc = default!) =>
+    Results.Ok(await svc.ListAsync(pmtMonth, status, paymentAVNNo, htvSignStatus, tcmsSignStatus, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/payment-avn/{paymentAVNNo}", async (string paymentAVNNo, IPaymentAVNService svc) =>
+{
+    var r = await svc.DetailAsync(paymentAVNNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn", async (CreatePaymentAVNDto dto, IPaymentAVNService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/payment-avn/{paymentAVNNo}", async (string paymentAVNNo, UpdatePaymentAVNDto dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/cars", async (string paymentAVNNo, AddPaymentAVNCarsDto dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-avn/{paymentAVNNo}/cars/{vin}", async (string paymentAVNNo, string vin, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(paymentAVNNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/approve1", async (string paymentAVNNo, Approve1PaymentAVNDto? dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/approve2", async (string paymentAVNNo, Approve2PaymentAVNDto? dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/tcms-sign", async (string paymentAVNNo, TCMSSignPaymentAVNDto? dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.TCMSSignAsync(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/htv-sign", async (string paymentAVNNo, HTVSignPaymentAVNDto? dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.HTVSignAsync(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/settle", async (string paymentAVNNo, SettlePaymentAVNDto? dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.SettleAsync(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/reject", async (string paymentAVNNo, RejectPaymentAVNDto dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-avn/{paymentAVNNo}/cancel", async (string paymentAVNNo, CancelPaymentAVNDto dto, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(paymentAVNNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-avn/{paymentAVNNo}", async (string paymentAVNNo, IPaymentAVNService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(paymentAVNNo);
+        return ok ? Results.Ok(new { success = true, paymentAVNNo }) : Results.NotFound(new { error = $"Không tìm thấy bảng kê {paymentAVNNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-avn/{paymentAVNNo}/print", async (string paymentAVNNo, IPaymentAVNService svc) =>
+{
+    var r = await svc.GetPrintDataAsync(paymentAVNNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
 
 app.Run();
 

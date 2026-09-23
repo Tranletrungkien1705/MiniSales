@@ -3643,11 +3643,118 @@ public sealed class TransportInsOrderDetail
     public string? LogLUBy { get; set; }
 }
 
+/// <summary>Trạng thái Bảng kê Quyết toán Chi phí Thiết bị AVN Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentAVN: Draft = 'P' [Bản nháp], TCMSApproved = 'A1' [TCMS duyệt cấp 1], HTVApproved = 'A2' [HTV duyệt cấp 2], Signed = 'F' [Ký số 2 bên hoàn tất], Settled = 'S' [Đã quyết toán/giải ngân], Rejected = 'R' [Từ chối duyệt], Cancelled = 'C' [Đã hủy]).</summary>
+public enum PaymentAVNStatus
+{
+    Draft = 0,
+    TCMSApproved = 1,
+    HTVApproved = 2,
+    Signed = 3,
+    Settled = 4,
+    Rejected = 5,
+    Cancelled = 6
+}
 
+/// <summary>Trạng thái ký số điện tử biên bản quyết toán AVN (DMS.Sales TCMSSignStatus / HTVSignStatus: ChuaKy = 0 ['P'], DaKy = 1 ['A']).</summary>
+public enum PaymentAVNSignStatus
+{
+    ChuaKy = 0,
+    DaKy = 1
+}
 
+/// <summary>Trạng thái dòng xe tính phí thiết bị AVN (DMS.Sales Pmt_PaymentAVNDetail: Pending = 'P', Approved = 'A', Adjusted = 'U', Cancelled = 'C').</summary>
+public enum PaymentAVNDetailStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Adjusted = 2,
+    Cancelled = 3
+}
 
+/// <summary>Bảng kê Quyết toán Chi phí Thiết bị AVN (Audio-Visual Navigation - màn hình giải trí & định vị dẫn đường) trên Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentAVN / PmtPaymentAVNController / Payment.cs / Pmt_PaymentAVN.txt): Định kỳ hàng tháng, Nhà phân phối ô tô HTV và Công ty Cổ phần Vận hành Kho vận TCMS lập bảng kê đối soát thanh toán chi phí thiết bị AVN (màn hình AVN + thẻ bản đồ định vị) đã lắp đặt trên từng xe ô tô theo lô VIN; tra cứu đơn giá thiết bị AVN theo danh mục Mst_UnitPriceAVN; quy trình phê duyệt đối soát 2 cấp 2 bên (TCMS duyệt cấp 1 TCMSApproveHQ, HTV duyệt cấp 2 HTVApproveHQ, TCMS ký số điện tử TCMSSignHQ, HTV ký số điện tử HTVSignHQ hoàn tất quyết toán Signed), quyết toán/giải ngân SettleHQ, từ chối duyệt RejectHQ, hủy bảng kê CancelHQ, xóa nháp DeleteDraft, thêm/gỡ xe theo VIN và in bảng kê quyết toán chi phí AVN.</summary>
+public sealed class PaymentAVNOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PaymentAVNNo { get; set; } = ""; // Mã bảng kê ({yyMM}AVN{seq:D4}, vd: 2603AVN0001)
+    public string PmtMonth { get; set; } = ""; // Tháng quyết toán (yyyy-MM, vd: 2026-03)
+    public string SupplierCode { get; set; } = "MOBIS-VN"; // Mã đơn vị cung cấp / lắp ráp thiết bị AVN
+    public string SupplierName { get; set; } = "Công ty TNHH Mobis Auto Parts Việt Nam"; // Tên nhà cung cấp / đối tác AVN
+    public int TotalCars { get; set; } // Tổng số lượng xe gắn thiết bị AVN trong kỳ
+    public decimal AmountTotal { get; set; } // Tổng chi phí AVN trước thuế VAT (VNĐ) = Σ UnitPriceAVN
+    public decimal VatRate { get; set; } = 10m; // Thuế suất VAT (%)
+    public decimal UnitPriceVAT { get; set; } // Tiền thuế GTGT (VNĐ) = AmountTotal * VatRate / 100
+    public decimal TotalAmountVAT { get; set; } // Tổng số tiền thanh toán sau VAT (VNĐ) = AmountTotal + UnitPriceVAT
+    public PaymentAVNStatus Status { get; set; } = PaymentAVNStatus.Draft;
 
+    // Ký số phía Đơn vị dịch vụ thiết bị AVN (TCMS):
+    public PaymentAVNSignStatus TCMSSignStatus { get; set; } = PaymentAVNSignStatus.ChuaKy;
+    public DateTime? TCMSSignDate { get; set; }
+    public string? TCMSSignBy { get; set; }
 
+    // Ký số phía Nhà phân phối HTV:
+    public PaymentAVNSignStatus HTVSignStatus { get; set; } = PaymentAVNSignStatus.ChuaKy;
+    public DateTime? HTVSignDate { get; set; }
+    public string? HTVSignBy { get; set; }
 
+    public string? FilePath { get; set; } // Đường dẫn / URL file quyết toán PDF ký số 2 bên
+    public string? BankTxnRef { get; set; } // Mã giao dịch / ủy nhiệm chi giải ngân quyết toán
+    public string? Remark { get; set; } // Ghi chú bảng kê
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public string? CancelReason { get; set; } // Lý do hủy bảng kê
 
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? Approved1At { get; set; }
+    public string? Approved1By { get; set; }
+    public DateTime? Approved2At { get; set; }
+    public string? Approved2By { get; set; }
+    public DateTime? SettledAt { get; set; }
+    public string? SettledBy { get; set; }
+    public DateTime? RejectedAt { get; set; }
+    public string? RejectedBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<PaymentAVNDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô tính phí thiết bị AVN trong kỳ (DMS.Sales Pmt_PaymentAVNDetail): theo dõi từng số khung VIN 17 ký tự, số máy EngineNo, model/spec/màu xe, mã chủng loại thiết bị AVN (AVNCode), số serial thiết bị dập trên vỏ/màn hình (SerialNo), đơn giá thiết bị AVN (UnitPriceAVN) tra theo danh mục Mst_UnitPriceAVN, ngày lắp ráp/kích hoạt hệ thống AVN (AVNDate) và ngày xe hoàn thiện nhập kho lưu bãi nhà máy (InStorageDate).</summary>
+public sealed class PaymentAVNDetail
+{
+    public long Id { get; set; }
+    public long PaymentAVNId { get; set; }
+    public string PaymentAVNNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN)
+    public string? CarId { get; set; } // Mã định danh xe hệ thống
+    public string? EngineNo { get; set; } // Số máy xe
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT, ELANTRA...)
+    public string ModelName { get; set; } = ""; // Tên thương mại dòng xe
+    public string? SpecCode { get; set; } // Mã cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? ColorName { get; set; } // Tên màu xe
+    public string AVNCode { get; set; } = ""; // Mã chủng loại thiết bị AVN (AVN-SANTAFE-GEN5, AVN-TUCSON-1025...)
+    public string SerialNo { get; set; } = ""; // Số serial thiết bị AVN dập trên vỏ/màn hình
+    public decimal UnitPriceAVN { get; set; } // Đơn giá thiết bị AVN (VNĐ) tra theo danh mục Mst_UnitPriceAVN
+    public DateTime? AVNDate { get; set; } // Ngày lắp ráp / kích hoạt hệ thống AVN
+    public DateTime? InStorageDate { get; set; } // Ngày xe hoàn thiện nhập kho lưu bãi nhà máy
+    public PaymentAVNDetailStatus Status { get; set; } = PaymentAVNDetailStatus.Pending; // Trạng thái dòng
+    public string? Remark { get; set; } // Ghi chú chi tiết dòng xe
+}
+
+/// <summary>Bảng đơn giá định mức thiết bị AVN theo dòng xe (DMS.Sales Mst_UnitPriceAVN / MstUnitPriceAVNController / Mst_UnitPriceAVN.txt): quản lý đơn giá thiết bị màn hình giải trí & định vị dẫn đường AVN áp dụng theo kỳ hiệu lực (EffStartDate -> EffEndDate).</summary>
+public sealed class AvnUnitPriceMaster
+{
+    public long Id { get; set; }
+    public string AvnCode { get; set; } = ""; // Mã chủng loại thiết bị AVN (vd: AVN-STF-GEN5-PREM)
+    public string AvnName { get; set; } = ""; // Tên thiết bị AVN
+    public string ModelCode { get; set; } = ""; // Dòng xe áp dụng (SANTAFE, TUCSON, CRETA...)
+    public decimal UnitPrice { get; set; } // Đơn giá thiết bị AVN (VNĐ)
+    public DateTime EffStartDate { get; set; } = new DateTime(2026, 1, 1); // Ngày bắt đầu áp dụng
+    public DateTime? EffEndDate { get; set; } // Ngày kết thúc áp dụng (null nếu đang hiệu lực)
+    public bool IsActive { get; set; } = true;
+    public string? Remark { get; set; }
+}
 

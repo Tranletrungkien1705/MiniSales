@@ -104,6 +104,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentPDIDetail> PaymentPDIDetails => Set<PaymentPDIDetail>();
     public DbSet<TransportInsOrder> TransportInsOrders => Set<TransportInsOrder>();
     public DbSet<TransportInsOrderDetail> TransportInsOrderDetails => Set<TransportInsOrderDetail>();
+    public DbSet<PaymentAVNOrder> PaymentAVNOrders => Set<PaymentAVNOrder>();
+    public DbSet<PaymentAVNDetail> PaymentAVNDetails => Set<PaymentAVNDetail>();
+    public DbSet<AvnUnitPriceMaster> AvnUnitPrices => Set<AvnUnitPriceMaster>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -447,5 +450,23 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<TransportInsOrderDetail>().HasIndex(x => x.Vin);
         b.Entity<TransportInsOrderDetail>().HasIndex(x => x.DlvMnNo);
         b.Entity<TransportInsOrderDetail>().Property(x => x.Status).HasConversion<int>();
+
+        b.Entity<PaymentAVNOrder>().ToTable("PaymentAVNOrders");
+        b.Entity<PaymentAVNOrder>().HasIndex(x => new { x.OrgId, x.PaymentAVNNo }).IsUnique();
+        b.Entity<PaymentAVNOrder>().HasIndex(x => new { x.OrgId, x.PmtMonth });
+        b.Entity<PaymentAVNOrder>().HasIndex(x => new { x.OrgId, x.Status });
+        b.Entity<PaymentAVNOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentAVNOrder>().Property(x => x.TCMSSignStatus).HasConversion<int>();
+        b.Entity<PaymentAVNOrder>().Property(x => x.HTVSignStatus).HasConversion<int>();
+        b.Entity<PaymentAVNOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PaymentAVNId).OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<PaymentAVNDetail>().ToTable("PaymentAVNDetails");
+        b.Entity<PaymentAVNDetail>().HasIndex(x => x.PaymentAVNNo);
+        b.Entity<PaymentAVNDetail>().HasIndex(x => x.Vin);
+        b.Entity<PaymentAVNDetail>().HasIndex(x => x.AVNCode);
+        b.Entity<PaymentAVNDetail>().Property(x => x.Status).HasConversion<int>();
+
+        b.Entity<AvnUnitPriceMaster>().ToTable("AvnUnitPrices");
+        b.Entity<AvnUnitPriceMaster>().HasIndex(x => x.AvnCode).IsUnique();
     }
 }
