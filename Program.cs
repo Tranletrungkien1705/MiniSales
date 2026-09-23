@@ -65,6 +65,7 @@ builder.Services.AddScoped<IPackingListService, PackingListService>();
 builder.Services.AddScoped<IBankingTransactionService, BankingTransactionService>();
 builder.Services.AddScoped<ICustomsDeclarationService, CustomsDeclarationService>();
 builder.Services.AddScoped<IPaymentGPSService, PaymentGPSService>();
+builder.Services.AddScoped<IPaymentStorageService, PaymentStorageService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -4059,6 +4060,176 @@ app.MapGet("/api/payment-gps/{paymentGPSNo}/print", async (string paymentGPSNo, 
 {
     var r = await svc.GetPrintDataAsync(paymentGPSNo);
     return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+// ===== Quản lý Bảng kê Quyết toán Chi phí Lưu kho Xe Ô tô HTV - TCMS (Payment Storage Management - Pmt_PaymentStorage + Pmt_PaymentStorageDetail + Mst_InventoryCost · PmtPaymentStorageController / PaymentStorage.cs / PmtPaymentStorage.txt / ChiPhiLuuKhoHTV.TCMS.xlsx) =====
+app.MapGet("/api/payment-storage/seq", async (IPaymentStorageService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/payment-storage/inventory-costs", async (string? storageCode, string? costTypeCode, IPaymentStorageService svc) =>
+    Results.Ok(await svc.GetMasterCostsAsync(storageCode, costTypeCode))).RequireAuthorization();
+
+app.MapGet("/api/payment-storage/eligible-vins", async (DateTime? pmtPeriodStart, DateTime? pmtPeriodEnd, string? storageCode, string? modelCode, IPaymentStorageService svc) =>
+{
+    var start = pmtPeriodStart ?? DateTime.Today.AddDays(-15);
+    var end = pmtPeriodEnd ?? DateTime.Today;
+    return Results.Ok(await svc.GetEligibleCarsAsync(start, end, storageCode, modelCode));
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/preview", async (PaymentStoragePreviewRequestDto dto, IPaymentStorageService svc) =>
+{
+    try { return Results.Ok(await svc.PreviewCalculationAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-storage/stats", async (string? pmtMonth, IPaymentStorageService svc) =>
+    Results.Ok(await svc.GetStatsAsync(pmtMonth))).RequireAuthorization();
+
+app.MapGet("/api/payment-storage", async (
+    string? pmtMonth,
+    PaymentStorageStatus? status,
+    string? paymentStorageNo,
+    string? storageCode,
+    string? vin,
+    PaymentStorageSignStatus? htvSignStatus,
+    PaymentStorageSignStatus? tcmsSignStatus,
+    int pageIndex = 0,
+    int pageSize = 50,
+    IPaymentStorageService svc = default!) =>
+    Results.Ok(await svc.ListAsync(pmtMonth, status, paymentStorageNo, storageCode, vin, htvSignStatus, tcmsSignStatus, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/payment-storage/{paymentStorageNo}", async (string paymentStorageNo, IPaymentStorageService svc) =>
+{
+    var r = await svc.DetailAsync(paymentStorageNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage", async (CreatePaymentStorageDto dto, IPaymentStorageService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/payment-storage/{paymentStorageNo}", async (string paymentStorageNo, UpdatePaymentStorageDto dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/cars", async (string paymentStorageNo, AddPaymentStorageCarsDto dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-storage/{paymentStorageNo}/cars/{vin}", async (string paymentStorageNo, string vin, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(paymentStorageNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/approve1", async (string paymentStorageNo, Approve1PaymentStorageDto? dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/approve2", async (string paymentStorageNo, Approve2PaymentStorageDto? dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/batch-approve2", async (BatchApprove2PaymentStorageDto dto, IPaymentStorageService svc) =>
+{
+    try { return Results.Ok(await svc.BatchApprove2Async(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/tcms-sign", async (string paymentStorageNo, TCMSSignPaymentStorageDto dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.TCMSESignAsync(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/htv-sign", async (string paymentStorageNo, HTVESignPaymentStorageDto dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.HTVESignAsync(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/upload-invoice", async (string paymentStorageNo, UploadPaymentStorageInvoiceDto dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.UploadInvoiceAsync(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/reject", async (string paymentStorageNo, RejectPaymentStorageDto dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-storage/{paymentStorageNo}/cancel", async (string paymentStorageNo, CancelPaymentStorageDto dto, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(paymentStorageNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-storage/{paymentStorageNo}", async (string paymentStorageNo, IPaymentStorageService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(paymentStorageNo);
+        return ok ? Results.Ok(new { success = true, paymentStorageNo }) : Results.NotFound(new { error = $"Không tìm thấy bảng kê {paymentStorageNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-storage/{paymentStorageNo}/print", async (string paymentStorageNo, IPaymentStorageService svc) =>
+{
+    var r = await svc.GetPrintDataAsync(paymentStorageNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
 }).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).

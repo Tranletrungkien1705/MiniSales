@@ -2399,6 +2399,106 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_PaymentGPSDetails_PaymentGPSNo ON PaymentGPSDetails(PaymentGPSNo);
                 CREATE INDEX IF NOT EXISTS IX_PaymentGPSDetails_Vin ON PaymentGPSDetails(Vin);
                 CREATE INDEX IF NOT EXISTS IX_PaymentGPSDetails_GPSDvNo ON PaymentGPSDetails(GPSDvNo);
+
+                CREATE TABLE IF NOT EXISTS InventoryCosts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CostTypeCode TEXT NOT NULL,
+                    CostTypeName TEXT NOT NULL,
+                    StorageCode TEXT NOT NULL,
+                    StorageName TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    UnitPrice REAL NOT NULL DEFAULT 0,
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    Remark TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_InventoryCosts_Storage_CostType_Model ON InventoryCosts(StorageCode, CostTypeCode, ModelCode);
+
+                CREATE TABLE IF NOT EXISTS PaymentStorageOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PaymentStorageNo TEXT NOT NULL,
+                    PmtMonth TEXT NOT NULL,
+                    PmtPeriodStartDTime TEXT NOT NULL,
+                    PmtPeriodEndDTime TEXT NOT NULL,
+                    VAT REAL NOT NULL DEFAULT 10,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    AmountBCP REAL NOT NULL DEFAULT 0,
+                    AmountLK REAL NOT NULL DEFAULT 0,
+                    AmountTotal REAL NOT NULL DEFAULT 0,
+                    AmountVAT REAL NOT NULL DEFAULT 0,
+                    AmountVATTotal REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    HTVSignStatus INTEGER NOT NULL DEFAULT 0,
+                    HTVSignDTime TEXT,
+                    HTVSignBy TEXT,
+                    TCMSSignStatus INTEGER NOT NULL DEFAULT 0,
+                    TCMSSignDTime TEXT,
+                    TCMSSignBy TEXT,
+                    FilePath TEXT,
+                    FileUrl TEXT,
+                    FileInvPath TEXT,
+                    FileInvUrl TEXT,
+                    InvoiceNo TEXT,
+                    InvoiceDate TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    Approve1At TEXT,
+                    Approve1By TEXT,
+                    Approve2At TEXT,
+                    Approve2By TEXT,
+                    RejectedAt TEXT,
+                    RejectedBy TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentStorageOrders_OrgId_PaymentStorageNo ON PaymentStorageOrders(OrgId, PaymentStorageNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentStorageOrders_OrgId_PmtMonth ON PaymentStorageOrders(OrgId, PmtMonth);
+
+                CREATE TABLE IF NOT EXISTS PaymentStorageDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PaymentStorageId INTEGER NOT NULL,
+                    PaymentStorageNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    RefNo TEXT NOT NULL,
+                    CarId TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    StorageCode TEXT NOT NULL,
+                    StorageName TEXT,
+                    StorageDateIn TEXT,
+                    StorageDateOut TEXT,
+                    DateBegin TEXT NOT NULL,
+                    DateEnd TEXT NOT NULL,
+                    DelayTransport INTEGER NOT NULL DEFAULT 0,
+                    DateCount INTEGER NOT NULL DEFAULT 0,
+                    PriceBCP REAL NOT NULL DEFAULT 0,
+                    PriceLK REAL NOT NULL DEFAULT 0,
+                    AmountBCP REAL NOT NULL DEFAULT 0,
+                    AmountLK REAL NOT NULL DEFAULT 0,
+                    AmountTotal REAL NOT NULL DEFAULT 0,
+                    DealerCode TEXT,
+                    DealerName TEXT,
+                    PackingListNo TEXT,
+                    DeliveryOrderNo TEXT,
+                    StorageRearrangeNoIn TEXT,
+                    StorageRearrangeNoOut TEXT,
+                    RetrieveOrderNo TEXT,
+                    InvoiceFactoryDate TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(PaymentStorageId) REFERENCES PaymentStorageOrders(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_PaymentStorageDetails_PaymentStorageNo ON PaymentStorageDetails(PaymentStorageNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentStorageDetails_Vin ON PaymentStorageDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_PaymentStorageDetails_RefNo ON PaymentStorageDetails(RefNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentStorageDetails_StorageCode ON PaymentStorageDetails(StorageCode);
             ");
         }
         catch
@@ -11200,6 +11300,397 @@ public static class Seeder
                         CreatedAt = DateTime.Today.AddDays(-3)
                     }
                 );
+            }
+
+            // Seed master data bảng đơn giá định mức lưu kho & bạt che phủ Mst_InventoryCost
+            if (!await db.InventoryCosts.AnyAsync())
+            {
+                var costs = new List<InventoryCostMaster>
+                {
+                    // KHO_NB: Kho Nhà máy Ninh Bình
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "SANTAFE", ModelName = "Santa Fe", UnitPrice = 35000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "TUCSON", ModelName = "Tucson", UnitPrice = 30000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "CRETA", ModelName = "Creta", UnitPrice = 25000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "ACCENT", ModelName = "Accent", UnitPrice = 20000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "STARGAZER", ModelName = "Stargazer", UnitPrice = 25000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "PALISADE", ModelName = "Palisade", UnitPrice = 40000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "IONIQ5", ModelName = "Ioniq 5", UnitPrice = 40000m, IsActive = true },
+
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "SANTAFE", ModelName = "Santa Fe", UnitPrice = 50000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "TUCSON", ModelName = "Tucson", UnitPrice = 45000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "CRETA", ModelName = "Creta", UnitPrice = 40000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "ACCENT", ModelName = "Accent", UnitPrice = 35000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "STARGAZER", ModelName = "Stargazer", UnitPrice = 40000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "PALISADE", ModelName = "Palisade", UnitPrice = 60000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_NB", StorageName = "Kho Nhà máy Ninh Bình", ModelCode = "IONIQ5", ModelName = "Ioniq 5", UnitPrice = 60000m, IsActive = true },
+
+                    // KHO_DY: Kho Trung chuyển Duyên Yên
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_DY", StorageName = "Kho Trung chuyển Duyên Yên", ModelCode = "SANTAFE", ModelName = "Santa Fe", UnitPrice = 35000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_DY", StorageName = "Kho Trung chuyển Duyên Yên", ModelCode = "TUCSON", ModelName = "Tucson", UnitPrice = 30000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_DY", StorageName = "Kho Trung chuyển Duyên Yên", ModelCode = "ACCENT", ModelName = "Accent", UnitPrice = 20000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_DY", StorageName = "Kho Trung chuyển Duyên Yên", ModelCode = "SANTAFE", ModelName = "Santa Fe", UnitPrice = 50000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_DY", StorageName = "Kho Trung chuyển Duyên Yên", ModelCode = "TUCSON", ModelName = "Tucson", UnitPrice = 45000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_DY", StorageName = "Kho Trung chuyển Duyên Yên", ModelCode = "ACCENT", ModelName = "Accent", UnitPrice = 35000m, IsActive = true },
+
+                    // KHO_CANG_HP: Kho Bãi Cảng Đình Vũ Hải Phòng
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_CANG_HP", StorageName = "Kho Bãi Cảng Hải Phòng Đình Vũ", ModelCode = "PALISADE", ModelName = "Palisade", UnitPrice = 45000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_CANG_HP", StorageName = "Kho Bãi Cảng Hải Phòng Đình Vũ", ModelCode = "IONIQ5", ModelName = "Ioniq 5", UnitPrice = 45000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_CANG_HP", StorageName = "Kho Bãi Cảng Hải Phòng Đình Vũ", ModelCode = "PALISADE", ModelName = "Palisade", UnitPrice = 65000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_CANG_HP", StorageName = "Kho Bãi Cảng Hải Phòng Đình Vũ", ModelCode = "IONIQ5", ModelName = "Ioniq 5", UnitPrice = 65000m, IsActive = true },
+
+                    // KHO_CANG_CM: Kho Bãi Cảng Cái Mép Vũng Tàu
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_CANG_CM", StorageName = "Kho Bãi Cảng Cái Mép Vũng Tàu", ModelCode = "PALISADE", ModelName = "Palisade", UnitPrice = 45000m, IsActive = true },
+                    new() { CostTypeCode = "BCP", CostTypeName = "Bạt Che Phủ", StorageCode = "KHO_CANG_CM", StorageName = "Kho Bãi Cảng Cái Mép Vũng Tàu", ModelCode = "IONIQ5", ModelName = "Ioniq 5", UnitPrice = 45000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_CANG_CM", StorageName = "Kho Bãi Cảng Cái Mép Vũng Tàu", ModelCode = "PALISADE", ModelName = "Palisade", UnitPrice = 65000m, IsActive = true },
+                    new() { CostTypeCode = "LK", CostTypeName = "Lưu Kho Bãi", StorageCode = "KHO_CANG_CM", StorageName = "Kho Bãi Cảng Cái Mép Vũng Tàu", ModelCode = "IONIQ5", ModelName = "Ioniq 5", UnitPrice = 65000m, IsActive = true }
+                };
+                db.InventoryCosts.AddRange(costs);
+            }
+
+            // Seed bảng kê quyết toán chi phí lưu kho xe Pmt_PaymentStorage
+            if (!await db.PaymentStorageOrders.AnyAsync(o => o.OrgId == orgId))
+            {
+                var pst1 = new PaymentStorageOrder
+                {
+                    OrgId = orgId,
+                    PaymentStorageNo = "2603PST00001",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 1),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 15),
+                    VAT = 10m,
+                    TotalCars = 3,
+                    AmountBCP = 1275000m,
+                    AmountLK = 1950000m,
+                    AmountTotal = 3225000m,
+                    AmountVAT = 322500m,
+                    AmountVATTotal = 3547500m,
+                    Status = PaymentStorageStatus.Finished,
+                    HTVSignStatus = PaymentStorageSignStatus.DaKy,
+                    HTVSignDTime = new DateTime(2026, 3, 17, 10, 30, 0),
+                    HTVSignBy = "TGD_HTV_ESIGN",
+                    TCMSSignStatus = PaymentStorageSignStatus.DaKy,
+                    TCMSSignDTime = new DateTime(2026, 3, 16, 15, 0, 0),
+                    TCMSSignBy = "GD_TCMS_ESIGN",
+                    FilePath = "/esign/htv/2603PST00001_contract_signed.pdf",
+                    FileUrl = "/esign/htv/2603PST00001_contract_signed.pdf",
+                    FileInvPath = "HD_TCMS_2603_0019.pdf",
+                    FileInvUrl = "/invoices/storage/HD_TCMS_2603_0019.pdf",
+                    InvoiceNo = "HD-TCMS-2603-0019",
+                    InvoiceDate = new DateTime(2026, 3, 18),
+                    Remark = "Quyết toán chi phí lưu kho bãi và bọc che phủ đợt 1 tháng 3/2026 tại Kho Ninh Bình và Duyên Yên",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = new DateTime(2026, 3, 15, 8, 0, 0),
+                    Approve1At = new DateTime(2026, 3, 15, 14, 0, 0),
+                    Approve1By = "TP_KHO_VAN_HTC",
+                    Approve2At = new DateTime(2026, 3, 16, 9, 30, 0),
+                    Approve2By = "LANH_DAO_HTC",
+                    Details = new List<PaymentStorageDetail>
+                    {
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00001",
+                            Vin = "KMHE281BBSA129841",
+                            RefNo = "DO2603010001",
+                            CarId = "CAR2026-SF0101",
+                            ModelCode = "SANTAFE",
+                            ModelName = "Santa Fe 2.5 HTRAC",
+                            SpecCode = "SF25-PRE-01",
+                            ColorCode = "WW1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 2, 20),
+                            StorageDateOut = new DateTime(2026, 3, 15),
+                            DateBegin = new DateTime(2026, 3, 1),
+                            DateEnd = new DateTime(2026, 3, 15),
+                            DelayTransport = 0,
+                            DateCount = 15,
+                            PriceBCP = 35000m,
+                            PriceLK = 50000m,
+                            AmountBCP = 525000m,
+                            AmountLK = 750000m,
+                            AmountTotal = 1275000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            DeliveryOrderNo = "DO2603010001",
+                            Remark = "Lưu bãi đạt chuẩn bọc che phủ"
+                        },
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00001",
+                            Vin = "KMHE281BBSA987654",
+                            RefNo = "DO2602150002",
+                            CarId = "CAR2026-TU1102",
+                            ModelCode = "TUCSON",
+                            ModelName = "Tucson 2.0 AT",
+                            SpecCode = "TU20-STD-01",
+                            ColorCode = "NKA",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 2, 25),
+                            StorageDateOut = new DateTime(2026, 3, 15),
+                            DateBegin = new DateTime(2026, 3, 1),
+                            DateEnd = new DateTime(2026, 3, 15),
+                            DelayTransport = 0,
+                            DateCount = 15,
+                            PriceBCP = 30000m,
+                            PriceLK = 45000m,
+                            AmountBCP = 450000m,
+                            AmountLK = 675000m,
+                            AmountTotal = 1125000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            DeliveryOrderNo = "DO2602150002",
+                            Remark = "Xe xuất giao đại lý hoàn tất"
+                        },
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00001",
+                            Vin = "KMHE281BBSA667788",
+                            RefNo = "PMT26090003",
+                            CarId = "CAR2026-AC9011",
+                            ModelCode = "ACCENT",
+                            ModelName = "Accent 1.4 AT",
+                            SpecCode = "AC14-AT-01",
+                            ColorCode = "WH1",
+                            StorageCode = "KHO_DY",
+                            StorageName = "Kho Trung chuyển Duyên Yên",
+                            StorageDateIn = new DateTime(2026, 3, 1),
+                            StorageDateOut = new DateTime(2026, 3, 15),
+                            DateBegin = new DateTime(2026, 3, 1),
+                            DateEnd = new DateTime(2026, 3, 15),
+                            DelayTransport = 0,
+                            DateCount = 15,
+                            PriceBCP = 20000m,
+                            PriceLK = 35000m,
+                            AmountBCP = 300000m,
+                            AmountLK = 525000m,
+                            AmountTotal = 825000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            Remark = "Xe Accent chuyển kho Duyên Yên"
+                        }
+                    }
+                };
+
+                var pst2 = new PaymentStorageOrder
+                {
+                    OrgId = orgId,
+                    PaymentStorageNo = "2603PST00002",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 16),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 31),
+                    VAT = 10m,
+                    TotalCars = 2,
+                    AmountBCP = 1440000m,
+                    AmountLK = 2080000m,
+                    AmountTotal = 3520000m,
+                    AmountVAT = 352000m,
+                    AmountVATTotal = 3872000m,
+                    Status = PaymentStorageStatus.Approved2,
+                    HTVSignStatus = PaymentStorageSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentStorageSignStatus.ChuaKy,
+                    Remark = "Bảng kê quyết toán đợt 2 tháng 3/2026 đã được Lãnh đạo HTC duyệt, chờ ký số 2 bên",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = new DateTime(2026, 3, 31, 10, 0, 0),
+                    Approve1At = new DateTime(2026, 3, 31, 14, 0, 0),
+                    Approve1By = "TP_KHO_VAN_HTC",
+                    Approve2At = new DateTime(2026, 3, 31, 16, 30, 0),
+                    Approve2By = "LANH_DAO_HTC",
+                    Details = new List<PaymentStorageDetail>
+                    {
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00002",
+                            Vin = "KMHE281BBSA900101",
+                            RefNo = "REF-26030001",
+                            CarId = "CAR2026-PAL-001",
+                            ModelCode = "PALISADE",
+                            ModelName = "Hyundai Palisade 2.2D Prestige",
+                            SpecCode = "PAL-PRE-01",
+                            ColorCode = "WW1",
+                            StorageCode = "KHO_CANG_HP",
+                            StorageName = "Kho Bãi Cảng Hải Phòng Đình Vũ",
+                            StorageDateIn = new DateTime(2026, 3, 10),
+                            StorageDateOut = null,
+                            DateBegin = new DateTime(2026, 3, 16),
+                            DateEnd = new DateTime(2026, 3, 31),
+                            DelayTransport = 0,
+                            DateCount = 16,
+                            PriceBCP = 45000m,
+                            PriceLK = 65000m,
+                            AmountBCP = 720000m,
+                            AmountLK = 1040000m,
+                            AmountTotal = 1760000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            PackingListNo = "2603PL0001",
+                            Remark = "Xe CBU lưu bãi cảng Đình Vũ bọc phủ tiêu chuẩn"
+                        },
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00002",
+                            Vin = "KMHE281BBSA900102",
+                            RefNo = "REF-26030002",
+                            CarId = "CAR2026-IQ5-001",
+                            ModelCode = "IONIQ5",
+                            ModelName = "Hyundai Ioniq 5 Prestige",
+                            SpecCode = "IQ5-PRE-01",
+                            ColorCode = "SL1",
+                            StorageCode = "KHO_CANG_CM",
+                            StorageName = "Kho Bãi Cảng Cái Mép Vũng Tàu",
+                            StorageDateIn = new DateTime(2026, 3, 12),
+                            StorageDateOut = null,
+                            DateBegin = new DateTime(2026, 3, 16),
+                            DateEnd = new DateTime(2026, 3, 31),
+                            DelayTransport = 0,
+                            DateCount = 16,
+                            PriceBCP = 45000m,
+                            PriceLK = 65000m,
+                            AmountBCP = 720000m,
+                            AmountLK = 1040000m,
+                            AmountTotal = 1760000m,
+                            DealerCode = "VS058",
+                            DealerName = "Hyundai Miền Nam",
+                            PackingListNo = "2603PL0001",
+                            Remark = "Xe điện Ioniq 5 lưu kho Cái Mép"
+                        }
+                    }
+                };
+
+                var pst3 = new PaymentStorageOrder
+                {
+                    OrgId = orgId,
+                    PaymentStorageNo = "2603PST00003",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 1),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 20),
+                    VAT = 10m,
+                    TotalCars = 1,
+                    AmountBCP = 500000m,
+                    AmountLK = 800000m,
+                    AmountTotal = 1300000m,
+                    AmountVAT = 130000m,
+                    AmountVATTotal = 1430000m,
+                    Status = PaymentStorageStatus.Approved1,
+                    HTVSignStatus = PaymentStorageSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentStorageSignStatus.ChuaKy,
+                    Remark = "Bảng kê lô xe Stargazer đã được Trưởng phòng bán hàng & kho duyệt cấp 1",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = DateTime.Today.AddDays(-5),
+                    Approve1At = DateTime.Today.AddDays(-4),
+                    Approve1By = "TP_KHO_VAN_HTC",
+                    Details = new List<PaymentStorageDetail>
+                    {
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00003",
+                            Vin = "KMHE281BBSA900401",
+                            RefNo = "REF-26030003",
+                            CarId = "CAR2026-SG-001",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X Cao Cấp",
+                            SpecCode = "SG-PRE-01",
+                            ColorCode = "WW1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 3, 1),
+                            StorageDateOut = new DateTime(2026, 3, 20),
+                            DateBegin = new DateTime(2026, 3, 1),
+                            DateEnd = new DateTime(2026, 3, 20),
+                            DelayTransport = 0,
+                            DateCount = 20,
+                            PriceBCP = 25000m,
+                            PriceLK = 40000m,
+                            AmountBCP = 500000m,
+                            AmountLK = 800000m,
+                            AmountTotal = 1300000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            Remark = "Lô xe Stargazer lưu kho bãi"
+                        }
+                    }
+                };
+
+                var pst4 = new PaymentStorageOrder
+                {
+                    OrgId = orgId,
+                    PaymentStorageNo = "2603PST00004",
+                    PmtMonth = "2026-03",
+                    PmtPeriodStartDTime = new DateTime(2026, 3, 21),
+                    PmtPeriodEndDTime = new DateTime(2026, 3, 31),
+                    VAT = 10m,
+                    TotalCars = 2,
+                    AmountBCP = 550000m,
+                    AmountLK = 850000m,
+                    AmountTotal = 1400000m,
+                    AmountVAT = 140000m,
+                    AmountVATTotal = 1540000m,
+                    Status = PaymentStorageStatus.Pending,
+                    HTVSignStatus = PaymentStorageSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentStorageSignStatus.ChuaKy,
+                    Remark = "Bảng kê nháp đang kiểm tra đối soát số ngày khấu trừ trễ vận chuyển với TCMS",
+                    CreatedBy = "HTC_STORAGE_ADMIN",
+                    CreatedAt = DateTime.Today.AddDays(-1),
+                    Details = new List<PaymentStorageDetail>
+                    {
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00004",
+                            Vin = "KMHE281BBSA900402",
+                            RefNo = "REF-26030004",
+                            CarId = "CAR2026-SG-002",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X Tiêu Chuẩn",
+                            SpecCode = "SG-STD-01",
+                            ColorCode = "BK1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 3, 21),
+                            StorageDateOut = null,
+                            DateBegin = new DateTime(2026, 3, 21),
+                            DateEnd = new DateTime(2026, 3, 31),
+                            DelayTransport = 1,
+                            DateCount = 10,
+                            PriceBCP = 25000m,
+                            PriceLK = 40000m,
+                            AmountBCP = 250000m,
+                            AmountLK = 400000m,
+                            AmountTotal = 650000m,
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            Remark = "Có khấu trừ 1 ngày trễ xe"
+                        },
+                        new()
+                        {
+                            PaymentStorageNo = "2603PST00004",
+                            Vin = "KMHE281BBSA900103",
+                            RefNo = "REF-26030005",
+                            CarId = "CAR2026-CR-003",
+                            ModelCode = "CRETA",
+                            ModelName = "Hyundai Creta 1.5 Cao Cấp",
+                            SpecCode = "CR15-PRE-01",
+                            ColorCode = "GY1",
+                            StorageCode = "KHO_NB",
+                            StorageName = "Kho Nhà máy Ninh Bình",
+                            StorageDateIn = new DateTime(2026, 3, 22),
+                            StorageDateOut = null,
+                            DateBegin = new DateTime(2026, 3, 22),
+                            DateEnd = new DateTime(2026, 3, 31),
+                            DelayTransport = 0,
+                            DateCount = 10,
+                            PriceBCP = 25000m,
+                            PriceLK = 40000m,
+                            AmountBCP = 250000m,
+                            AmountLK = 400000m,
+                            AmountTotal = 650000m,
+                            DealerCode = "VN012",
+                            DealerName = "Hyundai Lê Văn Lương",
+                            Remark = "Xe Creta chờ xuất kho"
+                        }
+                    }
+                };
+
+                db.PaymentStorageOrders.AddRange(pst1, pst2, pst3, pst4);
             }
 
             await db.SaveChangesAsync();

@@ -3020,6 +3020,132 @@ public sealed class GpsUnitPriceMaster
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái Bảng kê Quyết toán Chi phí Lưu kho Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentStorage: Pending = 'P' [Chờ duyệt cấp 1], Approved1 = 'A1' [Quản lý kho/Trưởng phòng bán hàng duyệt cấp 1], Approved2 = 'A2' [Lãnh đạo HTC/HTV duyệt cấp 2], Finished = 'F' [Ký số 2 bên hoàn tất/quyết toán xong], Rejected = 'R' [Từ chối duyệt], Cancelled = 'C' [Đã hủy]).</summary>
+public enum PaymentStorageStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Finished = 3,
+    Rejected = 4,
+    Cancelled = 5
+}
+
+/// <summary>Trạng thái ký số điện tử biên bản quyết toán lưu kho (DMS.Sales HTVSignStatus / TCMSSignStatus: ChuaKy = 0 ['P'], DaKy = 1 ['A']).</summary>
+public enum PaymentStorageSignStatus
+{
+    ChuaKy = 0,
+    DaKy = 1
+}
+
+/// <summary>Bảng kê Quyết toán Chi phí Lưu kho Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentStorage / PmtPaymentStorageController / PaymentStorage.cs / PmtPaymentStorage.txt / ChiPhiLuuKhoHTV.TCMS.xlsx): Định kỳ hàng tháng hoặc theo kỳ liên tiếp, Nhà phân phối ô tô HTV và Công ty Cổ phần Vận hành Kho vận TCMS lập bảng kê đối soát thanh toán chi phí lưu kho bãi và bọc che phủ (Bạt Che Phủ - BCP) cho các xe ô tô lưu bãi, xe vận chuyển, xe bàn giao đại lý; kiểm tra tính liên tục không ngắt quãng giữa các kỳ tính (StartDTime = LastEndDTime + 1 ngày); quy trình phê duyệt đối soát 2 cấp 2 bên (Trưởng phòng bán hàng/kho duyệt cấp 1 Approve1HQ, Lãnh đạo HTC/HTV duyệt cấp 2 Approve2HQ, TCMS ký số điện tử TCMSESignHQ, HTV ký số điện tử HTVESignHQ và cập nhật hóa đơn GTGT do TCMS xuất UploadFileInvoiceHQ).</summary>
+public sealed class PaymentStorageOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PaymentStorageNo { get; set; } = ""; // Mã bảng kê ({yyMM}PST{seq:D5}, vd: 2603PST00001)
+    public string PmtMonth { get; set; } = ""; // Tháng thanh toán (yyyy-MM-01 hoặc yyyy-MM, vd: 2026-03-01)
+    public DateTime PmtPeriodStartDTime { get; set; } // Ngày bắt đầu kỳ tính (phải thuộc PmtMonth)
+    public DateTime PmtPeriodEndDTime { get; set; } // Ngày kết thúc kỳ tính (phải thuộc PmtMonth, >= StartDTime)
+    public decimal VAT { get; set; } = 10m; // Thuế suất VAT (%)
+    public int TotalCars { get; set; } // Tổng số lượng xe tính phí trong bảng kê
+    public decimal AmountBCP { get; set; } // Tổng chi phí bọc che phủ trước VAT = SUM(Detail.AmountBCP)
+    public decimal AmountLK { get; set; } // Tổng chi phí lưu kho trước VAT = SUM(Detail.AmountLK)
+    public decimal AmountTotal { get; set; } // Tổng chi phí trước VAT = AmountBCP + AmountLK = SUM(Detail.AmountTotal)
+    public decimal AmountVAT { get; set; } // Tiền thuế GTGT = AmountTotal * VAT / 100
+    public decimal AmountVATTotal { get; set; } // Tổng chi phí thanh toán sau VAT = AmountTotal + AmountVAT
+    public PaymentStorageStatus Status { get; set; } = PaymentStorageStatus.Pending;
+
+    // Ký số phía Nhà phân phối HTV:
+    public PaymentStorageSignStatus HTVSignStatus { get; set; } = PaymentStorageSignStatus.ChuaKy;
+    public DateTime? HTVSignDTime { get; set; }
+    public string? HTVSignBy { get; set; }
+
+    // Ký số phía Đơn vị dịch vụ quản lý kho bãi TCMS:
+    public PaymentStorageSignStatus TCMSSignStatus { get; set; } = PaymentStorageSignStatus.ChuaKy;
+    public DateTime? TCMSSignDTime { get; set; }
+    public string? TCMSSignBy { get; set; }
+
+    // File hợp đồng / biên bản điện tử và hóa đơn GTGT:
+    public string? FilePath { get; set; } // File hợp đồng điện tử ký số
+    public string? FileUrl { get; set; }
+    public string? FileInvPath { get; set; } // File hóa đơn GTGT do TCMS xuất
+    public string? FileInvUrl { get; set; }
+    public string? InvoiceNo { get; set; } // Số hóa đơn GTGT dịch vụ lưu kho
+    public DateTime? InvoiceDate { get; set; } // Ngày lập hóa đơn GTGT
+
+    public string? Remark { get; set; } // Ghi chú phiếu
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public string? CancelReason { get; set; } // Lý do hủy phiếu
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? Approve1At { get; set; }
+    public string? Approve1By { get; set; }
+    public DateTime? Approve2At { get; set; }
+    public string? Approve2By { get; set; }
+    public DateTime? RejectedAt { get; set; }
+    public string? RejectedBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+
+    public List<PaymentStorageDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô tính phí lưu kho & bọc che phủ trong kỳ (DMS.Sales Pmt_PaymentStorageDetail): theo dõi từng số khung VIN 17 ký tự, số tham chiếu RefNo (lệnh xuất kho, điều chuyển, nhập cảng...), kho lưu bãi StorageCode, ngày vào kho StorageDateIn, ngày ra kho StorageDateOut, khoảng ngày tính phí trong kỳ (DateBegin -> DateEnd), số ngày trễ vận chuyển miễn giảm DelayTransport, số ngày tính phí thực tế DateCount, tiền bọc che phủ AmountBCP và tiền lưu kho AmountLK, tổng tiền dòng xe AmountTotal.</summary>
+public sealed class PaymentStorageDetail
+{
+    public long Id { get; set; }
+    public long PaymentStorageId { get; set; }
+    public string PaymentStorageNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN, bắt buộc)
+    public string RefNo { get; set; } = ""; // Số tham chiếu giao dịch kho bãi (bắt buộc, vd: DO, LK, RCB, TH...)
+    public string? CarId { get; set; } // Mã định danh xe hệ thống
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT, PALISADE, IONIQ5...)
+    public string ModelName { get; set; } = ""; // Tên thương mại dòng xe
+    public string? SpecCode { get; set; } // Mã cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string StorageCode { get; set; } = ""; // Mã kho bãi (KHO_NB, KHO_DY, KHO_CANG_HP, KHO_CANG_CM...)
+    public string? StorageName { get; set; } // Tên kho bãi
+    public DateTime? StorageDateIn { get; set; } // Ngày xe nhập kho bãi
+    public DateTime? StorageDateOut { get; set; } // Ngày xe xuất khỏi kho bãi
+    public DateTime DateBegin { get; set; } // Ngày bắt đầu tính phí trong kỳ
+    public DateTime DateEnd { get; set; } // Ngày kết thúc tính phí trong kỳ
+    public int DelayTransport { get; set; } = 0; // Số ngày miễn phí do trễ điều động vận tải
+    public int DateCount { get; set; } // Số ngày tính phí thực tế = (DateEnd - DateBegin + 1) - DelayTransport
+    public decimal PriceBCP { get; set; } // Đơn giá bọc che phủ (VNĐ/xe/ngày)
+    public decimal PriceLK { get; set; } // Đơn giá lưu kho bãi (VNĐ/xe/ngày)
+    public decimal AmountBCP { get; set; } // Tiền bọc che phủ = DateCount * PriceBCP (VNĐ)
+    public decimal AmountLK { get; set; } // Tiền lưu kho = DateCount * PriceLK (VNĐ)
+    public decimal AmountTotal { get; set; } // Tổng tiền xe = AmountBCP + AmountLK (VNĐ)
+    public string? DealerCode { get; set; } // Mã đại lý đích / đại lý nhận xe
+    public string? DealerName { get; set; } // Tên đại lý
+    public string? PackingListNo { get; set; } // Số Packing List lô xe nhập khẩu
+    public string? DeliveryOrderNo { get; set; } // Số lệnh giao xe xuất kho
+    public string? StorageRearrangeNoIn { get; set; } // Số lệnh điều chuyển kho đến
+    public string? StorageRearrangeNoOut { get; set; } // Số lệnh điều chuyển kho đi
+    public string? RetrieveOrderNo { get; set; } // Số lệnh thu hồi xe
+    public string? InvoiceFactoryDate { get; set; } // Ngày hóa đơn xuất xưởng nhà máy
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
+/// <summary>Bảng đơn giá định mức chi phí kho bãi theo dòng xe & kho bãi (DMS.Sales Mst_InventoryCost + Mst_InventoryCost_Model / MstInventoryCostController / MstInventoryCost.txt): Quản lý biểu giá chi phí bọc che phủ (CostTypeCode = 'BCP') và chi phí lưu kho (CostTypeCode = 'LK') theo từng kho lưu bãi (StorageCode: KHO_NB, KHO_DY, KHO_CANG_HP, KHO_CANG_CM) và model xe.</summary>
+public sealed class InventoryCostMaster
+{
+    public long Id { get; set; }
+    public string CostTypeCode { get; set; } = ""; // BCP (Bọc che phủ) | LK (Lưu kho)
+    public string CostTypeName { get; set; } = ""; // Tên loại chi phí
+    public string StorageCode { get; set; } = ""; // Mã kho bãi
+    public string StorageName { get; set; } = ""; // Tên kho bãi
+    public string ModelCode { get; set; } = ""; // Mã dòng xe (SANTAFE, TUCSON, CRETA, ACCENT, STARGAZER, PALISADE, IONIQ5...)
+    public string ModelName { get; set; } = ""; // Tên model
+    public decimal UnitPrice { get; set; } // Đơn giá chi phí (VNĐ/xe/ngày)
+    public bool IsActive { get; set; } = true;
+    public string? Remark { get; set; }
+}
+
 
 
 

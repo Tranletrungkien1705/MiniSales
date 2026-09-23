@@ -92,6 +92,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentGPSOrder> PaymentGPSOrders => Set<PaymentGPSOrder>();
     public DbSet<PaymentGPSDetail> PaymentGPSDetails => Set<PaymentGPSDetail>();
     public DbSet<GpsUnitPriceMaster> GpsUnitPrices => Set<GpsUnitPriceMaster>();
+    public DbSet<PaymentStorageOrder> PaymentStorageOrders => Set<PaymentStorageOrder>();
+    public DbSet<PaymentStorageDetail> PaymentStorageDetails => Set<PaymentStorageDetail>();
+    public DbSet<InventoryCostMaster> InventoryCosts => Set<InventoryCostMaster>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -357,5 +360,19 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PaymentGPSDetail>().HasIndex(x => x.GPSDvNo);
         b.Entity<GpsUnitPriceMaster>().ToTable("GpsUnitPrices");
         b.Entity<GpsUnitPriceMaster>().HasIndex(x => x.PriceCode).IsUnique();
+        b.Entity<PaymentStorageOrder>().ToTable("PaymentStorageOrders");
+        b.Entity<PaymentStorageOrder>().HasIndex(x => new { x.OrgId, x.PaymentStorageNo }).IsUnique();
+        b.Entity<PaymentStorageOrder>().HasIndex(x => new { x.OrgId, x.PmtMonth });
+        b.Entity<PaymentStorageOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentStorageOrder>().Property(x => x.HTVSignStatus).HasConversion<int>();
+        b.Entity<PaymentStorageOrder>().Property(x => x.TCMSSignStatus).HasConversion<int>();
+        b.Entity<PaymentStorageOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PaymentStorageId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PaymentStorageDetail>().ToTable("PaymentStorageDetails");
+        b.Entity<PaymentStorageDetail>().HasIndex(x => x.PaymentStorageNo);
+        b.Entity<PaymentStorageDetail>().HasIndex(x => x.Vin);
+        b.Entity<PaymentStorageDetail>().HasIndex(x => x.RefNo);
+        b.Entity<PaymentStorageDetail>().HasIndex(x => x.StorageCode);
+        b.Entity<InventoryCostMaster>().ToTable("InventoryCosts");
+        b.Entity<InventoryCostMaster>().HasIndex(x => new { x.StorageCode, x.CostTypeCode, x.ModelCode }).IsUnique();
     }
 }
