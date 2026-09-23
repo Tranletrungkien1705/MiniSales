@@ -69,6 +69,7 @@ builder.Services.AddScoped<IPaymentStorageService, PaymentStorageService>();
 builder.Services.AddScoped<ICarVinProfileService, CarVinProfileService>();
 builder.Services.AddScoped<IPerformanceInvoiceService, PerformanceInvoiceService>();
 builder.Services.AddScoped<IContractOverseaService, ContractOverseaService>();
+builder.Services.AddScoped<IPaymentTransportInsService, PaymentTransportInsService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -4642,6 +4643,152 @@ app.MapDelete("/api/contract-overseas/lcs/{lcNo}", async (string lcNo, IContract
         return ok ? Results.Ok(new { success = true, lcNo }) : Results.NotFound(new { error = $"Không tìm thấy thư tín dụng L/C '{lcNo}'." });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Bảng kê Quyết toán Chi phí Vận chuyển & Phạt Chậm Vận Tải Xe Ô tô HTV - TCMS (DMS.Sales Pmt_TransportIns + Pmt_TransportInsDetail · PmtTransportInsController / Payment.cs / PmtTransportIns.txt) =====
+app.MapGet("/api/payment-transport-ins/seq", async (IPaymentTransportInsService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/payment-transport-ins/eligible-cars", async (
+    string? pmtMonth,
+    string? transpReqType,
+    string? fStorageCode,
+    string? tStorageCode,
+    IPaymentTransportInsService svc) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(pmtMonth, transpReqType, fStorageCode, tStorageCode))).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/preview", async (PaymentTransportInsPreviewRequestDto dto, IPaymentTransportInsService svc) =>
+    Results.Ok(await svc.PreviewCalculationAsync(dto))).RequireAuthorization();
+
+app.MapGet("/api/payment-transport-ins/stats", async (string? pmtMonth, IPaymentTransportInsService svc) =>
+    Results.Ok(await svc.GetStatsAsync(pmtMonth))).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/export", async (List<string>? transportInsNos, IPaymentTransportInsService svc) =>
+    Results.Ok(await svc.ExportDataAsync(transportInsNos))).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/batch-approve2", async (BatchApprove2PaymentTransportInsDto dto, IPaymentTransportInsService svc) =>
+    Results.Ok(new { approved = await svc.BatchApprove2Async(dto) })).RequireAuthorization();
+
+app.MapGet("/api/payment-transport-ins", async (
+    string? transportInsNo,
+    string? pmtMonth,
+    DateTime? createFrom,
+    DateTime? createTo,
+    TransportInsStatus? status,
+    string? vin,
+    TransportInsSignStatus? tcmsSignStatus,
+    TransportInsSignStatus? htvSignStatus,
+    int pageIndex = 0,
+    int pageSize = 50,
+    IPaymentTransportInsService svc = default!) =>
+    Results.Ok(await svc.ListAsync(transportInsNo, pmtMonth, createFrom, createTo, status, vin, tcmsSignStatus, htvSignStatus, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/payment-transport-ins/{transportInsNo}", async (string transportInsNo, IPaymentTransportInsService svc) =>
+{
+    var r = await svc.DetailAsync(transportInsNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins", async (CreatePaymentTransportInsDto dto, IPaymentTransportInsService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/payment-transport-ins/{transportInsNo}", async (string transportInsNo, UpdatePaymentTransportInsDto dto, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(transportInsNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-transport-ins/{transportInsNo}", async (string transportInsNo, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(transportInsNo);
+        return ok ? Results.Ok(new { success = true, transportInsNo }) : Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/{transportInsNo}/cars", async (string transportInsNo, AddPaymentTransportInsCarsDto dto, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(transportInsNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-transport-ins/{transportInsNo}/cars/{vin}", async (string transportInsNo, string vin, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(transportInsNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/{transportInsNo}/approve1", async (string transportInsNo, Approve1PaymentTransportInsDto? dto, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(transportInsNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/{transportInsNo}/approve2", async (string transportInsNo, Approve2PaymentTransportInsDto? dto, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(transportInsNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/{transportInsNo}/tcms-sign", async (string transportInsNo, TCMSSignPaymentTransportInsDto dto, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.TCMSSignAsync(transportInsNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/{transportInsNo}/htv-sign", async (string transportInsNo, HTVESignPaymentTransportInsDto dto, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.HTVESignAsync(transportInsNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-transport-ins/{transportInsNo}/cancel", async (string transportInsNo, CancelPaymentTransportInsDto dto, IPaymentTransportInsService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(transportInsNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-transport-ins/{transportInsNo}/print", async (string transportInsNo, IPaymentTransportInsService svc) =>
+{
+    var r = await svc.GetPrintDataAsync(transportInsNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê thanh toán vận tải '{transportInsNo}'." }) : Results.Ok(r);
 }).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).

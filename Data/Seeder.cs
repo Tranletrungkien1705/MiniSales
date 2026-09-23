@@ -2682,6 +2682,85 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_LettersOfCredit_OrgId_ContractNo ON LettersOfCredit(OrgId, ContractNo);
                 CREATE INDEX IF NOT EXISTS IX_LettersOfCredit_OrgId_BankCode ON LettersOfCredit(OrgId, BankCode);
                 CREATE INDEX IF NOT EXISTS IX_LettersOfCredit_OrgId_Status ON LettersOfCredit(OrgId, Status);
+
+                CREATE TABLE IF NOT EXISTS TransportInsOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TransportInsNo TEXT NOT NULL,
+                    PmtMonth TEXT NOT NULL,
+                    TotalAmount REAL NOT NULL DEFAULT 0,
+                    VAT REAL NOT NULL DEFAULT 10,
+                    UnitPriceVAT REAL NOT NULL DEFAULT 0,
+                    TotalAmountVAT REAL NOT NULL DEFAULT 0,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    TotalTransportCost REAL NOT NULL DEFAULT 0,
+                    TotalDelayPenalty REAL NOT NULL DEFAULT 0,
+                    TotalInsuranceCost REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    HTVSignStatus INTEGER NOT NULL DEFAULT 0,
+                    HTVSignDTime TEXT,
+                    HTVSignBy TEXT,
+                    TCMSSignStatus INTEGER NOT NULL DEFAULT 0,
+                    TCMSSignDTime TEXT,
+                    TCMSSignBy TEXT,
+                    FilePath TEXT,
+                    App1DTime TEXT,
+                    App1By TEXT,
+                    App2DTime TEXT,
+                    App2By TEXT,
+                    CancelDTime TEXT,
+                    CancelBy TEXT,
+                    CancelReason TEXT,
+                    Remark TEXT,
+                    CreateDateTime TEXT NOT NULL,
+                    CreateBy TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_TransportInsOrders_OrgId_TransportInsNo ON TransportInsOrders(OrgId, TransportInsNo);
+                CREATE INDEX IF NOT EXISTS IX_TransportInsOrders_OrgId_PmtMonth ON TransportInsOrders(OrgId, PmtMonth);
+                CREATE INDEX IF NOT EXISTS IX_TransportInsOrders_OrgId_Status ON TransportInsOrders(OrgId, Status);
+
+                CREATE TABLE IF NOT EXISTS TransportInsOrderDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TransportInsOrderId INTEGER NOT NULL,
+                    TransportInsNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    CarId TEXT,
+                    DlvMnNo TEXT,
+                    TranspReqType TEXT NOT NULL DEFAULT 'CARTRANSPORT',
+                    ModelCode TEXT,
+                    ModelName TEXT,
+                    SpecCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    FStorageCode TEXT,
+                    FProvinceName TEXT,
+                    TStorageCode TEXT,
+                    TProvinceName TEXT,
+                    InvStartDate TEXT,
+                    ExpectedDays INTEGER NOT NULL DEFAULT 2,
+                    ExpectedDlvEndDate TEXT,
+                    InvEndDate TEXT,
+                    DelayDate INTEGER NOT NULL DEFAULT 0,
+                    TransportCost REAL NOT NULL DEFAULT 0,
+                    DelayPenaty REAL NOT NULL DEFAULT 0,
+                    PriceCar REAL NOT NULL DEFAULT 0,
+                    InsurancePercent REAL NOT NULL DEFAULT 0.0005,
+                    InsuranceContractNo TEXT,
+                    InsuranceCost REAL NOT NULL DEFAULT 0,
+                    TotalPrice REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    FProvinceRemark TEXT,
+                    StandardRemark TEXT,
+                    Remark TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT,
+                    FOREIGN KEY(TransportInsOrderId) REFERENCES TransportInsOrders(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_TransportInsOrderDetails_TransportInsNo ON TransportInsOrderDetails(TransportInsNo);
+                CREATE INDEX IF NOT EXISTS IX_TransportInsOrderDetails_Vin ON TransportInsOrderDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_TransportInsOrderDetails_DlvMnNo ON TransportInsOrderDetails(DlvMnNo);
             ");
         }
         catch
@@ -12537,6 +12616,232 @@ public static class Seeder
                 };
 
                 db.LettersOfCredit.AddRange(lc1, lc2);
+            }
+
+            if (!await db.TransportInsOrders.AnyAsync(o => o.OrgId == orgId))
+            {
+                var ti1 = new TransportInsOrder
+                {
+                    OrgId = orgId,
+                    TransportInsNo = "2603TI0001",
+                    PmtMonth = "2026-03-01",
+                    VAT = 10.0m,
+                    TotalCars = 3,
+                    TotalTransportCost = 18000000m,
+                    TotalDelayPenalty = 300000m,
+                    TotalInsuranceCost = 1515000m,
+                    TotalAmountVAT = 19215000m,
+                    TotalAmount = 17468181.82m,
+                    UnitPriceVAT = 1746818.18m,
+                    Status = TransportInsStatus.Approved2,
+                    HTVSignStatus = TransportInsSignStatus.ChuaKy,
+                    TCMSSignStatus = TransportInsSignStatus.ChuaKy,
+                    App1DTime = DateTime.Now.AddDays(-3),
+                    App1By = "LOGISTICS_HEAD",
+                    App2DTime = DateTime.Now.AddDays(-1),
+                    App2By = "FINANCE_DIRECTOR",
+                    Remark = "Bảng kê đối soát chi phí vận chuyển & bảo hiểm lô xe tháng 03/2026 giữa HTV và TCMS",
+                    CreateDateTime = DateTime.Now.AddDays(-5),
+                    CreateBy = "TCMS_DISPATCHER",
+                    LogLUDateTime = DateTime.Now.AddDays(-1),
+                    LogLUBy = "FINANCE_DIRECTOR",
+                    Details = new List<TransportInsOrderDetail>
+                    {
+                        new TransportInsOrderDetail
+                        {
+                            TransportInsNo = "2603TI0001",
+                            Vin = "KMHE281BBSA129841",
+                            CarId = "CAR2026-SF001",
+                            DlvMnNo = "BBBG2603001",
+                            TranspReqType = "CARTRANSPORT",
+                            ModelCode = "SANTAFE",
+                            ModelName = "Santa Fe 2.5 HTRAC",
+                            SpecCode = "SF25-PRE-01",
+                            ColorName = "Đen",
+                            EngineNo = "G4KP-092182",
+                            FStorageCode = "KHO_NB",
+                            FProvinceName = "Ninh Bình",
+                            TStorageCode = "VN001",
+                            TProvinceName = "Hà Nội",
+                            InvStartDate = DateTime.Today.AddDays(-12),
+                            ExpectedDays = 2,
+                            ExpectedDlvEndDate = DateTime.Today.AddDays(-10),
+                            InvEndDate = DateTime.Today.AddDays(-10),
+                            DelayDate = 0,
+                            TransportCost = 3500000m,
+                            DelayPenaty = 0m,
+                            PriceCar = 1350000000m,
+                            InsurancePercent = 0.0005m,
+                            InsuranceContractNo = "BHVT-2026-PTI",
+                            InsuranceCost = 675000m,
+                            TotalPrice = 4175000m,
+                            Status = TransportInsDetailStatus.Approved,
+                            Remark = "Giao xe đúng hẹn cho Đại lý Hyundai Đông Đô"
+                        },
+                        new TransportInsOrderDetail
+                        {
+                            TransportInsNo = "2603TI0001",
+                            Vin = "KMHE281BBSA987654",
+                            CarId = "CAR2026-TU002",
+                            DlvMnNo = "BBBG2603002",
+                            TranspReqType = "CARTRANSPORT",
+                            ModelCode = "TUCSON",
+                            ModelName = "Tucson 2.0 AT",
+                            SpecCode = "TU20-STD-01",
+                            ColorName = "Trắng",
+                            EngineNo = "G4NL-983102",
+                            FStorageCode = "KHO_NB",
+                            FProvinceName = "Ninh Bình",
+                            TStorageCode = "VN003",
+                            TProvinceName = "Đà Nẵng",
+                            InvStartDate = DateTime.Today.AddDays(-11),
+                            ExpectedDays = 3,
+                            ExpectedDlvEndDate = DateTime.Today.AddDays(-8),
+                            InvEndDate = DateTime.Today.AddDays(-6),
+                            DelayDate = 2,
+                            TransportCost = 6000000m,
+                            DelayPenaty = 300000m,
+                            PriceCar = 950000000m,
+                            InsurancePercent = 0.0005m,
+                            InsuranceContractNo = "BHVT-2026-PTI",
+                            InsuranceCost = 475000m,
+                            TotalPrice = 6175000m,
+                            Status = TransportInsDetailStatus.Approved,
+                            StandardRemark = "Mưa bão đèo Hải Vân chậm 2 ngày",
+                            Remark = "Trừ phạt chậm 2 ngày x 150k"
+                        },
+                        new TransportInsOrderDetail
+                        {
+                            TransportInsNo = "2603TI0001",
+                            Vin = "KMHE281BBSA556677",
+                            CarId = "CAR2026-CR003",
+                            DlvMnNo = "BBBG2603003",
+                            TranspReqType = "CARTRANSPORT",
+                            ModelCode = "CRETA",
+                            ModelName = "Creta 1.5 Cao Cấp",
+                            SpecCode = "CR15-PRE-01",
+                            ColorName = "Đỏ",
+                            EngineNo = "G4FL-881920",
+                            FStorageCode = "KHO_NB",
+                            FProvinceName = "Ninh Bình",
+                            TStorageCode = "VN002",
+                            TProvinceName = "TP. Hồ Chí Minh",
+                            InvStartDate = DateTime.Today.AddDays(-9),
+                            ExpectedDays = 4,
+                            ExpectedDlvEndDate = DateTime.Today.AddDays(-5),
+                            InvEndDate = DateTime.Today.AddDays(-5),
+                            DelayDate = 0,
+                            TransportCost = 8500000m,
+                            DelayPenaty = 0m,
+                            PriceCar = 730000000m,
+                            InsurancePercent = 0.0005m,
+                            InsuranceContractNo = "BHVT-2026-PTI",
+                            InsuranceCost = 365000m,
+                            TotalPrice = 8865000m,
+                            Status = TransportInsDetailStatus.Approved,
+                            Remark = "Bàn giao xe đại lý Hyundai Nam Trung an toàn đúng hẹn"
+                        }
+                    }
+                };
+
+                var ti2 = new TransportInsOrder
+                {
+                    OrgId = orgId,
+                    TransportInsNo = "2602TI0002",
+                    PmtMonth = "2026-02-01",
+                    VAT = 10.0m,
+                    TotalCars = 2,
+                    TotalTransportCost = 7000000m,
+                    TotalDelayPenalty = 0m,
+                    TotalInsuranceCost = 550000m,
+                    TotalAmountVAT = 7550000m,
+                    TotalAmount = 6863636.36m,
+                    UnitPriceVAT = 686363.64m,
+                    Status = TransportInsStatus.Finished,
+                    HTVSignStatus = TransportInsSignStatus.DaKy,
+                    HTVSignDTime = DateTime.Now.AddDays(-20),
+                    HTVSignBy = "HTV_REP_KIM",
+                    TCMSSignStatus = TransportInsSignStatus.DaKy,
+                    TCMSSignDTime = DateTime.Now.AddDays(-21),
+                    TCMSSignBy = "TCMS_REP_TRAN",
+                    FilePath = "https://cdn.dms.sales/signs/202602/TI26020002_signed.pdf",
+                    App1DTime = DateTime.Now.AddDays(-24),
+                    App1By = "LOGISTICS_HEAD",
+                    App2DTime = DateTime.Now.AddDays(-22),
+                    App2By = "FINANCE_DIRECTOR",
+                    Remark = "Bảng kê chi phí vận tải tháng 02/2026 đã ký số 2 bên hoàn tất quyết toán",
+                    CreateDateTime = DateTime.Now.AddDays(-25),
+                    CreateBy = "TCMS_DISPATCHER",
+                    LogLUDateTime = DateTime.Now.AddDays(-20),
+                    LogLUBy = "HTV_REP_KIM",
+                    Details = new List<TransportInsOrderDetail>
+                    {
+                        new TransportInsOrderDetail
+                        {
+                            TransportInsNo = "2602TI0002",
+                            Vin = "KMHE281BBSA112233",
+                            CarId = "CAR2026-AC001",
+                            DlvMnNo = "BBBG2602001",
+                            TranspReqType = "CARTRANSPORT",
+                            ModelCode = "ACCENT",
+                            ModelName = "Accent 1.5 AT",
+                            SpecCode = "AC15-AT-01",
+                            ColorName = "Bạc",
+                            EngineNo = "G4FA-109283",
+                            FStorageCode = "KHO_NB",
+                            FProvinceName = "Ninh Bình",
+                            TStorageCode = "VN001",
+                            TProvinceName = "Hà Nội",
+                            InvStartDate = DateTime.Today.AddDays(-30),
+                            ExpectedDays = 2,
+                            ExpectedDlvEndDate = DateTime.Today.AddDays(-28),
+                            InvEndDate = DateTime.Today.AddDays(-28),
+                            DelayDate = 0,
+                            TransportCost = 3500000m,
+                            DelayPenaty = 0m,
+                            PriceCar = 550000000m,
+                            InsurancePercent = 0.0005m,
+                            InsuranceContractNo = "BHVT-2026-PTI",
+                            InsuranceCost = 275000m,
+                            TotalPrice = 3775000m,
+                            Status = TransportInsDetailStatus.Approved,
+                            Remark = "Đã thanh lý quyết toán xong"
+                        },
+                        new TransportInsOrderDetail
+                        {
+                            TransportInsNo = "2602TI0002",
+                            Vin = "KMHE281BBSA445566",
+                            CarId = "CAR2026-SG002",
+                            DlvMnNo = "BBBG2602002",
+                            TranspReqType = "CARTRANSPORT",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Stargazer X",
+                            SpecCode = "SGX-PRE-01",
+                            ColorName = "Trắng Mờ",
+                            EngineNo = "G4FL-772910",
+                            FStorageCode = "KHO_NB",
+                            FProvinceName = "Ninh Bình",
+                            TStorageCode = "VN001",
+                            TProvinceName = "Hà Nội",
+                            InvStartDate = DateTime.Today.AddDays(-29),
+                            ExpectedDays = 2,
+                            ExpectedDlvEndDate = DateTime.Today.AddDays(-27),
+                            InvEndDate = DateTime.Today.AddDays(-27),
+                            DelayDate = 0,
+                            TransportCost = 3500000m,
+                            DelayPenaty = 0m,
+                            PriceCar = 550000000m,
+                            InsurancePercent = 0.0005m,
+                            InsuranceContractNo = "BHVT-2026-PTI",
+                            InsuranceCost = 275000m,
+                            TotalPrice = 3775000m,
+                            Status = TransportInsDetailStatus.Approved,
+                            Remark = "Đã thanh lý quyết toán xong"
+                        }
+                    }
+                };
+
+                db.TransportInsOrders.AddRange(ti1, ti2);
             }
 
             await db.SaveChangesAsync();

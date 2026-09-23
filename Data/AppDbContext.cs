@@ -100,6 +100,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PerformanceInvoiceDetail> PerformanceInvoiceDetails => Set<PerformanceInvoiceDetail>();
     public DbSet<ContractOversea> ContractOverseas => Set<ContractOversea>();
     public DbSet<LetterOfCredit> LettersOfCredit => Set<LetterOfCredit>();
+    public DbSet<PaymentPDIOrder> PaymentPDIOrders => Set<PaymentPDIOrder>();
+    public DbSet<PaymentPDIDetail> PaymentPDIDetails => Set<PaymentPDIDetail>();
+    public DbSet<TransportInsOrder> TransportInsOrders => Set<TransportInsOrder>();
+    public DbSet<TransportInsOrderDetail> TransportInsOrderDetails => Set<TransportInsOrderDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -415,5 +419,33 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<LetterOfCredit>().HasIndex(x => new { x.OrgId, x.Status });
         b.Entity<LetterOfCredit>().Property(x => x.LCType).HasConversion<int>();
         b.Entity<LetterOfCredit>().Property(x => x.Status).HasConversion<int>();
+
+        b.Entity<PaymentPDIOrder>().ToTable("PaymentPDIOrders");
+        b.Entity<PaymentPDIOrder>().HasIndex(x => new { x.OrgId, x.PmtPDINo }).IsUnique();
+        b.Entity<PaymentPDIOrder>().HasIndex(x => new { x.OrgId, x.PmtMonth });
+        b.Entity<PaymentPDIOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentPDIOrder>().Property(x => x.HTVSignStatus).HasConversion<int>();
+        b.Entity<PaymentPDIOrder>().Property(x => x.TCMSSignStatus).HasConversion<int>();
+        b.Entity<PaymentPDIOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PaymentPDIId).OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<PaymentPDIDetail>().ToTable("PaymentPDIDetails");
+        b.Entity<PaymentPDIDetail>().HasIndex(x => x.PmtPDINo);
+        b.Entity<PaymentPDIDetail>().HasIndex(x => x.Vin);
+        b.Entity<PaymentPDIDetail>().HasIndex(x => x.ModelCode);
+
+        b.Entity<TransportInsOrder>().ToTable("TransportInsOrders");
+        b.Entity<TransportInsOrder>().HasIndex(x => new { x.OrgId, x.TransportInsNo }).IsUnique();
+        b.Entity<TransportInsOrder>().HasIndex(x => new { x.OrgId, x.PmtMonth });
+        b.Entity<TransportInsOrder>().HasIndex(x => new { x.OrgId, x.Status });
+        b.Entity<TransportInsOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<TransportInsOrder>().Property(x => x.HTVSignStatus).HasConversion<int>();
+        b.Entity<TransportInsOrder>().Property(x => x.TCMSSignStatus).HasConversion<int>();
+        b.Entity<TransportInsOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.TransportInsOrderId).OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<TransportInsOrderDetail>().ToTable("TransportInsOrderDetails");
+        b.Entity<TransportInsOrderDetail>().HasIndex(x => x.TransportInsNo);
+        b.Entity<TransportInsOrderDetail>().HasIndex(x => x.Vin);
+        b.Entity<TransportInsOrderDetail>().HasIndex(x => x.DlvMnNo);
+        b.Entity<TransportInsOrderDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

@@ -3376,6 +3376,275 @@ public sealed class LetterOfCredit
     public DateTime? UpdatedAt { get; set; }
 }
 
+/// <summary>Trạng thái Bảng kê Quyết toán Chi phí PDI Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentPDI: Pending = 0 ['P' - Chờ duyệt cấp 1], Approved1 = 1 ['A1' - Trưởng phòng/Quản lý PDI duyệt cấp 1], Approved2 = 2 ['A2' - Lãnh đạo HTC/HTV duyệt cấp 2], Finished = 3 ['F' - Ký số 2 bên hoàn tất/quyết toán xong], Rejected = 4 ['R' - Từ chối duyệt], Cancelled = 5 ['C' - Đã hủy]).</summary>
+public enum PaymentPDIStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Finished = 3,
+    Rejected = 4,
+    Cancelled = 5
+}
+
+/// <summary>Trạng thái ký số điện tử biên bản quyết toán PDI & Rửa xe (DMS.Sales HTVSignStatus / TCMSSignStatus: ChuaKy = 0 ['P'], DaKy = 1 ['A'/'S']).</summary>
+public enum PaymentPDISignStatus
+{
+    ChuaKy = 0,
+    DaKy = 1
+}
+
+/// <summary>Bảng kê Quyết toán Chi phí PDI & Rửa xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentPDI / PmtPaymentPDIController / PaymentPDI.cs / PmtPaymentPDI.txt / ChiPhiPDI.HTV.TCMS.xlsx): Định kỳ hàng tháng hoặc theo kỳ liên tiếp, Nhà phân phối ô tô HTV và Công ty Cổ phần Vận hành Kho vận TCMS lập bảng kê đối soát thanh toán chi phí kiểm tra trước khi giao xe (PDI - Pre-Delivery Inspection) cho xe nội địa CKD (PDINAmount) và xe nhập khẩu CBU (PDIXAmount), chi phí rửa xe (RXAmount); kiểm tra ràng buộc kỳ thanh toán liên tiếp không ngắt quãng (StartDTime = LastEndDTime + 1 ngày); các bảng kê trước phải ở trạng thái đã kết thúc (F, C, R); quy trình phê duyệt đối soát 2 cấp 2 bên (NPP duyệt cấp 1 Approve1HQ, Lãnh đạo NPP duyệt cấp 2 Approve2HQ, TCMS ký số điện tử TCMSESignHQ 2 file PDF PDI & RX, HTV ký số điện tử HTVESignHQ 2 file và tự động hoàn tất Finished, đính kèm hóa đơn GTGT do TCMS xuất UploadFileInvoicePDIHQ và UploadFileInvoiceRXHQ).</summary>
+public sealed class PaymentPDIOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PmtPDINo { get; set; } = ""; // Mã bảng kê ({yyMM}PDI{seq:D5}, vd: 2603PDI00001)
+    public string PmtMonth { get; set; } = ""; // Tháng thanh toán (yyyy-MM-01 hoặc yyyy-MM, vd: 2026-03-01)
+    public DateTime PmtPeriodStartDTime { get; set; } // Ngày bắt đầu kỳ thanh toán
+    public DateTime PmtPeriodEndDTime { get; set; } // Ngày kết thúc kỳ thanh toán
+    public decimal VAT { get; set; } = 10m; // Thuế GTGT % (mặc định 10%)
+    public int TotalCars { get; set; } // Tổng số lượng xe tính PDI & RX
+
+    // Các khoản mục chi phí:
+    public decimal PDINTotalAmount { get; set; } // Tổng tiền PDI xe nội địa CKD
+    public decimal PDIXTotalAmount { get; set; } // Tổng tiền PDI xe nhập khẩu CBU
+    public decimal PDITotalAmount { get; set; } // Tổng tiền PDI = PDINTotalAmount + PDIXTotalAmount
+    public decimal RXTotalAmount { get; set; } // Tổng tiền rửa xe
+    public decimal TotalAmount { get; set; } // Tổng chi phí trước VAT = PDITotalAmount + RXTotalAmount
+    public decimal AmountVAT { get; set; } // Tiền thuế VAT = TotalAmount * VAT / 100
+    public decimal TotalAmountAfterVAT { get; set; } // Tổng chi phí thanh toán sau VAT = TotalAmount + AmountVAT
+    public PaymentPDIStatus Status { get; set; } = PaymentPDIStatus.Pending;
+
+    // Ký số phía Nhà phân phối HTV:
+    public PaymentPDISignStatus HTVSignStatus { get; set; } = PaymentPDISignStatus.ChuaKy;
+    public DateTime? HTVSignDTime { get; set; }
+    public string? HTVSignBy { get; set; }
+
+    // Ký số phía Đơn vị dịch vụ kiểm định kho bãi TCMS:
+    public PaymentPDISignStatus TCMSSignStatus { get; set; } = PaymentPDISignStatus.ChuaKy;
+    public DateTime? TCMSSignDTime { get; set; }
+    public string? TCMSSignBy { get; set; }
+
+    // Hồ sơ file ký số điện tử (2 file: PDI và Rửa xe RX):
+    public string? PDIFilePath { get; set; } // Đường dẫn lưu trữ file PDF ký số PDI
+    public string? PDIFileUrl { get; set; }
+    public string? RXFilePath { get; set; } // Đường dẫn lưu trữ file PDF ký số RX
+    public string? RXFileUrl { get; set; }
+
+    // Hóa đơn GTGT chi phí do TCMS xuất (2 hóa đơn: PDI và RX):
+    public string? PDIFileInvPath { get; set; } // File hóa đơn VAT dịch vụ PDI
+    public string? PDIFileInvUrl { get; set; }
+    public DateTime? PDIFileInvUpDTime { get; set; }
+    public string? PDIFileInvUpBy { get; set; }
+    public string? PDIInvoiceNo { get; set; }
+    public DateTime? PDIInvoiceDate { get; set; }
+
+    public string? RXFileInvPath { get; set; } // File hóa đơn VAT dịch vụ Rửa xe
+    public string? RXFileInvUrl { get; set; }
+    public DateTime? RXFileInvUpDTime { get; set; }
+    public string? RXFileInvUpBy { get; set; }
+    public string? RXInvoiceNo { get; set; }
+    public DateTime? RXInvoiceDate { get; set; }
+
+    // Ghi chú & lý do:
+    public string? Remark { get; set; }
+    public string? RejectReason { get; set; }
+    public string? CancelReason { get; set; }
+
+    // Audit logs & phê duyệt:
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? Approve1At { get; set; }
+    public string? Approve1By { get; set; }
+    public DateTime? Approve2At { get; set; }
+    public string? Approve2By { get; set; }
+    public DateTime? RejectedAt { get; set; }
+    public string? RejectedBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now;
+    public string? LogLUBy { get; set; }
+
+    public List<PaymentPDIDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô tính phí PDI & rửa xe trong kỳ (DMS.Sales Pmt_PaymentPDIDetail): theo dõi từng số khung VIN 17 ký tự, mã định danh CarId, model, spec, màu xe, phân loại xe nội địa CKD ('N') hay nhập khẩu CBU ('X'), số tham chiếu vào kho RefNoInit, kho ban đầu StorageCodeInit, ngày vào kho StorageDateInit, ngày hóa đơn nhà máy InvoiceFactoryDate, kho xuất/ngày xuất/lệnh giao xe nếu có, chi phí PDI nội địa PDINAmount, chi phí PDI nhập khẩu PDIXAmount, tổng chi phí PDI dòng xe PDIAmount, chi phí rửa xe RXAmount và tổng tiền dòng xe TotalAmount.</summary>
+public sealed class PaymentPDIDetail
+{
+    public long Id { get; set; }
+    public long PaymentPDIId { get; set; }
+    public string PmtPDINo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN, bắt buộc)
+    public string? CarId { get; set; }
+    public string ModelCode { get; set; } = "";
+    public string ModelName { get; set; } = "";
+    public string? SpecCode { get; set; }
+    public string? ColorCode { get; set; }
+    public string PDIType { get; set; } = "N"; // "N" = CKD Nội địa, "X" = CBU Nhập khẩu
+
+    // Thông tin kho và chứng từ gốc:
+    public string? RefNoInit { get; set; } // Số phiếu kiểm tra / nhập kho ban đầu
+    public string? StorageCodeInit { get; set; } // Kho lưu bãi ban đầu
+    public DateTime? StorageDateInit { get; set; } // Ngày nhập kho
+    public string? InvoiceFactoryDate { get; set; } // Ngày hóa đơn nhà máy
+
+    public string? RefNoCost { get; set; } // Số tham chiếu chi phí
+    public string? StorageCodeCost { get; set; }
+
+    public string? RefNoOut { get; set; } // Số phiếu xuất kho nếu đã xuất
+    public string? StorageCodeOut { get; set; }
+    public DateTime? StorageDateOut { get; set; }
+    public string? DeliveryOrderNo { get; set; } // Lệnh giao xe liên kết
+
+    public string? DealerCode { get; set; } // Đại lý nhận xe
+    public string? DealerName { get; set; }
+
+    // Chi phí chi tiết theo dòng xe:
+    public decimal PDINAmount { get; set; } // Tiền PDI nội địa CKD
+    public decimal PDIXAmount { get; set; } // Tiền PDI xuất / nhập khẩu CBU
+    public decimal PDIAmount { get; set; } // Tổng tiền PDI dòng xe = PDINAmount + PDIXAmount
+    public decimal RXAmount { get; set; } // Tiền rửa xe
+    public decimal TotalAmount { get; set; } // Tổng tiền dòng xe = PDIAmount + RXAmount
+
+    public string? Remark { get; set; }
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now;
+    public string? LogLUBy { get; set; }
+}
+
+/// <summary>Trạng thái Bảng kê Quyết toán Chi phí Vận chuyển & Phạt Chậm Vận Tải Xe Ô tô HTV - TCMS / Đơn vị Vận tải (DMS.Sales Pmt_TransportIns: Pending = 0 ['P' - Chờ duyệt cấp 1], Approved1 = 1 ['A1' - Bộ phận Logistics duyệt cấp 1], Approved2 = 2 ['A2' - Lãnh đạo HTC/HTV & TCKT duyệt cấp 2], Finished = 3 ['F' - Ký số 2 bên hoàn tất/quyết toán xong], Cancelled = 4 ['C' - Đã hủy]).</summary>
+public enum TransportInsStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Finished = 3,
+    Cancelled = 4
+}
+
+/// <summary>Trạng thái ký số điện tử biên bản quyết toán chi phí vận chuyển & bảo hiểm (DMS.Sales HTVSignStatus / TCMSSignStatus: ChuaKy = 0 ['P'], DaKy = 1 ['A']).</summary>
+public enum TransportInsSignStatus
+{
+    ChuaKy = 0,
+    DaKy = 1
+}
+
+/// <summary>Trạng thái dòng xe ô tô trong bảng kê thanh toán vận tải (DMS.Sales TrasportInsDtlStatus: Pending = 0 ['P' - Chờ duyệt], Approved = 1 ['A' - Chấp thuận], Rejected = 2 ['R' - Bác bỏ/không thanh toán]).</summary>
+public enum TransportInsDetailStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2
+}
+
+/// <summary>Bảng kê Quyết toán Chi phí Vận chuyển & Phạt Chậm Vận Tải Xe Ô tô HTV - TCMS / Đơn vị Vận tải (DMS.Sales Pmt_TransportIns / PmtTransportInsController / Payment.cs / PmtTransportIns.txt): Định kỳ hàng tháng, Nhà phân phối xe ô tô HTV/HTC và Công ty Cổ phần Vận hành Kho vận TCMS / Đơn vị vận chuyển lập bảng kê đối soát chi phí vận chuyển ô tô từ nhà máy/kho đến đại lý, đối soát ngày xuất kho (InvStartDate), hạn mức số ngày vận chuyển quy định theo tuyến đường (ExpectedDays), ngày đến theo định mức (ExpectedDlvEndDate) so với ngày xe đến thực tế bàn giao cho đại lý (InvEndDate); tự động tính số ngày giao chậm (DelayDate) và số tiền phạt chậm (DelayPenaty); tính phí bảo hiểm hàng hóa vận chuyển trên đường (InsuranceCost = PriceCar * InsurancePercent); tính tổng phí thanh toán từng xe (TotalPrice = InsuranceCost + TransportCost - DelayPenaty) và tổng hợp thuế GTGT (TotalAmount, VAT, UnitPriceVAT, TotalAmountVAT); quy trình phê duyệt đối soát 2 cấp (Logistics duyệt cấp 1 Approve1HQ, Lãnh đạo HTV/TCKT duyệt cấp 2 Approve2HQ), quy trình ký số điện tử 2 bên (TCMS ký số TCMSSignHQ, HTV ký số HTVESignHQ hoàn tất quyết toán Finished), in phiếu thanh toán PDF và xuất dữ liệu đối soát Master + Detail.</summary>
+public sealed class TransportInsOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TransportInsNo { get; set; } = ""; // Số phiếu bảng kê thanh toán ({yyMM}TI{seq:D4}, vd: 2603TI0001)
+    public string PmtMonth { get; set; } = ""; // Tháng thanh toán (yyyy-MM-01, vd: 2026-03-01)
+
+    // Tổng hợp tài chính:
+    public decimal TotalAmount { get; set; } // Tổng tiền trước VAT = TotalAmountVAT * 100 / (100 + VAT)
+    public decimal VAT { get; set; } = 10.0m; // Thuế suất VAT (%), mặc định 10%
+    public decimal UnitPriceVAT { get; set; } // Tiền thuế VAT = TotalAmountVAT - TotalAmount
+    public decimal TotalAmountVAT { get; set; } // Tổng tiền sau VAT = Σ(TotalPrice dòng xe)
+
+    // Thống kê số lượng & chi phí thành phần:
+    public int TotalCars { get; set; } // Tổng số xe trong bảng kê
+    public decimal TotalTransportCost { get; set; } // Tổng cước vận tải
+    public decimal TotalDelayPenalty { get; set; } // Tổng tiền phạt chậm giao xe
+    public decimal TotalInsuranceCost { get; set; } // Tổng phí bảo hiểm vận tải
+
+    // Trạng thái phê duyệt:
+    public TransportInsStatus Status { get; set; } = TransportInsStatus.Pending;
+
+    // Ký số phía Nhà phân phối HTV:
+    public TransportInsSignStatus HTVSignStatus { get; set; } = TransportInsSignStatus.ChuaKy;
+    public DateTime? HTVSignDTime { get; set; }
+    public string? HTVSignBy { get; set; }
+
+    // Ký số phía Đơn vị vận hành kho vận / Vận tải TCMS:
+    public TransportInsSignStatus TCMSSignStatus { get; set; } = TransportInsSignStatus.ChuaKy;
+    public DateTime? TCMSSignDTime { get; set; }
+    public string? TCMSSignBy { get; set; }
+
+    // File hợp đồng điện tử / biên bản đã ký số:
+    public string? FilePath { get; set; }
+
+    // Lịch sử duyệt 2 cấp:
+    public DateTime? App1DTime { get; set; }
+    public string? App1By { get; set; }
+    public DateTime? App2DTime { get; set; }
+    public string? App2By { get; set; }
+
+    // Hủy bảng kê:
+    public DateTime? CancelDTime { get; set; }
+    public string? CancelBy { get; set; }
+    public string? CancelReason { get; set; }
+
+    public string? Remark { get; set; }
+    public DateTime CreateDateTime { get; set; } = DateTime.Now;
+    public string? CreateBy { get; set; }
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now;
+    public string? LogLUBy { get; set; }
+
+    public List<TransportInsOrderDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô tính phí vận chuyển & phạt chậm trong bảng kê (DMS.Sales Pmt_TransportInsDetail): theo dõi từng số khung VIN 17 ký tự, mã xe CarId, số biên bản giao nhận xe BBGN/BBBG DlvMnNo, loại lệnh vận chuyển TranspReqType, tuyến đường vận tải (nơi đi - nơi đến), ngày xuất kho InvStartDate, hạn mức số ngày vận chuyển theo định mức ExpectedDays, ngày đến theo định mức ExpectedDlvEndDate, ngày xe đến thực tế InvEndDate, số ngày giao chậm DelayDate, cước vận chuyển TransportCost, tiền phạt chậm DelayPenaty, giá trị xe PriceCar, tỷ lệ bảo hiểm InsurancePercent, số HĐ bảo hiểm InsuranceContractNo, chi phí bảo hiểm InsuranceCost và tổng thanh toán dòng xe TotalPrice = InsuranceCost + TransportCost - DelayPenaty.</summary>
+public sealed class TransportInsOrderDetail
+{
+    public long Id { get; set; }
+    public long TransportInsOrderId { get; set; }
+    public string TransportInsNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN, bắt buộc)
+    public string? CarId { get; set; } // Mã định danh xe trong hệ thống
+    public string? DlvMnNo { get; set; } // Số lệnh biên bản giao nhận xe BBGN / Sto_DlvMinutes
+    public string? TranspReqType { get; set; } = "CARTRANSPORT"; // Loại vận chuyển: CARTRANSPORT, CARRETRIEVE, STORAGEREARRANGE, STORAGEREARRCB
+
+    // Thông tin xe:
+    public string? ModelCode { get; set; }
+    public string? ModelName { get; set; }
+    public string? SpecCode { get; set; }
+    public string? ColorName { get; set; }
+    public string? EngineNo { get; set; }
+
+    // Tuyến đường vận chuyển:
+    public string? FStorageCode { get; set; } // Mã kho/nơi đi
+    public string? FProvinceName { get; set; } // Tỉnh/thành nơi đi
+    public string? TStorageCode { get; set; } // Mã nơi đến (đại lý hoặc kho đến)
+    public string? TProvinceName { get; set; } // Tỉnh/thành nơi đến
+
+    // Thời gian & định mức:
+    public DateTime? InvStartDate { get; set; } // Ngày xuất kho / lăn bánh
+    public int ExpectedDays { get; set; } // Định mức số ngày vận chuyển theo quy chuẩn tuyến đường
+    public DateTime? ExpectedDlvEndDate { get; set; } // Ngày đến theo định mức (= InvStartDate + ExpectedDays)
+    public DateTime? InvEndDate { get; set; } // Ngày đến thực tế bàn giao đại lý
+    public int DelayDate { get; set; } // Số ngày chậm bàn giao xe: max(0, InvEndDate - ExpectedDlvEndDate)
+
+    // Cước phí & Phạt chậm & Bảo hiểm:
+    public decimal TransportCost { get; set; } // Phí vận chuyển (>= 0)
+    public decimal DelayPenaty { get; set; } // Tiền phạt chậm do trễ hạn (>= 0)
+    public decimal PriceCar { get; set; } // Giá trị xe tính phí bảo hiểm
+    public decimal InsurancePercent { get; set; } // Tỷ lệ phí bảo hiểm vận chuyển (%)
+    public string? InsuranceContractNo { get; set; } // Số hợp đồng bảo hiểm vận tải
+    public decimal InsuranceCost { get; set; } // Tiền phí bảo hiểm = PriceCar * InsurancePercent
+    public decimal TotalPrice { get; set; } // Tổng tiền dòng xe = InsuranceCost + TransportCost - DelayPenaty
+
+    // Trạng thái dòng & ghi chú:
+    public TransportInsDetailStatus Status { get; set; } = TransportInsDetailStatus.Pending;
+    public string? FProvinceRemark { get; set; } // Lý do sửa nơi đến/đi
+    public string? StandardRemark { get; set; } // Lý do sửa ngày định mức
+    public string? Remark { get; set; } // Ghi chú
+
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now;
+    public string? LogLUBy { get; set; }
+}
+
+
+
 
 
 
