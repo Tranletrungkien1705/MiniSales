@@ -107,6 +107,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentAVNOrder> PaymentAVNOrders => Set<PaymentAVNOrder>();
     public DbSet<PaymentAVNDetail> PaymentAVNDetails => Set<PaymentAVNDetail>();
     public DbSet<AvnUnitPriceMaster> AvnUnitPrices => Set<AvnUnitPriceMaster>();
+    public DbSet<DealerCustomer> DealerCustomers => Set<DealerCustomer>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -468,5 +469,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
 
         b.Entity<AvnUnitPriceMaster>().ToTable("AvnUnitPrices");
         b.Entity<AvnUnitPriceMaster>().HasIndex(x => x.AvnCode).IsUnique();
+
+        b.Entity<DealerCustomer>().ToTable("DealerCustomers");
+        b.Entity<DealerCustomer>().HasIndex(x => new { x.OrgId, x.CustomerCode }).IsUnique();
+        b.Entity<DealerCustomer>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<DealerCustomer>().HasIndex(x => new { x.OrgId, x.PhoneNo });
+        b.Entity<DealerCustomer>().HasIndex(x => new { x.OrgId, x.IDCardNo });
+        b.Entity<DealerCustomer>().Property(x => x.Gender).HasConversion<int>();
+        b.Entity<DealerCustomer>().Property(x => x.CustomerType).HasConversion<int>();
     }
 }

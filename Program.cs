@@ -71,6 +71,8 @@ builder.Services.AddScoped<IPerformanceInvoiceService, PerformanceInvoiceService
 builder.Services.AddScoped<IContractOverseaService, ContractOverseaService>();
 builder.Services.AddScoped<IPaymentTransportInsService, PaymentTransportInsService>();
 builder.Services.AddScoped<IPaymentAVNService, PaymentAVNService>();
+builder.Services.AddScoped<IPaymentPDIService, PaymentPDIService>();
+builder.Services.AddScoped<IDealerCustomerService, DealerCustomerService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -4979,6 +4981,61 @@ app.MapGet("/api/payment-avn/{paymentAVNNo}/print", async (string paymentAVNNo, 
 {
     var r = await svc.GetPrintDataAsync(paymentAVNNo);
     return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán AVN {paymentAVNNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+// ===== Quản lý Khách hàng Đại lý (Dealer Customer - DMS.Sales DLS_DealerCustomer / DLSDealerCustomerController) =====
+app.MapGet("/api/dealer-customers/seq", async (IDealerCustomerService svc) =>
+    Results.Ok(new { customerCode = await svc.GetSeqAsync() })).RequireAuthorization();
+
+app.MapPost("/api/dealer-customers", async (CreateDealerCustomerDto dto, IDealerCustomerService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-customers", async (IDealerCustomerService svc, string? customerCode, string? dealerCode, string? fullName, string? phoneNo, string? idCardNo, DateTime? createdFrom, DateTime? createdTo) =>
+    Results.Ok(await svc.SearchAsync(customerCode, dealerCode, fullName, phoneNo, idCardNo, createdFrom, createdTo))).RequireAuthorization();
+
+app.MapGet("/api/dealer-customers/stats", async (IDealerCustomerService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/dealer-customers/by-dealer/{dealerCode}", async (string dealerCode, IDealerCustomerService svc) =>
+    Results.Ok(await svc.GetAllByDealerAsync(dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/dealer-customers/{customerCode}", async (string customerCode, IDealerCustomerService svc) =>
+{
+    var r = await svc.GetByCodeAsync(customerCode);
+    return r is null ? Results.NotFound(new { customerCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-customers/{customerCode}", async (string customerCode, UpdateDealerCustomerDto dto, IDealerCustomerService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(customerCode, dto);
+        return r is null ? Results.NotFound(new { customerCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-customers/{customerCode}/admin", async (string customerCode, UpdateDealerCustomerDto dto, IDealerCustomerService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAdminAsync(customerCode, dto);
+        return r is null ? Results.NotFound(new { customerCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-customers/{customerCode}", async (string customerCode, IDealerCustomerService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteAsync(customerCode);
+        return ok ? Results.Ok(new { success = true, customerCode }) : Results.NotFound(new { customerCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
 app.Run();

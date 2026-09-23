@@ -1,0 +1,16 @@
+﻿[21:01:10 ERR] () Failed executing DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE CarVinInventories ADD COLUMN DeclarationNo TEXT;
+[21:01:10 ERR] () Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE DriveTests ADD COLUMN FlagActive INTEGER NOT NULL DEFAULT 1;
+[21:02:12 INF] () License check minisales: <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Service Suspended</title>
+</head>
+<body>
+This service has been suspended.
+</body>
+</html>
+

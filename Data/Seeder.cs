@@ -13103,6 +13103,92 @@ public static class Seeder
                 db.PaymentAVNOrders.AddRange(avn1, avn2);
             }
 
+            // Khách hàng Đại lý (DLS_DealerCustomer)
+            if (!await db.DealerCustomers.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.DealerCustomers.AddRange(
+                    new DealerCustomer
+                    {
+                        OrgId = orgId,
+                        CustomerCode = "2606CTM06125",
+                        DealerCode = "VS058",
+                        DealerName = "Hyundai Bình Dương",
+                        FullName = "Nguyễn Văn An",
+                        FullNameEN = "Nguyen Van An",
+                        Gender = DealerCustomerGender.Male,
+                        DateOfBirth = new DateTime(1990, 1, 1),
+                        IDCardType = "CCCD",
+                        IDCardNo = "079090001234",
+                        PhoneNo = "0901234567",
+                        Email = "nguyenvanan@email.com",
+                        Address = "123 Đường ABC, Phường XYZ",
+                        ProvinceCode = "BD",
+                        ProvinceName = "Bình Dương",
+                        DistrictCode = "BD001",
+                        DistrictName = "TP. Thủ Dầu Một",
+                        CustomerBaseCode = "CTM_CAN_NHAN",
+                        CustomerBaseName = "Khách hàng cá nhân",
+                        CustomerType = DealerCustomerType.Personal,
+                        CreatedAt = DateTime.Now.AddDays(-20),
+                        CreatedBy = "VS058"
+                    },
+                    new DealerCustomer
+                    {
+                        OrgId = orgId,
+                        CustomerCode = "2606CTM06126",
+                        DealerCode = "VS058",
+                        DealerName = "Hyundai Bình Dương",
+                        FullName = "Công ty TNHH Thương mại Dịch vụ Phú Thịnh",
+                        FullNameEN = "Phu Thinh Trading Service Co., Ltd",
+                        Gender = DealerCustomerGender.Other,
+                        DateOfBirth = new DateTime(2015, 6, 12),
+                        IDCardType = "MST",
+                        IDCardNo = "3701234567",
+                        PhoneNo = "02743888999",
+                        Email = "contact@phuthinh.vn",
+                        Address = "456 Đại lộ Bình Dương, KCN Sóng Thần",
+                        ProvinceCode = "BD",
+                        ProvinceName = "Bình Dương",
+                        DistrictCode = "BD002",
+                        DistrictName = "TP. Dĩ An",
+                        CustomerBaseCode = "CTM_DOANH_NGHIEP",
+                        CustomerBaseName = "Khách hàng doanh nghiệp",
+                        CustomerType = DealerCustomerType.Business,
+                        TaxCode = "3701234567",
+                        RepresentName = "Trần Thị Bích",
+                        Position = "Giám đốc",
+                        CusAccountBank = "0071000123456",
+                        CreatedAt = DateTime.Now.AddDays(-15),
+                        CreatedBy = "VS058"
+                    },
+                    new DealerCustomer
+                    {
+                        OrgId = orgId,
+                        CustomerCode = "2606CTM06127",
+                        DealerCode = "VN001",
+                        DealerName = "Hyundai Đông Đô",
+                        FullName = "Lê Hoàng Nam",
+                        FullNameEN = "Le Hoang Nam",
+                        Gender = DealerCustomerGender.Male,
+                        DateOfBirth = new DateTime(1985, 9, 20),
+                        IDCardType = "CCCD",
+                        IDCardNo = "001085009876",
+                        PhoneNo = "0912345678",
+                        Email = "lehoangnam@email.com",
+                        Address = "789 Phố Kim Mã, Quận Ba Đình",
+                        ProvinceCode = "HN",
+                        ProvinceName = "Hà Nội",
+                        DistrictCode = "HN001",
+                        DistrictName = "Quận Ba Đình",
+                        CustomerBaseCode = "CTM_CAN_NHAN",
+                        CustomerBaseName = "Khách hàng cá nhân",
+                        CustomerType = DealerCustomerType.Personal,
+                        CreatedAt = DateTime.Now.AddDays(-10),
+                        CreatedBy = "VN001"
+                    }
+                );
+            }
+
             await db.SaveChangesAsync();
         }
     }

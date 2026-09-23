@@ -3758,3 +3758,61 @@ public sealed class AvnUnitPriceMaster
     public string? Remark { get; set; }
 }
 
+
+/// <summary>Giới tính khách hàng đại lý (DMS.Sales DLS_DealerCustomer.Gender: Male = 'M' [Nam], Female = 'F' [Nữ], Other = 'O' [Khác]).</summary>
+public enum DealerCustomerGender
+{
+    Male = 0,
+    Female = 1,
+    Other = 2
+}
+
+/// <summary>Loại khách hàng đại lý (DMS.Sales DLS_DealerCustomer.CustomerType: Personal = 'Personal' [Cá nhân], Business = 'Business' [Doanh nghiệp]).</summary>
+public enum DealerCustomerType
+{
+    Personal = 0,
+    Business = 1
+}
+
+/// <summary>Khách hàng Đại lý (DMS.Sales DLS_DealerCustomer / DLSDealerCustomerController / DealerSales.cs / DLS_DealerCustomer.txt): Đại lý quản lý hồ sơ khách hàng mua xe (cá nhân/doanh nghiệp) gồm thông tin định danh (họ tên, giới tính, ngày sinh, giấy tờ tùy thân), liên hệ (điện thoại, email, địa chỉ, tỉnh/xã), nguồn khách hàng (CustomerBaseCode), loại khách hàng và thông tin doanh nghiệp (người đại diện, chức vụ, MST, tài khoản ngân hàng). Mã khách hàng sinh tự động theo quy chuẩn {yyMM}CTM{seq:D5} (SequenceType = "CTM").</summary>
+public sealed class DealerCustomer
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CustomerCode { get; set; } = ""; // Mã khách hàng ({yyMM}CTM{seq:D5}, vd: 2606CTM06125)
+    public string DealerCode { get; set; } = ""; // Mã đại lý tạo (chỉ dùng khi Create, không cho đổi khi Update)
+    public string? DealerName { get; set; } // Tên đại lý tạo
+
+    // Thông tin định danh:
+    public string FullName { get; set; } = ""; // Họ tên / Tên khách hàng (bắt buộc)
+    public string? FullNameEN { get; set; } // Tên khách hàng tiếng Anh
+    public DealerCustomerGender Gender { get; set; } = DealerCustomerGender.Male; // Giới tính (bắt buộc)
+    public DateTime? DateOfBirth { get; set; } // Ngày sinh nhật / Ngày thành lập
+    public string? IDCardType { get; set; } // Loại giấy tờ tùy thân (CMND, CCCD, Hộ chiếu...)
+    public string? IDCardNo { get; set; } // Số giấy tờ tùy thân (chỉ chứa [a-zA-Z0-9])
+
+    // Liên hệ:
+    public string PhoneNo { get; set; } = ""; // Số điện thoại (bắt buộc)
+    public string? Email { get; set; } // Email (không bắt buộc, nếu có phải đúng format)
+    public string? Address { get; set; } // Địa chỉ (bắt buộc)
+    public string? ProvinceCode { get; set; } // Mã tỉnh/thành (bắt buộc)
+    public string? ProvinceName { get; set; } // Tên tỉnh/thành
+    public string? DistrictCode { get; set; } // Mã quận/huyện - xã/phường (bắt buộc)
+    public string? DistrictName { get; set; } // Tên quận/huyện - xã/phường
+
+    // Phân loại & nguồn khách hàng:
+    public string CustomerBaseCode { get; set; } = ""; // Mã nguồn khách hàng (bắt buộc, tham chiếu Mst_CustomerBase)
+    public string? CustomerBaseName { get; set; } // Tên nguồn khách hàng
+    public DealerCustomerType CustomerType { get; set; } = DealerCustomerType.Personal; // Loại khách hàng (Cá nhân/Doanh nghiệp)
+
+    // Thông tin doanh nghiệp:
+    public string? TaxCode { get; set; } // Mã số thuế
+    public string? RepresentName { get; set; } // Người đại diện (dành cho KH doanh nghiệp)
+    public string? Position { get; set; } // Chức vụ
+    public string? CusAccountBank { get; set; } // Số tài khoản ngân hàng
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+}
