@@ -1312,6 +1312,84 @@ public static class Seeder
                     PerformedAt TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS IX_CarCancelLogs_OrgId_CarId ON CarCancelLogs(OrgId, CarId);
+
+                CREATE TABLE IF NOT EXISTS CarVinInventories (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    StorageCode TEXT NOT NULL,
+                    StorageName TEXT,
+                    AssemblyStatus TEXT NOT NULL,
+                    ProductionMonth TEXT,
+                    Status INTEGER NOT NULL,
+                    MappedCarId TEXT,
+                    CreatedAt TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarVinInventories_OrgId_Vin ON CarVinInventories(OrgId, Vin);
+
+                CREATE TABLE IF NOT EXISTS MapVinSessions (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    SessionNo TEXT NOT NULL,
+                    MapType INTEGER NOT NULL,
+                    Method INTEGER NOT NULL,
+                    Status INTEGER NOT NULL,
+                    DealerCode TEXT,
+                    ModelCode TEXT,
+                    TotalRequested INTEGER NOT NULL,
+                    TotalMapped INTEGER NOT NULL,
+                    TotalUnmapped INTEGER NOT NULL,
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ApprovedBy TEXT,
+                    ApprovedAt TEXT,
+                    CancelledAt TEXT,
+                    CancelReason TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_MapVinSessions_OrgId_SessionNo ON MapVinSessions(OrgId, SessionNo);
+
+                CREATE TABLE IF NOT EXISTS MapVinSessionDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SessionId INTEGER NOT NULL,
+                    CarId TEXT NOT NULL,
+                    SoCode TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    Vin TEXT,
+                    EngineNo TEXT,
+                    StorageCode TEXT,
+                    StorageName TEXT,
+                    Status INTEGER NOT NULL,
+                    RejectReason TEXT,
+                    MappedAt TEXT,
+                    MappedBy TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS MapVinAuditLogs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT,
+                    Action TEXT NOT NULL,
+                    SessionNo TEXT,
+                    Remark TEXT,
+                    PerformedBy TEXT,
+                    PerformedAt TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS IX_MapVinAuditLogs_OrgId_CarId ON MapVinAuditLogs(OrgId, CarId);
             ");
         }
         catch
@@ -6010,6 +6088,395 @@ public static class Seeder
                 }
             };
             db.CarCancelLogs.AddRange(logs);
+
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.CarVinInventories.AnyAsync(v => v.OrgId == orgId))
+        {
+            // Thêm các xe thương mại chưa có VIN để phục vụ phân bổ Map VIN
+            var c10 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-SF2501",
+                Vin = "",
+                ModelCode = "SF25",
+                ModelName = "Santa Fe 2.5 Xăng Cao Cấp",
+                SpecCode = "SF25-PRE-01",
+                SpecDescription = "Santa Fe 2.5 CKD xăng cao cấp",
+                ColorCode = "WH1",
+                ColorName = "Trắng",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hyundai Ninh Bình",
+                SoCode = "ORD2603010018",
+                PriceActual = 1350000000m,
+                PaymentDepositAmount = 135000000m, // Đã cọc 10%
+                GuaranteeAmount = 1215000000m,
+                DutyCompletedAmount = 1350000000m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "1", // Cho phép Map VIN
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-6),
+                LogLUDateTime = DateTime.Today.AddDays(-6),
+                LogLUBy = "HE_THONG_BAN_HANG"
+            };
+
+            var c11 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-TU2005",
+                Vin = "",
+                ModelCode = "TU20",
+                ModelName = "Tucson 2.0 AT",
+                SpecCode = "TU20-STD-01",
+                SpecDescription = "Tucson 2.0 xăng tiêu chuẩn bản nâng cấp",
+                ColorCode = "NKA",
+                ColorName = "Đen Phantom",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                StorageCode = "KHO_TONG_SG",
+                StorageName = "Kho Tổng Nam Bộ Hiệp Phước",
+                SoCode = "ORD2603010019",
+                PriceActual = 950000000m,
+                PaymentDepositAmount = 190000000m, // Đã cọc 20%
+                GuaranteeAmount = 760000000m,
+                DutyCompletedAmount = 950000000m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "1", // Cho phép Map VIN
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-4),
+                LogLUDateTime = DateTime.Today.AddDays(-4),
+                LogLUBy = "HE_THONG_BAN_HANG"
+            };
+
+            var c12 = new CarRecord
+            {
+                OrgId = orgId,
+                CarId = "CAR2026-AC1409",
+                Vin = "",
+                ModelCode = "AC14",
+                ModelName = "Accent 1.4 AT",
+                SpecCode = "AC14-STD-01",
+                SpecDescription = "Accent 1.4 AT Sedan gia đình",
+                ColorCode = "SL2",
+                ColorName = "Bạc",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                StorageCode = "KHO_TONG_HN",
+                StorageName = "Kho Tổng Hyundai Ninh Bình",
+                SoCode = "ORD2603010020",
+                PriceActual = 542000000m,
+                PaymentDepositAmount = 54200000m, // Đã cọc 10%
+                GuaranteeAmount = 0m,
+                DutyCompletedAmount = 54200000m,
+                FlagActive = "1",
+                FlagAllowChangeVIN = "1",
+                FlagEarlyCancel = "0",
+                FlagMapVIN = "1", // Cho phép Map VIN
+                FlagCarDeliveryOrder = "0",
+                FlagTestCar = "0",
+                CreatedAt = DateTime.Today.AddDays(-3),
+                LogLUDateTime = DateTime.Today.AddDays(-3),
+                LogLUBy = "HE_THONG_BAN_HANG"
+            };
+
+            db.Cars.AddRange(c10, c11, c12);
+
+            // Kho xe vật lý có số khung VIN (CarVinInventory)
+            var vins = new List<CarVinInventory>
+            {
+                // Các xe đã map
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSA129841",
+                    ModelCode = "SF25",
+                    ModelName = "Santa Fe 2.5 HTRAC",
+                    SpecCode = "SF25-PRE-01",
+                    SpecDescription = "Santa Fe 2.5 CKD xăng cao cấp",
+                    ColorCode = "WH1",
+                    ColorName = "Trắng",
+                    EngineNo = "G4KP-129841",
+                    StorageCode = "KHO_TONG_HN",
+                    StorageName = "Kho Tổng Hyundai Ninh Bình",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202602",
+                    Status = CarVinStatus.Mapped,
+                    MappedCarId = "CAR2026-SF0988",
+                    CreatedAt = DateTime.Today.AddDays(-20)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSA987654",
+                    ModelCode = "TU20",
+                    ModelName = "Tucson 2.0 AT",
+                    SpecCode = "TU20-STD-01",
+                    SpecDescription = "Tucson 2.0 xăng tiêu chuẩn bản nâng cấp",
+                    ColorCode = "NKA",
+                    ColorName = "Đen Phantom",
+                    EngineNo = "G4NM-987654",
+                    StorageCode = "KHO_TONG_SG",
+                    StorageName = "Kho Tổng Nam Bộ Hiệp Phước",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202602",
+                    Status = CarVinStatus.Mapped,
+                    MappedCarId = "CAR2026-TU1102",
+                    CreatedAt = DateTime.Today.AddDays(-25)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSA334455",
+                    ModelCode = "CR15",
+                    ModelName = "Creta 1.5 Cao Cấp",
+                    SpecCode = "CR15-PRE-02",
+                    SpecDescription = "Creta 1.5 CVT bản cao cấp 2 tông màu",
+                    ColorCode = "R2N",
+                    ColorName = "Đỏ đô nóc đen",
+                    EngineNo = "G4FL-334455",
+                    StorageCode = "KHO_TONG_HN",
+                    StorageName = "Kho Tổng Hà Nội - Đài Tư",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202602",
+                    Status = CarVinStatus.Mapped,
+                    MappedCarId = "CAR2026-CR0192",
+                    CreatedAt = DateTime.Today.AddDays(-10)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSA223344",
+                    ModelCode = "AC14",
+                    ModelName = "Accent 1.4 AT",
+                    SpecCode = "AC14-STD-01",
+                    SpecDescription = "Accent 1.4 AT Sedan gia đình",
+                    ColorCode = "SL2",
+                    ColorName = "Bạc",
+                    EngineNo = "G4LC-223344",
+                    StorageCode = "KHO_TONG_HN",
+                    StorageName = "Kho Tổng Hyundai Ninh Bình",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202603",
+                    Status = CarVinStatus.Mapped,
+                    MappedCarId = "CAR2026-AC1401",
+                    CreatedAt = DateTime.Today.AddDays(-8)
+                },
+
+                // Các xe còn trống trong kho (Available) sẵn sàng cho Map VIN
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSB100001",
+                    ModelCode = "SF25",
+                    ModelName = "Santa Fe 2.5 Xăng Cao Cấp",
+                    SpecCode = "SF25-PRE-01",
+                    SpecDescription = "Santa Fe 2.5 CKD xăng cao cấp",
+                    ColorCode = "WH1",
+                    ColorName = "Trắng",
+                    EngineNo = "G4KP-100001",
+                    StorageCode = "KHO_TONG_HN",
+                    StorageName = "Kho Tổng Hyundai Ninh Bình",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202603",
+                    Status = CarVinStatus.Available,
+                    MappedCarId = null,
+                    CreatedAt = DateTime.Today.AddDays(-5)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSB100002",
+                    ModelCode = "TU20",
+                    ModelName = "Tucson 2.0 AT",
+                    SpecCode = "TU20-STD-01",
+                    SpecDescription = "Tucson 2.0 xăng tiêu chuẩn bản nâng cấp",
+                    ColorCode = "NKA",
+                    ColorName = "Đen Phantom",
+                    EngineNo = "G4NM-100002",
+                    StorageCode = "KHO_TONG_SG",
+                    StorageName = "Kho Tổng Nam Bộ Hiệp Phước",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202603",
+                    Status = CarVinStatus.Available,
+                    MappedCarId = null,
+                    CreatedAt = DateTime.Today.AddDays(-5)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSB100003",
+                    ModelCode = "CR15",
+                    ModelName = "Creta 1.5 Cao Cấp",
+                    SpecCode = "CR15-PRE-02",
+                    SpecDescription = "Creta 1.5 CVT bản cao cấp 2 tông màu",
+                    ColorCode = "R2N",
+                    ColorName = "Đỏ đô nóc đen",
+                    EngineNo = "G4FL-100003",
+                    StorageCode = "KHO_TONG_HN",
+                    StorageName = "Kho Tổng Hà Nội - Đài Tư",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202603",
+                    Status = CarVinStatus.Available,
+                    MappedCarId = null,
+                    CreatedAt = DateTime.Today.AddDays(-4)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSB100004",
+                    ModelCode = "AC14",
+                    ModelName = "Accent 1.4 AT",
+                    SpecCode = "AC14-STD-01",
+                    SpecDescription = "Accent 1.4 AT Sedan gia đình",
+                    ColorCode = "SL2",
+                    ColorName = "Bạc",
+                    EngineNo = "G4LC-100004",
+                    StorageCode = "KHO_TONG_HN",
+                    StorageName = "Kho Tổng Hyundai Ninh Bình",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202603",
+                    Status = CarVinStatus.Available,
+                    MappedCarId = null,
+                    CreatedAt = DateTime.Today.AddDays(-3)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSB100005",
+                    ModelCode = "CS20",
+                    ModelName = "Custin 2.0T Cao Cấp",
+                    SpecCode = "CS20-PRE-01",
+                    SpecDescription = "Custin 2.0 Turbo Bản Cao Cấp 7 chỗ",
+                    ColorCode = "WW1",
+                    ColorName = "Trắng tuyết",
+                    EngineNo = "G4NN-100005",
+                    StorageCode = "KHO_TONG_SG",
+                    StorageName = "Kho Tổng Nam Bộ Hiệp Phước",
+                    AssemblyStatus = "CBU",
+                    ProductionMonth = "202602",
+                    Status = CarVinStatus.Available,
+                    MappedCarId = null,
+                    CreatedAt = DateTime.Today.AddDays(-2)
+                },
+                new CarVinInventory
+                {
+                    OrgId = orgId,
+                    Vin = "KMHE281BBSB100006",
+                    ModelCode = "I10",
+                    ModelName = "Grand i10 Sedan 1.2 AT",
+                    SpecCode = "I10-SED-01",
+                    SpecDescription = "Grand i10 Sedan 1.2 số tự động",
+                    ColorCode = "SL1",
+                    ColorName = "Bạc",
+                    EngineNo = "G4LA-100006",
+                    StorageCode = "KHO_TONG_HN",
+                    StorageName = "Kho Tổng Hyundai Ninh Bình",
+                    AssemblyStatus = "CKD",
+                    ProductionMonth = "202603",
+                    Status = CarVinStatus.Available,
+                    MappedCarId = null,
+                    CreatedAt = DateTime.Today.AddDays(-2)
+                }
+            };
+            db.CarVinInventories.AddRange(vins);
+
+            // Phiên Map VIN mẫu ban đầu
+            var s1 = new MapVinSession
+            {
+                OrgId = orgId,
+                SessionNo = $"{DateTime.Today:yyMM}MV0001",
+                MapType = MapVinType.Auto,
+                Method = MapVinMethod.Normal,
+                Status = MapVinSessionStatus.Approved,
+                DealerCode = null,
+                ModelCode = null,
+                TotalRequested = 2,
+                TotalMapped = 2,
+                TotalUnmapped = 0,
+                Remark = "Phiên tự động phân bổ Map VIN đợt 1 tháng theo kế hoạch sản xuất HTMV",
+                CreatedBy = "HỆ THỐNG PHÂN BỔ MAP VIN",
+                CreatedAt = DateTime.Today.AddDays(-15),
+                ApprovedBy = "Đặng Phương Nam (Phòng Bán buôn HTC)",
+                ApprovedAt = DateTime.Today.AddDays(-15),
+                Details = new List<MapVinSessionDetail>
+                {
+                    new MapVinSessionDetail
+                    {
+                        CarId = "CAR2026-SF0988",
+                        SoCode = "ORD2603010001",
+                        DealerCode = "VN001",
+                        DealerName = "Hyundai Đông Đô",
+                        ModelCode = "SF25",
+                        ModelName = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng",
+                        Vin = "KMHE281BBSA129841",
+                        EngineNo = "G4KP-129841",
+                        StorageCode = "KHO_TONG_HN",
+                        StorageName = "Kho Tổng Hyundai Ninh Bình",
+                        Status = MapVinDetailStatus.Mapped,
+                        MappedAt = DateTime.Today.AddDays(-15),
+                        MappedBy = "Đặng Phương Nam (Phòng Bán buôn HTC)"
+                    },
+                    new MapVinSessionDetail
+                    {
+                        CarId = "CAR2026-TU1102",
+                        SoCode = "ORD2603010002",
+                        DealerCode = "VN002",
+                        DealerName = "Hyundai Nam Trung",
+                        ModelCode = "TU20",
+                        ModelName = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        ColorCode = "NKA",
+                        ColorName = "Đen Phantom",
+                        Vin = "KMHE281BBSA987654",
+                        EngineNo = "G4NM-987654",
+                        StorageCode = "KHO_TONG_SG",
+                        StorageName = "Kho Tổng Nam Bộ Hiệp Phước",
+                        Status = MapVinDetailStatus.Mapped,
+                        MappedAt = DateTime.Today.AddDays(-15),
+                        MappedBy = "Đặng Phương Nam (Phòng Bán buôn HTC)"
+                    }
+                }
+            };
+            db.MapVinSessions.Add(s1);
+
+            var mapLogs = new List<MapVinAuditLog>
+            {
+                new MapVinAuditLog
+                {
+                    OrgId = orgId,
+                    CarId = "CAR2026-SF0988",
+                    Vin = "KMHE281BBSA129841",
+                    Action = "AutoMap",
+                    SessionNo = s1.SessionNo,
+                    Remark = $"Tự động ghép số khung VIN KMHE281BBSA129841 theo phiên {s1.SessionNo}",
+                    PerformedBy = "Đặng Phương Nam (Phòng Bán buôn HTC)",
+                    PerformedAt = DateTime.Today.AddDays(-15)
+                },
+                new MapVinAuditLog
+                {
+                    OrgId = orgId,
+                    CarId = "CAR2026-TU1102",
+                    Vin = "KMHE281BBSA987654",
+                    Action = "AutoMap",
+                    SessionNo = s1.SessionNo,
+                    Remark = $"Tự động ghép số khung VIN KMHE281BBSA987654 theo phiên {s1.SessionNo}",
+                    PerformedBy = "Đặng Phương Nam (Phòng Bán buôn HTC)",
+                    PerformedAt = DateTime.Today.AddDays(-15)
+                }
+            };
+            db.MapVinAuditLogs.AddRange(mapLogs);
 
             await db.SaveChangesAsync();
         }

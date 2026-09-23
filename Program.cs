@@ -51,6 +51,7 @@ builder.Services.AddScoped<ICarBodyRequestService, CarBodyRequestService>();
 builder.Services.AddScoped<IDealerDriveTestService, DealerDriveTestService>();
 builder.Services.AddScoped<IStorageRearrangeCBService, StorageRearrangeCBService>();
 builder.Services.AddScoped<ICarCancelService, CarCancelService>();
+builder.Services.AddScoped<IMapVinService, MapVinService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2484,6 +2485,52 @@ app.MapPost("/api/car-cancels/cancel-batch", async (BatchCarCancelDto dto, ICarC
     try { return Results.Ok(await svc.CancelBatchAsync(dto)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
+
+// ===== Quản lý Phân bổ & Gán số khung VIN xe ô tô Đại lý - NPP (Auto & Manual Map VIN / Unmap VIN Management - DMS.Sales Auto_MapVIN + Car_VIN_Map_HQ + Car_VIN_Unmap_HQ / AutoMapVINController / MapVIN.cs) =====
+app.MapGet("/api/map-vins/sessions", async (IMapVinService svc, string? status, string? method, string? dealerCode) =>
+    Results.Ok(await svc.GetSessionsAsync(status, method, dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/map-vins/sessions/{sessionNo}", async (string sessionNo, IMapVinService svc) =>
+{
+    var r = await svc.GetSessionByNoAsync(sessionNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiên Map VIN {sessionNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/map-vins/sessions/auto", async (AutoMapVinRunDto dto, IMapVinService svc) =>
+{
+    try { return Results.Ok(await svc.RunAutoMapAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/map-vins/manual-map", async (ManualMapVinDto dto, IMapVinService svc) =>
+{
+    try { return Results.Ok(await svc.ManualMapAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/map-vins/unmap", async (UnmapVinDto dto, IMapVinService svc) =>
+{
+    try { return Results.Ok(await svc.UnmapAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/map-vins/unmap-batch", async (BatchUnmapVinDto dto, IMapVinService svc) =>
+{
+    try { return Results.Ok(await svc.BatchUnmapAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/map-vins/available-vins", async (IMapVinService svc, string? modelCode, string? colorCode, string? storageCode) =>
+    Results.Ok(await svc.GetAvailableVinsAsync(modelCode, colorCode, storageCode))).RequireAuthorization();
+
+app.MapGet("/api/map-vins/pending-cars", async (IMapVinService svc, string? dealerCode, string? modelCode) =>
+    Results.Ok(await svc.GetPendingCarsAsync(dealerCode, modelCode))).RequireAuthorization();
+
+app.MapGet("/api/map-vins/stats", async (IMapVinService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/map-vins/logs", async (IMapVinService svc, string? carId, string? vin) =>
+    Results.Ok(await svc.GetLogsAsync(carId, vin))).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).
 // Dedupe theo Code (DealNo). Status luôn Draft/Paid=0 — nguồn DeliveryStatus không đủ rõ nghĩa để map an toàn

@@ -59,6 +59,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarCancelReasonMaster> CarCancelReasons => Set<CarCancelReasonMaster>();
     public DbSet<CarRecord> Cars => Set<CarRecord>();
     public DbSet<CarCancelLog> CarCancelLogs => Set<CarCancelLog>();
+    public DbSet<CarVinInventory> CarVinInventories => Set<CarVinInventory>();
+    public DbSet<MapVinSession> MapVinSessions => Set<MapVinSession>();
+    public DbSet<MapVinSessionDetail> MapVinSessionDetails => Set<MapVinSessionDetail>();
+    public DbSet<MapVinAuditLog> MapVinAuditLogs => Set<MapVinAuditLog>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -183,5 +187,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CarRecord>().HasIndex(x => new { x.OrgId, x.CarId }).IsUnique();
         b.Entity<CarRecord>().HasIndex(x => new { x.OrgId, x.Vin });
         b.Entity<CarCancelLog>().HasIndex(x => new { x.OrgId, x.CarId });
+        b.Entity<CarVinInventory>().HasIndex(x => new { x.OrgId, x.Vin }).IsUnique();
+        b.Entity<CarVinInventory>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<MapVinSession>().HasIndex(x => new { x.OrgId, x.SessionNo }).IsUnique();
+        b.Entity<MapVinSession>().Property(x => x.MapType).HasConversion<int>();
+        b.Entity<MapVinSession>().Property(x => x.Method).HasConversion<int>();
+        b.Entity<MapVinSession>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<MapVinSession>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<MapVinSessionDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<MapVinAuditLog>().HasIndex(x => new { x.OrgId, x.CarId });
     }
 }

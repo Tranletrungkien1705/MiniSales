@@ -1664,6 +1664,107 @@ public sealed class CarCancelLog
     public DateTime PerformedAt { get; set; } = DateTime.Now; // Thời điểm thực hiện
 }
 
+/// <summary>Hình thức gán số khung VIN xe ô tô (DMS.Sales Car_Car MapVINType: A = Auto gán tự động theo thuật toán phân bổ, M = Manual gán thủ công).</summary>
+public enum MapVinType { Auto = 0, Manual = 1 }
+
+/// <summary>Phương thức / Tiêu chí thuật toán phân bổ Map VIN tự động (DMS.Sales Auto_MapVIN ATMVType / DMS40.0.20.MapVIN.cs: Normal FIFO, PriorityDeposit theo tỷ lệ cọc/nghĩa vụ, NewDealer ưu tiên đại lý mới, NewSpec ưu tiên spec mới, Special đặc biệt).</summary>
+public enum MapVinMethod { Normal = 0, PriorityDeposit = 1, NewDealer = 2, NewSpec = 3, Special = 4, Manual = 5 }
+
+/// <summary>Trạng thái phiên phân bổ Map VIN (DMS.Sales Auto_MapVIN: Pending -> Simulated -> Approved/Completed hoặc Cancelled).</summary>
+public enum MapVinSessionStatus { Pending = 0, Simulated = 1, Approved = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái từng dòng xe trong phiên phân bổ Map VIN (DMS.Sales Auto_MapVIN_Car_Car: Pending, Mapped gán thành công, Unmapped đã gỡ VIN, Rejected không đủ điều kiện/hết xe kho).</summary>
+public enum MapVinDetailStatus { Pending = 0, Mapped = 1, Unmapped = 2, Rejected = 3 }
+
+/// <summary>Trạng thái tồn kho xe có số khung VIN vật lý (DMS.Sales Car_VIN: Available sẵn sàng trong kho, Mapped đã gán xe thương mại, Delivered đã xuất kho giao, Locked khóa kỹ thuật/sửa chữa).</summary>
+public enum CarVinStatus { Available = 0, Mapped = 1, Delivered = 2, Locked = 3 }
+
+/// <summary>Danh mục xe vật lý có số khung VIN trong kho bãi nhà máy/NPP (DMS.Sales Car_VIN / CarVINController / 05_QUAN_LY_XE.md): lưu thông tin kỹ thuật số khung 17 ký tự, số máy, model, bản cấu hình spec, màu sắc, kho lưu trữ, loại lắp ráp và trạng thái khả dụng cho Map VIN.</summary>
+public sealed class CarVinInventory
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN)
+    public string ModelCode { get; set; } = ""; // Mã model (SF25, TU20, CR15, AC14...)
+    public string ModelName { get; set; } = ""; // Tên dòng xe
+    public string? SpecCode { get; set; } // Mã cấu hình xe (spec)
+    public string? SpecDescription { get; set; } // Mô tả bản cấu hình
+    public string? ColorCode { get; set; } // Mã màu ngoại thất
+    public string? ColorName { get; set; } // Tên màu ngoại thất
+    public string? EngineNo { get; set; } // Số máy
+    public string StorageCode { get; set; } = ""; // Mã kho lưu bãi hiện tại
+    public string? StorageName { get; set; } // Tên kho lưu bãi
+    public string AssemblyStatus { get; set; } = "CKD"; // CBU | CKD | DKD
+    public string? ProductionMonth { get; set; } // Tháng sản xuất (YYYYMM)
+    public CarVinStatus Status { get; set; } = CarVinStatus.Available; // Trạng thái tồn kho
+    public string? MappedCarId { get; set; } // Mã CarId xe thương mại đang gán giữ VIN
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+}
+
+/// <summary>Phiên phân bổ & gán số khung VIN xe ô tô (DMS.Sales Auto_MapVIN / AutoMapVINController / DMS40.0.20.MapVIN.cs / 05_QUAN_LY_XE.md): quản lý đợt chạy phân bổ Map VIN cho các đơn đặt hàng/hợp đồng đại lý còn thiếu VIN, lưu mã đợt ATMVNo, phương thức phân bổ, tổng số xe xử lý và kết quả.</summary>
+public sealed class MapVinSession
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SessionNo { get; set; } = ""; // Số đợt phân bổ Map VIN (ATMVNo, vd: 2609MV0001)
+    public MapVinType MapType { get; set; } = MapVinType.Auto;
+    public MapVinMethod Method { get; set; } = MapVinMethod.Normal;
+    public MapVinSessionStatus Status { get; set; } = MapVinSessionStatus.Pending;
+    public string? DealerCode { get; set; } // Lọc theo đại lý nhận phân bổ (tùy chọn)
+    public string? ModelCode { get; set; } // Lọc theo model phân bổ (tùy chọn)
+    public int TotalRequested { get; set; } // Tổng số xe cần gán VIN trong phiên
+    public int TotalMapped { get; set; } // Số lượng xe đã gán thành công
+    public int TotalUnmapped { get; set; } // Số lượng xe chưa gán được / từ chối
+    public string? Remark { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelReason { get; set; }
+
+    public List<MapVinSessionDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết xe trong phiên phân bổ Map VIN (DMS.Sales Auto_MapVIN_Car_Car / Auto_MapVIN_MapRoundSpec): lưu liên kết giữa xe thương mại trong đơn hàng và số khung VIN kho bãi được phân bổ.</summary>
+public sealed class MapVinSessionDetail
+{
+    public long Id { get; set; }
+    public long SessionId { get; set; }
+    public string CarId { get; set; } = ""; // Mã xe thương mại Car_Car
+    public string? SoCode { get; set; } // Mã đơn đặt hàng / hợp đồng bán xe
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string? DealerName { get; set; }
+    public string ModelCode { get; set; } = ""; // Model xe
+    public string ModelName { get; set; } = "";
+    public string? SpecCode { get; set; }
+    public string? ColorCode { get; set; }
+    public string? ColorName { get; set; }
+    public string? Vin { get; set; } // Số khung VIN được gán (17 ký tự)
+    public string? EngineNo { get; set; } // Số máy
+    public string? StorageCode { get; set; } // Kho xuất xe
+    public string? StorageName { get; set; }
+    public MapVinDetailStatus Status { get; set; } = MapVinDetailStatus.Pending;
+    public string? RejectReason { get; set; } // Lý do chưa map được (hết xe kho, không khớp cấu hình...)
+    public DateTime? MappedAt { get; set; }
+    public string? MappedBy { get; set; }
+}
+
+/// <summary>Nhật ký kiểm toán vết Map VIN / Gỡ VIN / Đổi VIN xe ô tô (DMS.Sales MapVIN.cs Car_VIN_Map_HQ / Car_VIN_Unmap_HQ audit trail): lưu vết chi tiết từng thao tác gán hoặc gỡ số khung VIN.</summary>
+public sealed class MapVinAuditLog
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CarId { get; set; } = ""; // Mã xe thương mại
+    public string? Vin { get; set; } // Số khung VIN tác động
+    public string Action { get; set; } = ""; // "ManualMap" | "AutoMap" | "Unmap" | "SwapVin"
+    public string? SessionNo { get; set; } // Số đợt Map VIN liên quan
+    public string? Remark { get; set; } // Ghi chú / lý do gán hoặc gỡ
+    public string? PerformedBy { get; set; }
+    public DateTime PerformedAt { get; set; } = DateTime.Now;
+}
+
+
 
 
 
