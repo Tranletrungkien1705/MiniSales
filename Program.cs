@@ -73,6 +73,7 @@ builder.Services.AddScoped<IPaymentTransportInsService, PaymentTransportInsServi
 builder.Services.AddScoped<IPaymentAVNService, PaymentAVNService>();
 builder.Services.AddScoped<IPaymentPDIService, PaymentPDIService>();
 builder.Services.AddScoped<IDealerCustomerService, DealerCustomerService>();
+builder.Services.AddScoped<ICarPriceUpdateService, CarPriceUpdateService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5037,6 +5038,19 @@ app.MapDelete("/api/dealer-customers/{customerCode}", async (string customerCode
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
+
+// ===== Cập nhật giá xe ô tô (Car Price Update - DMS.Sales CarUpdPriceController / Car_Car_Update01_HQ) =====
+app.MapPost("/api/car-price-updates", async (UpdateCarPriceDto dto, ICarPriceUpdateService svc) =>
+{
+    try { return Results.Ok(await svc.UpdatePriceAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/car-price-updates/logs", async (ICarPriceUpdateService svc, string? carId, string? vin) =>
+    Results.Ok(await svc.GetLogsAsync(carId, vin))).RequireAuthorization();
+
+app.MapGet("/api/car-price-updates/stats", async (ICarPriceUpdateService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
 
 app.Run();
 

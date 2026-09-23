@@ -13189,6 +13189,57 @@ public static class Seeder
                 );
             }
 
+            // Nhật ký cập nhật giá xe ô tô (CarUpdPriceController / Car_Car_Update01_HQ)
+            if (!await db.CarPriceUpdateLogs.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.CarPriceUpdateLogs.AddRange(
+                    new CarPriceUpdateLog
+                    {
+                        OrgId = orgId,
+                        CarId = "CAR2026-SF2501",
+                        Vin = null,
+                        ModelCode = "SF25",
+                        DealerCode = "VN001",
+                        Action = CarPriceUpdateAction.UpdatePrice,
+                        OldUnitPriceActual = 1330000000m,
+                        NewUnitPriceActual = 1350000000m,
+                        OldPaymentStatus = "P",
+                        NewPaymentStatus = "P",
+                        Remark = "Điều chỉnh giá bán buôn thực tế theo chính sách bán hàng tháng",
+                        PerformedBy = "CHUYEN_VIEN_DIEU_PHOI_NPP",
+                        PerformedAt = DateTime.Now.AddDays(-5)
+                    },
+                    new CarPriceUpdateLog
+                    {
+                        OrgId = orgId,
+                        CarId = "CAR2026-TU2005",
+                        Vin = null,
+                        ModelCode = "TU20",
+                        DealerCode = "VN002",
+                        Action = CarPriceUpdateAction.UpdateMapVINRanking,
+                        OldPaymentStatus = "P",
+                        NewPaymentStatus = "P",
+                        Remark = "Cập nhật thứ tự ưu tiên Map VIN cho xe chờ phân bổ",
+                        PerformedBy = "CHUYEN_VIEN_DIEU_PHOI_NPP",
+                        PerformedAt = DateTime.Now.AddDays(-3)
+                    },
+                    new CarPriceUpdateLog
+                    {
+                        OrgId = orgId,
+                        CarId = "CAR2026-AC1409",
+                        Vin = null,
+                        ModelCode = "AC14",
+                        DealerCode = "VN003",
+                        Action = CarPriceUpdateAction.LockChangeVIN,
+                        OldPaymentStatus = "P",
+                        NewPaymentStatus = "P",
+                        Remark = "Khóa đổi số khung VIN theo yêu cầu điều phối",
+                        PerformedBy = "CHUYEN_VIEN_DIEU_PHOI_NPP",
+                        PerformedAt = DateTime.Now.AddDays(-2)
+                    }
+                );
+            }
+
             await db.SaveChangesAsync();
         }
     }

@@ -108,6 +108,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentAVNDetail> PaymentAVNDetails => Set<PaymentAVNDetail>();
     public DbSet<AvnUnitPriceMaster> AvnUnitPrices => Set<AvnUnitPriceMaster>();
     public DbSet<DealerCustomer> DealerCustomers => Set<DealerCustomer>();
+    public DbSet<CarPriceUpdateLog> CarPriceUpdateLogs => Set<CarPriceUpdateLog>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -477,5 +478,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerCustomer>().HasIndex(x => new { x.OrgId, x.IDCardNo });
         b.Entity<DealerCustomer>().Property(x => x.Gender).HasConversion<int>();
         b.Entity<DealerCustomer>().Property(x => x.CustomerType).HasConversion<int>();
+
+        b.Entity<CarPriceUpdateLog>().ToTable("CarPriceUpdateLogs");
+        b.Entity<CarPriceUpdateLog>().HasIndex(x => new { x.OrgId, x.CarId });
+        b.Entity<CarPriceUpdateLog>().Property(x => x.Action).HasConversion<int>();
     }
 }

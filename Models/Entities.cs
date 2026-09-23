@@ -1632,6 +1632,8 @@ public sealed class CarRecord
     public string? StorageName { get; set; } // Tên kho
     public string? SoCode { get; set; } // Mã đơn hàng bán xe gắn với xe (Sales Order)
     public decimal PriceActual { get; set; } // Giá bán buôn thực tế của xe (VNĐ)
+    public string PaymentStatus { get; set; } = "P"; // Trạng thái thanh toán của xe (Car_Car.PaymentStatus): 'P' = Chưa thanh toán xong, 'F' = Đã thanh toán đủ
+    public string? MapVINRanking { get; set; } // Thứ tự ưu tiên Map VIN (Car_Car.MapVINRanking), chỉ sửa được khi xe chưa gán VIN
     public decimal PaymentDepositAmount { get; set; } // Số tiền cọc đã thanh toán hoàn tất (VNĐ)
     public decimal GuaranteeAmount { get; set; } // Giá trị bảo lãnh ngân hàng đã mở cho xe (VNĐ)
     public decimal DutyCompletedAmount { get; set; } // Giá trị đã hoàn thành nghĩa vụ giao xe (VNĐ) = cọc + bảo lãnh
@@ -3815,4 +3817,26 @@ public sealed class DealerCustomer
     public string? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public string? UpdatedBy { get; set; }
+}
+
+/// <summary>Loại thao tác cập nhật giá xe ô tô (DMS.Sales CarUpdPriceController / Car_Car_Update01_HQ): UpdatePrice = cập nhật giá bán buôn thực tế, UpdateMapVINRanking = cập nhật thứ tự ưu tiên Map VIN, LockChangeVIN = khóa đổi số khung VIN.</summary>
+public enum CarPriceUpdateAction { UpdatePrice = 0, UpdateMapVINRanking = 1, LockChangeVIN = 2 }
+
+/// <summary>Nhật ký cập nhật giá xe ô tô (DMS.Sales CarUpdPriceController / Car_Car_Update01_HQ / MapVIN.cs): lưu vết mỗi lần NPP cập nhật giá bán buôn thực tế (UnitPriceActual) của xe, thứ tự ưu tiên Map VIN (MapVINRanking) hoặc khóa đổi số khung VIN (FlagAllowChangeVIN), kèm trạng thái thanh toán trước/sau khi cập nhật giá.</summary>
+public sealed class CarPriceUpdateLog
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CarId { get; set; } = ""; // Mã định danh xe hệ thống (Car_Car)
+    public string? Vin { get; set; } // Số khung VIN tại thời điểm cập nhật
+    public string ModelCode { get; set; } = ""; // Mã model xe
+    public string? DealerCode { get; set; } // Mã đại lý quản lý xe
+    public CarPriceUpdateAction Action { get; set; } = CarPriceUpdateAction.UpdatePrice; // Loại thao tác
+    public decimal? OldUnitPriceActual { get; set; } // Giá bán buôn thực tế trước khi cập nhật
+    public decimal? NewUnitPriceActual { get; set; } // Giá bán buôn thực tế sau khi cập nhật
+    public string? OldPaymentStatus { get; set; } // Trạng thái thanh toán trước khi cập nhật (P/F)
+    public string? NewPaymentStatus { get; set; } // Trạng thái thanh toán sau khi cập nhật (P/F)
+    public string? Remark { get; set; } // Ghi chú thao tác
+    public string? PerformedBy { get; set; } // Người thực hiện cập nhật
+    public DateTime PerformedAt { get; set; } = DateTime.Now; // Thời điểm thực hiện
 }
