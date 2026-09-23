@@ -3987,6 +3987,31 @@ public sealed class QuotaMaster
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
 }
+
+/// <summary>Ngân hàng đối tác (DMS.Sales Mst_Bank / Master.cs / Mst_Bank_Get|Create|Update|Delete|Import): danh mục ngân hàng cấp bảo lãnh / tài trợ cho đại lý mua xe. BankCode là khóa nghiệp vụ duy nhất; bắt buộc BankName. Các cờ nghiệp vụ: FlagPaymentBank (NH thanh toán), FlagMortageBank (NH hỗ trợ thế chấp/giải chấp), FlagMonitorBank (NH giám sát — chỉ chi hội sở BankCodeParent='ALL' mới được bật). BankCode được tham chiếu trong DealerContract (BankCodeMD), PaymentGuarantee, DealerPayment.</summary>
+public sealed class BankMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string BankCode { get; set; } = ""; // Mã ngân hàng (khóa nghiệp vụ duy nhất)
+    public string? BankCodeParent { get; set; } // Mã ngân hàng cha (chi hội sở dùng 'ALL')
+    public string? ProvinceCode { get; set; } // Mã tỉnh/thành (tham chiếu Mst_Province)
+    public string BankName { get; set; } = ""; // Tên ngân hàng (bắt buộc)
+    public string? PhoneNo { get; set; } // Số điện thoại liên hệ
+    public string? FaxNo { get; set; } // Số fax
+    public string? BenBankCode { get; set; } // Mã ngân hàng thụ hưởng
+    public string? Address { get; set; } // Địa chỉ chi nhánh
+    public string? PICEmail { get; set; } // Email người liên lạc (nhiều email cách nhau bởi dấu phẩy)
+    public string? PICName { get; set; } // Tên người liên lạc
+    public string FlagPaymentBank { get; set; } = "0"; // Cờ NH thanh toán (1 = có, 0 = không)
+    public string FlagMortageBank { get; set; } = "0"; // Cờ NH hỗ trợ thế chấp (1 = có, 0 = không)
+    public string FlagMonitorBank { get; set; } = "0"; // Cờ NH giám sát (1 = có, 0 = không; chỉ chi hội sở BankCodeParent='ALL')
+    public string? Remark { get; set; } // Ghi chú
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
 /// <summary>Loại vi phạm chế tài nhân viên bán hàng (DMS.Sales Mst_ViolateType.ViolateTypeId: TT = Tạm thời [có thời hạn], VV = Vĩnh viễn [không thời hạn]).</summary>
 public enum ViolateType { Temporary = 0, Permanent = 1 }
 

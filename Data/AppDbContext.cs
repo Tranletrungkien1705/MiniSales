@@ -118,6 +118,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<TransporterCar> TransporterCars => Set<TransporterCar>();
     public DbSet<TransporterDriver> TransporterDrivers => Set<TransporterDriver>();
     public DbSet<QuotaMaster> Quotas => Set<QuotaMaster>();
+    public DbSet<BankMaster> Banks => Set<BankMaster>();
     public DbSet<SalesManViolate> SalesManViolates => Set<SalesManViolate>();
     public DbSet<RearrangeTransportRequest> RearrangeTransportRequests => Set<RearrangeTransportRequest>();
     public DbSet<RearrangeTransportRequestDetail> RearrangeTransportRequestDetails => Set<RearrangeTransportRequestDetail>();
@@ -535,6 +536,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.DealerCode, x.SpecCode }).IsUnique();
         b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.SpecCode });
+
+        b.Entity<BankMaster>().ToTable("Banks");
+        b.Entity<BankMaster>().HasIndex(x => new { x.OrgId, x.BankCode }).IsUnique();
+        b.Entity<BankMaster>().HasIndex(x => new { x.OrgId, x.BankCodeParent });
 
         b.Entity<SalesManViolate>().ToTable("SalesManViolates");
         b.Entity<SalesManViolate>().HasIndex(x => new { x.OrgId, x.SMCode, x.ViolateNumber }).IsUnique();

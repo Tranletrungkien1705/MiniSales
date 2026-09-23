@@ -83,6 +83,7 @@ builder.Services.AddScoped<ISalesManViolateService, SalesManViolateService>();
 builder.Services.AddScoped<IRearrangeTransportRequestService, RearrangeTransportRequestService>();
 builder.Services.AddScoped<IOrderAllocationService, OrderAllocationService>();
 builder.Services.AddScoped<IDelayTransportService, DelayTransportService>();
+builder.Services.AddScoped<IBankService, BankService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5630,6 +5631,51 @@ app.MapDelete("/api/delay-transports/{storageCode}/{dealerCode}", async (string 
 }).RequireAuthorization();
 
 app.MapPost("/api/delay-transports/import", async (List<DelayTransportImportRowDto> rows, IDelayTransportService svc) =>
+{
+    try { return Results.Ok(await svc.ImportAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Danh mục Ngân hàng đối tác (Bank Master - DMS.Sales Mst_Bank / Master.cs / Mst_Bank_Get|Create|Update|Delete|Import) =====
+app.MapPost("/api/banks", async (CreateBankDto dto, IBankService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/banks", async (IBankService svc, string? keyWord, string? bankCode, string? flagActive) =>
+    Results.Ok(await svc.SearchAsync(keyWord, bankCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/banks/stats", async (IBankService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/banks/{bankCode}", async (string bankCode, IBankService svc) =>
+{
+    var r = await svc.GetAsync(bankCode);
+    return r is null ? Results.NotFound(new { bankCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/banks/{bankCode}", async (string bankCode, UpdateBankDto dto, IBankService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(bankCode, dto);
+        return r is null ? Results.NotFound(new { bankCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/banks/{bankCode}", async (string bankCode, IBankService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteAsync(bankCode);
+        return r ? Results.Ok(new { deleted = true, bankCode }) : Results.NotFound(new { bankCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banks/import", async (List<BankImportRowDto> rows, IBankService svc) =>
 {
     try { return Results.Ok(await svc.ImportAsync(rows)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }

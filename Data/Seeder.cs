@@ -3019,6 +3019,30 @@ public static class Seeder
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_Quotas_OrgId_DealerCode_SpecCode ON Quotas(OrgId, DealerCode, SpecCode);
                 CREATE INDEX IF NOT EXISTS IX_Quotas_OrgId_DealerCode ON Quotas(OrgId, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_Quotas_OrgId_SpecCode ON Quotas(OrgId, SpecCode);
+
+                CREATE TABLE IF NOT EXISTS Banks (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    BankCode TEXT NOT NULL,
+                    BankCodeParent TEXT,
+                    ProvinceCode TEXT,
+                    BankName TEXT NOT NULL,
+                    PhoneNo TEXT,
+                    FaxNo TEXT,
+                    BenBankCode TEXT,
+                    Address TEXT,
+                    PICEmail TEXT,
+                    PICName TEXT,
+                    FlagPaymentBank TEXT NOT NULL DEFAULT '0',
+                    FlagMortageBank TEXT NOT NULL DEFAULT '0',
+                    FlagMonitorBank TEXT NOT NULL DEFAULT '0',
+                    Remark TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_Banks_OrgId_BankCode ON Banks(OrgId, BankCode);
+                CREATE INDEX IF NOT EXISTS IX_Banks_OrgId_BankCodeParent ON Banks(OrgId, BankCodeParent);
             ");
         }
         catch
@@ -13484,6 +13508,18 @@ public static class Seeder
                     new QuotaMaster { OrgId = orgId, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", SpecCode = "TU20-2.0AT", SpecDescription = "Tucson 2.0 AT Tiêu chuẩn", ModelCode = "TU20", ModelName = "Tucson 2.0 AT", QtyQuota = 35m, FlagActive = "1", UpdateBy = "CHUYEN_VIEN_NPP", UpdateDTime = DateTime.Now.AddDays(-20), LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new QuotaMaster { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", SpecCode = "CR15-1.5AT", SpecDescription = "Creta 1.5 AT Cao Cấp", ModelCode = "CR15", ModelName = "Creta 1.5 Cao Cấp", QtyQuota = 25m, FlagActive = "1", UpdateBy = "CHUYEN_VIEN_NPP", UpdateDTime = DateTime.Now.AddDays(-15), LogLUDateTime = DateTime.Now.AddDays(-15), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new QuotaMaster { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", SpecCode = "AC14-1.4AT", SpecDescription = "Accent 1.4 AT Đặc biệt", ModelCode = "AC14", ModelName = "Accent 1.4 AT", QtyQuota = 40m, FlagActive = "1", UpdateBy = "CHUYEN_VIEN_NPP", UpdateDTime = DateTime.Now.AddDays(-15), LogLUDateTime = DateTime.Now.AddDays(-15), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Danh mục Ngân hàng đối tác (Mst_Bank / Master.cs / Mst_Bank_Get|Create|Update|Delete|Import)
+            if (!await db.Banks.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.Banks.AddRange(
+                    new BankMaster { OrgId = orgId, BankCode = "VCB", BankCodeParent = "ALL", ProvinceCode = "HN", BankName = "Ngân hàng TMCP Ngoại thương Việt Nam", PhoneNo = "02439341367", FaxNo = "02439341368", BenBankCode = "VCB", Address = "198 Trần Quang Khải, Hoàn Kiếm, Hà Nội", PICEmail = "cskh@vietcombank.com.vn", PICName = "Nguyễn Thị Hoa", FlagPaymentBank = "1", FlagMortageBank = "1", FlagMonitorBank = "1", Remark = "Ngân hàng bảo lãnh chính", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" },
+                    new BankMaster { OrgId = orgId, BankCode = "BIDV", BankCodeParent = "ALL", ProvinceCode = "HN", BankName = "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam", PhoneNo = "02422205588", FaxNo = "02422205589", BenBankCode = "BIDV", Address = "35 Hàng Vôi, Hoàn Kiếm, Hà Nội", PICEmail = "cskh@bidv.com.vn", PICName = "Trần Văn Nam", FlagPaymentBank = "1", FlagMortageBank = "1", FlagMonitorBank = "1", Remark = "Ngân hàng tài trợ vốn", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "SYSADMIN" },
+                    new BankMaster { OrgId = orgId, BankCode = "TCB", BankCodeParent = "ALL", ProvinceCode = "HN", BankName = "Ngân hàng TMCP Kỹ thương Việt Nam", PhoneNo = "02436366699", FaxNo = "02436366698", BenBankCode = "TCB", Address = "191 Bà Triệu, Hai Bà Trưng, Hà Nội", PICEmail = "cskh@techcombank.com.vn", PICName = "Lê Thị Mai", FlagPaymentBank = "1", FlagMortageBank = "1", FlagMonitorBank = "0", Remark = "Ngân hàng thanh toán", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" },
+                    new BankMaster { OrgId = orgId, BankCode = "VPB", BankCodeParent = "ALL", ProvinceCode = "HN", BankName = "Ngân hàng TMCP Việt Nam Thịnh Vượng", PhoneNo = "02439366688", FaxNo = "02439366689", BenBankCode = "VPB", Address = "89 Láng Hạ, Đống Đa, Hà Nội", PICEmail = "cskh@vpbank.com.vn", PICName = "Phạm Văn Dũng", FlagPaymentBank = "1", FlagMortageBank = "0", FlagMonitorBank = "0", Remark = "Ngân hàng giải ngân", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "SYSADMIN" },
+                    new BankMaster { OrgId = orgId, BankCode = "VIB", BankCodeParent = "ALL", ProvinceCode = "HN", BankName = "Ngân hàng TMCP Quốc tế Việt Nam", PhoneNo = "02439366655", FaxNo = "02439366656", BenBankCode = "VIB", Address = "Tòa nhà Sailing Tower, 111A Pasteur, Q.1, TP.HCM", PICEmail = "cskh@vib.com.vn", PICName = "Hoàng Thị Lan", FlagPaymentBank = "0", FlagMortageBank = "1", FlagMonitorBank = "0", Remark = "Ngân hàng thế chấp", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "SYSADMIN" }
                 );
             }
 
