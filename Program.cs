@@ -58,6 +58,7 @@ builder.Services.AddScoped<ICarInsuranceService, CarInsuranceService>();
 builder.Services.AddScoped<ITransportPlanService, TransportPlanService>();
 builder.Services.AddScoped<ISaleAwardMinutesService, SaleAwardMinutesService>();
 builder.Services.AddScoped<IBusinessPlanService, BusinessPlanService>();
+builder.Services.AddScoped<ICalcFnExpPmDcService, CalcFnExpPmDcService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -3167,6 +3168,119 @@ app.MapDelete("/api/business-plans/{planCode}", async (string planCode, IBusines
         return deleted ? Results.Ok(new { success = true, planCode }) : Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Bảng tính Chi phí Tài chính (CPTC) & Chiết khấu Thanh toán (CKTT) Mua buôn Xe Ô tô Đại lý - NPP (DMS.Sales DMS40_FnExp_Calc_FnExp_PmDc + DMS40_FnExp_Calc_FnExp_PmDcDtl / CalcFnExpPmDcController / DMS40.0.40.FnExp_PmtDisc.cs / CalcFnExpPmDc.txt) =====
+app.MapGet("/api/fnexp-calc/seq", async (string? dealerCode, ICalcFnExpPmDcService svc) =>
+    Results.Ok(await svc.GetSeqAsync(dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/fnexp-calc/eligible-cars", async (string? dealerCode, DateTime? termFrom, DateTime? termTo, ICalcFnExpPmDcService svc) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealerCode, termFrom, termTo))).RequireAuthorization();
+
+app.MapPost("/api/fnexp-calc/preview", async (PreviewFnExpCalcSheetDto dto, ICalcFnExpPmDcService svc) =>
+{
+    try { return Results.Ok(await svc.CalculatePreviewAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/fnexp-calc", async (
+    ICalcFnExpPmDcService svc,
+    string? dealerCode,
+    string? caNo,
+    FnExpStatus? status,
+    FnExpSignStatus? dlrSignStatus,
+    FnExpSignStatus? htcSignStatus,
+    DateTime? termFrom,
+    DateTime? termTo,
+    int page = 0,
+    int pageSize = 10) =>
+    Results.Ok(await svc.ListAsync(dealerCode, caNo, status, dlrSignStatus, htcSignStatus, termFrom, termTo, page, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/fnexp-calc/stats", async (string? dealerCode, ICalcFnExpPmDcService svc) =>
+    Results.Ok(await svc.StatsAsync(dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/fnexp-calc/{caNo}", async (string caNo, ICalcFnExpPmDcService svc) =>
+{
+    var r = await svc.DetailAsync(caNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính CPTC & CKTT {caNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/fnexp-calc", async (CreateFnExpCalcSheetDto dto, ICalcFnExpPmDcService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/fnexp-calc/{caNo}/confirm-dlr1", async (string caNo, ConfirmStep1DealerDto? dto, ICalcFnExpPmDcService svc) =>
+{
+    try
+    {
+        var r = await svc.ConfirmStep1DealerAsync(caNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/fnexp-calc/{caNo}/approve-hq1", async (string caNo, ApproveStep1HqDto? dto, ICalcFnExpPmDcService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveStep1HqAsync(caNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/fnexp-calc/{caNo}/approve-hq2", async (string caNo, ApproveStep2HqDto? dto, ICalcFnExpPmDcService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveStep2HqAsync(caNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/fnexp-calc/{caNo}/approve-dlr2", async (string caNo, ApproveStep2DealerDto? dto, ICalcFnExpPmDcService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveStep2DealerAsync(caNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/fnexp-calc/{caNo}/cancel", async (string caNo, CancelFnExpCalcSheetDto dto, ICalcFnExpPmDcService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(caNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/fnexp-calc/{caNo}", async (string caNo, ICalcFnExpPmDcService svc) =>
+{
+    try
+    {
+        var deleted = await svc.DeleteDraftAsync(caNo);
+        return deleted ? Results.Ok(new { success = true, caNo }) : Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/fnexp-calc/{caNo}/print-cptc", async (string caNo, ICalcFnExpPmDcService svc) =>
+{
+    var r = await svc.PrintCptcAsync(caNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapGet("/api/fnexp-calc/{caNo}/print-cktt", async (string caNo, ICalcFnExpPmDcService svc) =>
+{
+    var r = await svc.PrintCkttAsync(caNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng tính {caNo}" }) : Results.Ok(r);
 }).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).

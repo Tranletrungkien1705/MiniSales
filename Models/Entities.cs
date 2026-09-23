@@ -2254,4 +2254,109 @@ public sealed class BusinessPlanDetail
     public string? Remark { get; set; } // Ghi chú model
 }
 
+/// <summary>Trạng thái ký duyệt bảng tính Chi phí tài chính & Chiết khấu thanh toán (DMS.Sales DMS40_FnExp_Calc_FnExp_PmDc DlrSignStatus / HTCSignStatus: Pending = 'Pending', Approved1 = 'Approve1', Approved2 = 'Approve2', Cancelled = 'Cancel').</summary>
+public enum FnExpSignStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Cancelled = 3
+}
+
+/// <summary>Trạng thái tổng thể bảng tính Chi phí tài chính & Chiết khấu thanh toán (DMS.Sales DMS40_FnExp_Calc_FnExp_PmDc FnExpStatus: NotSign = 'NotSign' [Đang lưu nháp / chờ duyệt], Approved = 'Approved' [Đã duyệt 2 cấp hoàn tất], Cancelled = 'Cancel' [Đã hủy]).</summary>
+public enum FnExpStatus
+{
+    NotSign = 0,
+    Approved = 1,
+    Cancelled = 2
+}
+
+/// <summary>Bảng tính Hỗ trợ Chi phí tài chính (CPTC) & Chiết khấu thanh toán TCG (CKTT) Đại lý - NPP (DMS.Sales DMS40_FnExp_Calc_FnExp_PmDc / CalcFnExpPmDcController / DMS40.0.40.FnExp_PmtDisc.cs / CalcFnExpPmDc.txt): NPP tính toán định kỳ hỗ trợ lãi suất cọc chậm, bảo lãnh ngân hàng và chiết khấu thanh toán sớm cho đại lý theo kỳ tính (TermFrom -> TermTo) và kỳ đối chiếu trước (TermPrevFrom -> TermPrevTo), quy trình duyệt 2 cấp 2 bên (Đại lý đối soát bước 1 ConfirmMultiDL, HTC duyệt bước 1 ApproveMultiHQ; Lãnh đạo HTC duyệt bước 2 Approve2HQ sinh URL chứng từ FilePathFnExp & FilePathPmtDC, Lãnh đạo Đại lý duyệt bước 2 Approve2DL chốt quyết toán).</summary>
+public sealed class FnExpCalcSheet
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CaNo { get; set; } = ""; // Số bảng tính ({yyMMdd}-{seq:D3}/CPTC/{DealerCode}, vd: 260520-001/CPTC/VS058)
+    public string DealerCode { get; set; } = ""; // Mã đại lý (VS058, VN012...)
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public DateTime TermFrom { get; set; } // Kỳ tính hiện tại - Từ ngày
+    public DateTime TermTo { get; set; } // Kỳ tính hiện tại - Đến ngày
+    public DateTime TermPrevFrom { get; set; } // Kỳ tính trước - Từ ngày
+    public DateTime TermPrevTo { get; set; } // Kỳ tính trước - Đến ngày
+    public decimal FnExpPercent { get; set; } // % Chi phí tài chính CPTC (ví dụ: 5.5% / năm)
+    public decimal PmtDsTCGPercent { get; set; } // % Chiết khấu thanh toán CKTT (ví dụ: 2.0%)
+    public string? CAName { get; set; } // Tên bảng tính
+    public string? FlagEarlyCancel { get; set; } // Cờ hủy sớm (1/0)
+    public string FlagisHTC { get; set; } = "HTC"; // Pháp nhân ("HTC" / "HTV")
+    public FnExpSignStatus DlrSignStatus { get; set; } = FnExpSignStatus.Pending; // Trạng thái ký Đại lý (Pending -> Approved1 -> Approved2 / Cancelled)
+    public FnExpSignStatus HTCSignStatus { get; set; } = FnExpSignStatus.Pending; // Trạng thái ký HTC (Pending -> Approved1 -> Approved2 / Cancelled)
+    public FnExpStatus Status { get; set; } = FnExpStatus.NotSign; // Trạng thái bảng tính: NotSign -> Approved / Cancelled
+
+    public int TotalCars { get; set; } // Tổng số xe trong bảng tính
+    public decimal TotalFnDepositAmount { get; set; } // Tổng CPTC phần tiền cọc chậm
+    public decimal TotalFnGrtAmount { get; set; } // Tổng CPTC phần bảo lãnh thanh toán
+    public decimal TotalFnAmount { get; set; } // Tổng Chi phí tài chính = TotalFnDepositAmount + TotalFnGrtAmount
+    public decimal TotalPDAmount { get; set; } // Tổng Chiết khấu thanh toán sớm
+    public decimal NetSettlementAmount { get; set; } // Tổng số tiền thanh toán thực nhận / bù trừ = TotalPDAmount - TotalFnAmount
+
+    public string? FilePathFnExp { get; set; } // Đường dẫn / URL file chứng từ CPTC (được tạo sau khi HTC duyệt cấp 2)
+    public string? FilePathPmtDC { get; set; } // Đường dẫn / URL file chứng từ CKTT (được tạo sau khi HTC duyệt cấp 2)
+
+    public DateTime? DlrAppr1At { get; set; } // Thời gian Đại lý xác nhận cấp 1
+    public string? DlrAppr1By { get; set; } // Người Đại lý xác nhận cấp 1
+    public DateTime? HTCAppr1At { get; set; } // Thời gian HTC duyệt cấp 1
+    public string? HTCAppr1By { get; set; } // Người HTC duyệt cấp 1
+    public DateTime? DlrAppr2At { get; set; } // Thời gian Đại lý duyệt cấp 2
+    public string? DlrAppr2By { get; set; } // Người Đại lý duyệt cấp 2
+    public DateTime? HTCAppr2At { get; set; } // Thời gian HTC duyệt cấp 2
+    public string? HTCAppr2By { get; set; } // Người HTC duyệt cấp 2
+
+    public string? CancelReason { get; set; } // Lý do hủy bảng tính
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public string? Remark { get; set; } // Ghi chú chung
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string CreatedBy { get; set; } = "";
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+
+    public List<FnExpCalcSheetDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe trong Bảng tính Chi phí tài chính & Chiết khấu thanh toán (DMS.Sales DMS40_FnExp_Calc_FnExp_PmDcDtl): lưu vết thông tin từng xe (CarId, VIN, Giá bán, Ngày duyệt đơn, Hạn nghĩa vụ cọc, Thời hạn bảo lãnh, Ngày hoàn thành thanh toán 100%, Số ngày tính CPTC cọc/BL, Tiền CPTC và Số ngày hưởng CKTT sớm, Tiền CKTT).</summary>
+public sealed class FnExpCalcSheetDetail
+{
+    public long Id { get; set; }
+    public long SheetId { get; set; }
+    public string CaNo { get; set; } = "";
+    public string CarId { get; set; } = ""; // Mã xe hệ thống
+    public string Vin { get; set; } = ""; // Số khung VIN (17 ký tự)
+    public string ModelCode { get; set; } = ""; // Model xe
+    public string ModelName { get; set; } = ""; // Tên model xe
+    public decimal UnitPriceActual { get; set; } // Giá bán xe thực tế
+    public DateTime? CarCancelDate { get; set; } // Ngày xe hủy (nếu có)
+    public DateTime? SodApprovedDate { get; set; } // Ngày duyệt đơn đặt hàng (SO Approved Date)
+    public DateTime? SodDepositDutyEndDate { get; set; } // Ngày hết hạn nộp tiền cọc
+    public DateTime? DateStart { get; set; } // Ngày bắt đầu hiệu lực bảo lãnh
+    public DateTime? DateEnd { get; set; } // Ngày hết hạn hiệu lực bảo lãnh
+    public DateTime? TotalCompletedDate { get; set; } // Ngày thanh toán hoàn thành nghĩa vụ (>= 100% giá xe)
+    public decimal TermActual { get; set; } // Thời hạn thực tế của bảo lãnh (ngày)
+
+    public decimal FnDepositCountDate { get; set; } // Số ngày tính CPTC cọc chậm
+    public decimal FnDepositAmount { get; set; } // Số tiền CPTC cọc
+    public decimal FnGrtCountDate { get; set; } // Số ngày tính CPTC bảo lãnh
+    public decimal FnGrtAmount { get; set; } // Số tiền CPTC bảo lãnh
+    public decimal FnTotalAmount { get; set; } // Tổng CPTC xe = FnDepositAmount + FnGrtAmount
+
+    public decimal PDCountDate { get; set; } // Số ngày được hưởng CKTT sớm
+    public decimal PDAmount { get; set; } // Số tiền CKTT được hưởng
+
+    public FnExpStatus Status { get; set; } = FnExpStatus.NotSign; // Trạng thái dòng
+    public string? Remark { get; set; } // Ghi chú dòng xe
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+}
+
+
 

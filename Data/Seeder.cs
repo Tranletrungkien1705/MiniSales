@@ -1849,6 +1849,84 @@ public static class Seeder
                 );
                 CREATE INDEX IF NOT EXISTS IX_BusinessPlanDetails_BusinessPlanId ON BusinessPlanDetails(BusinessPlanId);
                 CREATE INDEX IF NOT EXISTS IX_BusinessPlanDetails_ModelCode ON BusinessPlanDetails(ModelCode);
+
+                CREATE TABLE IF NOT EXISTS FnExpCalcSheets (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CaNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    TermFrom TEXT NOT NULL,
+                    TermTo TEXT NOT NULL,
+                    TermPrevFrom TEXT NOT NULL,
+                    TermPrevTo TEXT NOT NULL,
+                    FnExpPercent REAL NOT NULL DEFAULT 5.5,
+                    PmtDsTCGPercent REAL NOT NULL DEFAULT 2.0,
+                    CAName TEXT,
+                    FlagEarlyCancel TEXT,
+                    FlagisHTC TEXT NOT NULL DEFAULT 'HTC',
+                    DlrSignStatus INTEGER NOT NULL DEFAULT 0,
+                    HTCSignStatus INTEGER NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    TotalFnDepositAmount REAL NOT NULL DEFAULT 0,
+                    TotalFnGrtAmount REAL NOT NULL DEFAULT 0,
+                    TotalFnAmount REAL NOT NULL DEFAULT 0,
+                    TotalPDAmount REAL NOT NULL DEFAULT 0,
+                    NetSettlementAmount REAL NOT NULL DEFAULT 0,
+                    FilePathFnExp TEXT,
+                    FilePathPmtDC TEXT,
+                    DlrAppr1At TEXT,
+                    DlrAppr1By TEXT,
+                    HTCAppr1At TEXT,
+                    HTCAppr1By TEXT,
+                    DlrAppr2At TEXT,
+                    DlrAppr2By TEXT,
+                    HTCAppr2At TEXT,
+                    HTCAppr2By TEXT,
+                    CancelReason TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT,
+                    Remark TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT NOT NULL,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_FnExpCalcSheets_OrgId_CaNo ON FnExpCalcSheets(OrgId, CaNo);
+                CREATE INDEX IF NOT EXISTS IX_FnExpCalcSheets_OrgId_Dealer_Term ON FnExpCalcSheets(OrgId, DealerCode, TermFrom, TermTo);
+
+                CREATE TABLE IF NOT EXISTS FnExpCalcSheetDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SheetId INTEGER NOT NULL,
+                    CaNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    UnitPriceActual REAL NOT NULL DEFAULT 0,
+                    CarCancelDate TEXT,
+                    SodApprovedDate TEXT,
+                    SodDepositDutyEndDate TEXT,
+                    DateStart TEXT,
+                    DateEnd TEXT,
+                    TotalCompletedDate TEXT,
+                    TermActual REAL NOT NULL DEFAULT 60,
+                    FnDepositCountDate REAL NOT NULL DEFAULT 0,
+                    FnDepositAmount REAL NOT NULL DEFAULT 0,
+                    FnGrtCountDate REAL NOT NULL DEFAULT 0,
+                    FnGrtAmount REAL NOT NULL DEFAULT 0,
+                    FnTotalAmount REAL NOT NULL DEFAULT 0,
+                    PDCountDate REAL NOT NULL DEFAULT 0,
+                    PDAmount REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT,
+                    FOREIGN KEY(SheetId) REFERENCES FnExpCalcSheets(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_FnExpCalcSheetDetails_SheetId ON FnExpCalcSheetDetails(SheetId);
+                CREATE INDEX IF NOT EXISTS IX_FnExpCalcSheetDetails_Vin ON FnExpCalcSheetDetails(Vin);
             ");
         }
         catch
@@ -8337,6 +8415,266 @@ public static class Seeder
             };
 
             db.BusinessPlans.AddRange(plan1, plan2, plan3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.FnExpCalcSheets.AnyAsync())
+        {
+            var sheet1 = new FnExpCalcSheet
+            {
+                OrgId = orgId,
+                CaNo = "260320-001/CPTC/VS058",
+                DealerCode = "VS058",
+                DealerName = "Hyundai Bình Dương",
+                TermFrom = new DateTime(2026, 3, 1),
+                TermTo = new DateTime(2026, 3, 31),
+                TermPrevFrom = new DateTime(2026, 2, 1),
+                TermPrevTo = new DateTime(2026, 2, 28),
+                FnExpPercent = 5.5m,
+                PmtDsTCGPercent = 2.0m,
+                CAName = "Bảng tính CPTC & CKTT kỳ 03/2026 - Hyundai Bình Dương",
+                FlagEarlyCancel = "0",
+                FlagisHTC = "HTC",
+                DlrSignStatus = FnExpSignStatus.Approved2,
+                HTCSignStatus = FnExpSignStatus.Approved2,
+                Status = FnExpStatus.Approved,
+                TotalCars = 3,
+                TotalFnDepositAmount = 1450000m,
+                TotalFnGrtAmount = 2650000m,
+                TotalFnAmount = 4100000m,
+                TotalPDAmount = 11850000m,
+                NetSettlementAmount = 7750000m,
+                FilePathFnExp = "https://ftest.ecore.vn/20260320/CPTC_260320-001_CPTC_VS058.xlsx",
+                FilePathPmtDC = "https://ftest.ecore.vn/20260320/CKTT_260320-001_CPTC_VS058.xlsx",
+                DlrAppr1At = new DateTime(2026, 3, 20, 10, 15, 0),
+                DlrAppr1By = "VS058_ACCOUNTANT",
+                HTCAppr1At = new DateTime(2026, 3, 20, 14, 30, 0),
+                HTCAppr1By = "HTC_FIN_SPECIALIST",
+                DlrAppr2At = new DateTime(2026, 3, 21, 9, 0, 0),
+                DlrAppr2By = "VS058_DIRECTOR",
+                HTCAppr2At = new DateTime(2026, 3, 21, 11, 20, 0),
+                HTCAppr2By = "HTC_FINANCE_DIRECTOR",
+                Remark = "Đã quyết toán hoàn tất CPTC và chiết khấu thanh toán sớm kỳ 03/2026",
+                CreatedAt = new DateTime(2026, 3, 20, 8, 30, 0),
+                CreatedBy = "HTC_FIN_SPECIALIST",
+                Details = new List<FnExpCalcSheetDetail>
+                {
+                    new()
+                    {
+                        CaNo = "260320-001/CPTC/VS058",
+                        CarId = "2603C101-ACCENT",
+                        Vin = "KMHCT41BPST030101",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent 1.5 AT Đặc Biệt",
+                        UnitPriceActual = 569000000m,
+                        SodApprovedDate = new DateTime(2026, 2, 10),
+                        SodDepositDutyEndDate = new DateTime(2026, 2, 17),
+                        DateStart = new DateTime(2026, 2, 20),
+                        DateEnd = new DateTime(2026, 4, 20),
+                        TotalCompletedDate = new DateTime(2026, 3, 10),
+                        TermActual = 60,
+                        FnDepositCountDate = 10,
+                        FnDepositAmount = 391188m,
+                        FnGrtCountDate = 0,
+                        FnGrtAmount = 0,
+                        FnTotalAmount = 391188m,
+                        PDCountDate = 41,
+                        PDAmount = 2592078m,
+                        Status = FnExpStatus.Approved,
+                        Remark = "Thanh toán sớm 41 ngày trước hạn bảo lãnh"
+                    },
+                    new()
+                    {
+                        CaNo = "260320-001/CPTC/VS058",
+                        CarId = "2603C102-CRETA",
+                        Vin = "KMHCT41BPST030102",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta B-SUV 1.5 Cao Cấp",
+                        UnitPriceActual = 699000000m,
+                        SodApprovedDate = new DateTime(2026, 2, 12),
+                        SodDepositDutyEndDate = new DateTime(2026, 2, 19),
+                        DateStart = new DateTime(2026, 2, 22),
+                        DateEnd = new DateTime(2026, 4, 22),
+                        TotalCompletedDate = new DateTime(2026, 3, 15),
+                        TermActual = 60,
+                        FnDepositCountDate = 15,
+                        FnDepositAmount = 720844m,
+                        FnGrtCountDate = 0,
+                        FnGrtAmount = 0,
+                        FnTotalAmount = 720844m,
+                        PDCountDate = 38,
+                        PDAmount = 2951333m,
+                        Status = FnExpStatus.Approved,
+                        Remark = "Thanh toán sớm 38 ngày trước hạn bảo lãnh"
+                    },
+                    new()
+                    {
+                        CaNo = "260320-001/CPTC/VS058",
+                        CarId = "2603C103-TUCSON",
+                        Vin = "KMHCT41BPST030103",
+                        ModelCode = "TUCSON",
+                        ModelName = "Hyundai Tucson 1.6 Turbo AWD",
+                        UnitPriceActual = 959000000m,
+                        SodApprovedDate = new DateTime(2026, 2, 15),
+                        SodDepositDutyEndDate = new DateTime(2026, 2, 22),
+                        DateStart = new DateTime(2026, 2, 25),
+                        DateEnd = new DateTime(2026, 4, 25),
+                        TotalCompletedDate = new DateTime(2026, 3, 5),
+                        TermActual = 60,
+                        FnDepositCountDate = 5,
+                        FnDepositAmount = 337968m,
+                        FnGrtCountDate = 10,
+                        FnGrtAmount = 2650000m,
+                        FnTotalAmount = 2987968m,
+                        PDCountDate = 51,
+                        PDAmount = 6306589m,
+                        Status = FnExpStatus.Approved,
+                        Remark = "Thanh toán sớm 51 ngày trước hạn bảo lãnh"
+                    }
+                }
+            };
+
+            var sheet2 = new FnExpCalcSheet
+            {
+                OrgId = orgId,
+                CaNo = "260322-001/CPTC/VN012",
+                DealerCode = "VN012",
+                DealerName = "Hyundai Hà Đông",
+                TermFrom = new DateTime(2026, 3, 1),
+                TermTo = new DateTime(2026, 3, 31),
+                TermPrevFrom = new DateTime(2026, 2, 1),
+                TermPrevTo = new DateTime(2026, 2, 28),
+                FnExpPercent = 5.5m,
+                PmtDsTCGPercent = 2.0m,
+                CAName = "Bảng tính CPTC & CKTT kỳ 03/2026 - Hyundai Hà Đông",
+                FlagEarlyCancel = "0",
+                FlagisHTC = "HTC",
+                DlrSignStatus = FnExpSignStatus.Approved1,
+                HTCSignStatus = FnExpSignStatus.Approved1,
+                Status = FnExpStatus.NotSign,
+                TotalCars = 2,
+                TotalFnDepositAmount = 850000m,
+                TotalFnGrtAmount = 0,
+                TotalFnAmount = 850000m,
+                TotalPDAmount = 6500000m,
+                NetSettlementAmount = 5650000m,
+                DlrAppr1At = new DateTime(2026, 3, 22, 11, 0, 0),
+                DlrAppr1By = "VN012_ACCOUNTANT",
+                HTCAppr1At = new DateTime(2026, 3, 22, 15, 30, 0),
+                HTCAppr1By = "HTC_FIN_SPECIALIST",
+                Remark = "Đại lý và HTC đã đối soát bước 1, chờ Lãnh đạo HTC phê duyệt cấp 2",
+                CreatedAt = new DateTime(2026, 3, 22, 9, 0, 0),
+                CreatedBy = "HTC_FIN_SPECIALIST",
+                Details = new List<FnExpCalcSheetDetail>
+                {
+                    new()
+                    {
+                        CaNo = "260322-001/CPTC/VN012",
+                        CarId = "2603C201-SANTAFE",
+                        Vin = "KMHCT41BPST030201",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe 2.5 All New Cao Cấp",
+                        UnitPriceActual = 1369000000m,
+                        SodApprovedDate = new DateTime(2026, 2, 18),
+                        SodDepositDutyEndDate = new DateTime(2026, 2, 25),
+                        DateStart = new DateTime(2026, 2, 28),
+                        DateEnd = new DateTime(2026, 4, 28),
+                        TotalCompletedDate = new DateTime(2026, 3, 12),
+                        TermActual = 60,
+                        FnDepositCountDate = 12,
+                        FnDepositAmount = 850000m,
+                        FnGrtCountDate = 0,
+                        FnGrtAmount = 0,
+                        FnTotalAmount = 850000m,
+                        PDCountDate = 47,
+                        PDAmount = 3574722m,
+                        Status = FnExpStatus.NotSign,
+                        Remark = "Thanh toán sớm 47 ngày"
+                    },
+                    new()
+                    {
+                        CaNo = "260322-001/CPTC/VN012",
+                        CarId = "2603C202-CRETA",
+                        Vin = "KMHCT41BPST030202",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta B-SUV 1.5 Tiêu Chuẩn",
+                        UnitPriceActual = 599000000m,
+                        SodApprovedDate = new DateTime(2026, 2, 20),
+                        SodDepositDutyEndDate = new DateTime(2026, 2, 27),
+                        DateStart = new DateTime(2026, 3, 2),
+                        DateEnd = new DateTime(2026, 5, 2),
+                        TotalCompletedDate = new DateTime(2026, 3, 18),
+                        TermActual = 60,
+                        FnDepositCountDate = 0,
+                        FnDepositAmount = 0,
+                        FnGrtCountDate = 0,
+                        FnGrtAmount = 0,
+                        FnTotalAmount = 0,
+                        PDCountDate = 45,
+                        PDAmount = 2925278m,
+                        Status = FnExpStatus.NotSign,
+                        Remark = "Thanh toán sớm 45 ngày"
+                    }
+                }
+            };
+
+            var sheet3 = new FnExpCalcSheet
+            {
+                OrgId = orgId,
+                CaNo = "260323-001/CPTC/VN065",
+                DealerCode = "VN065",
+                DealerName = "Hyundai Phạm Văn Đồng",
+                TermFrom = new DateTime(2026, 3, 1),
+                TermTo = new DateTime(2026, 3, 31),
+                TermPrevFrom = new DateTime(2026, 2, 1),
+                TermPrevTo = new DateTime(2026, 2, 28),
+                FnExpPercent = 5.5m,
+                PmtDsTCGPercent = 2.0m,
+                CAName = "Bảng tính CPTC & CKTT kỳ 03/2026 - Hyundai Phạm Văn Đồng",
+                FlagEarlyCancel = "0",
+                FlagisHTC = "HTC",
+                DlrSignStatus = FnExpSignStatus.Pending,
+                HTCSignStatus = FnExpSignStatus.Pending,
+                Status = FnExpStatus.NotSign,
+                TotalCars = 1,
+                TotalFnDepositAmount = 350000m,
+                TotalFnGrtAmount = 0,
+                TotalFnAmount = 350000m,
+                TotalPDAmount = 2350000m,
+                NetSettlementAmount = 2000000m,
+                Remark = "Bảng tính mới tạo, gửi đại lý đối soát số liệu",
+                CreatedAt = new DateTime(2026, 3, 23, 14, 0, 0),
+                CreatedBy = "HTC_FIN_SPECIALIST",
+                Details = new List<FnExpCalcSheetDetail>
+                {
+                    new()
+                    {
+                        CaNo = "260323-001/CPTC/VN065",
+                        CarId = "2603C301-ELANTRA",
+                        Vin = "KMHCT41BPST030301",
+                        ModelCode = "ELANTRA",
+                        ModelName = "Hyundai Elantra N-Line Turbo",
+                        UnitPriceActual = 769000000m,
+                        SodApprovedDate = new DateTime(2026, 2, 25),
+                        SodDepositDutyEndDate = new DateTime(2026, 3, 4),
+                        DateStart = new DateTime(2026, 3, 5),
+                        DateEnd = new DateTime(2026, 5, 5),
+                        TotalCompletedDate = new DateTime(2026, 3, 20),
+                        TermActual = 60,
+                        FnDepositCountDate = 16,
+                        FnDepositAmount = 350000m,
+                        FnGrtCountDate = 0,
+                        FnGrtAmount = 0,
+                        FnTotalAmount = 350000m,
+                        PDCountDate = 46,
+                        PDAmount = 2350000m,
+                        Status = FnExpStatus.NotSign,
+                        Remark = "Chờ đại lý xác nhận đối soát"
+                    }
+                }
+            };
+
+            db.FnExpCalcSheets.AddRange(sheet1, sheet2, sheet3);
             await db.SaveChangesAsync();
         }
     }

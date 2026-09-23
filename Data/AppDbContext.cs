@@ -75,6 +75,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<SaleAwardMinutesDetail> SaleAwardMinutesDetails => Set<SaleAwardMinutesDetail>();
     public DbSet<BusinessPlan> BusinessPlans => Set<BusinessPlan>();
     public DbSet<BusinessPlanDetail> BusinessPlanDetails => Set<BusinessPlanDetail>();
+    public DbSet<FnExpCalcSheet> FnExpCalcSheets => Set<FnExpCalcSheet>();
+    public DbSet<FnExpCalcSheetDetail> FnExpCalcSheetDetails => Set<FnExpCalcSheetDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -249,5 +251,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<BusinessPlan>().Property(x => x.Status).HasConversion<int>();
         b.Entity<BusinessPlan>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.BusinessPlanId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<BusinessPlanDetail>().ToTable("BusinessPlanDetails");
+        b.Entity<FnExpCalcSheet>().ToTable("FnExpCalcSheets");
+        b.Entity<FnExpCalcSheet>().HasIndex(x => new { x.OrgId, x.CaNo }).IsUnique();
+        b.Entity<FnExpCalcSheet>().HasIndex(x => new { x.OrgId, x.DealerCode, x.TermFrom, x.TermTo });
+        b.Entity<FnExpCalcSheet>().Property(x => x.DlrSignStatus).HasConversion<int>();
+        b.Entity<FnExpCalcSheet>().Property(x => x.HTCSignStatus).HasConversion<int>();
+        b.Entity<FnExpCalcSheet>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<FnExpCalcSheet>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.SheetId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<FnExpCalcSheetDetail>().ToTable("FnExpCalcSheetDetails");
+        b.Entity<FnExpCalcSheetDetail>().HasIndex(x => x.Vin);
+        b.Entity<FnExpCalcSheetDetail>().HasIndex(x => x.CarId);
+        b.Entity<FnExpCalcSheetDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }
