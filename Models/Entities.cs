@@ -2570,6 +2570,90 @@ public sealed class PlanEstimateOrderDetail
     public string? Remark { get; set; } // Ghi chú dòng xe
 }
 
+/// <summary>Loại danh sách đóng gói xe nhập khẩu (DMS.Sales CT_PackingList PLType: CBU = 0 [Xe nguyên chiếc nhập khẩu], CKD = 1 [Bộ linh kiện rời lắp ráp]).</summary>
+public enum PackingListType
+{
+    CBU = 0,
+    CKD = 1
+}
+
+/// <summary>Trạng thái Danh sách đóng gói / Lô xe nhập khẩu (DMS.Sales CT_PackingList PLStatus: Draft = 'Draft' [Nháp/chờ xếp tàu], Shipping = 'Shipping' [Đang vận chuyển đường biển], PortArrived = 'PortArrived' [Đã cập cảng biển/kiểm hóa], Completed = 'Completed' [Nghiệm thu nhập kho hoàn tất], Cancelled = 'Cancelled' [Đã hủy lô]).</summary>
+public enum PackingListStatus
+{
+    Draft = 0,
+    Shipping = 1,
+    PortArrived = 2,
+    Completed = 3,
+    Cancelled = 4
+}
+
+/// <summary>Trạng thái từng xe ô tô trong Packing List (DMS.Sales Car_VINForPL / CT_PackingListDetail Status: Draft = 0, OnBoard = 1, PortArrived = 2, StockIn = 3, Cancelled = 4).</summary>
+public enum PackingListDetailStatus
+{
+    Draft = 0,
+    OnBoard = 1,
+    PortArrived = 2,
+    StockIn = 3,
+    Cancelled = 4
+}
+
+/// <summary>Quản lý Danh sách Đóng gói / Lô xe Ô tô Nhập khẩu Packing List & Lịch trình Vận chuyển Tàu biển / Nghiệm thu Cảng biển (DMS.Sales CT_PackingList + Car_VINForPL / CTPackingListController.cs / CTPackingList.txt / 05_QUAN_LY_XE.md / PL.xlsx): Quản lý tiếp nhận lô xe nhập khẩu từ Hyundai Motor Company (HMC) theo Hợp đồng ngoại thương (ContractNo) và Thư tín dụng thanh toán quốc tế (LCNo), theo dõi hải trình tàu biển (VesselName, VoyageNo, ShippingDateStart, ShippingDateEndExpected, ShippingDateEnd), giám định tình trạng hư hại trầy xước vỏ xe trong vận chuyển đường biển (FlagRepair, RepairRemark) và nghiệm thu nhập kho bãi lưu trữ, tự động cấp số khung VIN vào kho xe khả dụng sẵn sàng cho Map VIN.</summary>
+public sealed class PackingList
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PackingListNo { get; set; } = ""; // Mã Packing List ({yyMM}PL{seq:D4}, vd: 2603PL0001)
+    public string ContractNo { get; set; } = ""; // Số hợp đồng ngoại thương (HMC-2026-VN01...)
+    public string? LCNo { get; set; } // Số thư tín dụng L/C (LC2601001...)
+    public string PortCode { get; set; } = ""; // Mã cảng tiếp nhận (CANG_CAT_LAI, CANG_HAI_PHONG, CANG_DA_NANG, CANG_CAI_MEP...)
+    public string? PortName { get; set; } // Tên cảng tiếp nhận
+    public PackingListType PLType { get; set; } = PackingListType.CBU; // Loại hình: CBU (xe nguyên chiếc) / CKD (linh kiện)
+    public PackingListStatus Status { get; set; } = PackingListStatus.Draft; // Trạng thái PL
+    public DateTime? ShippingDateStart { get; set; } // Ngày tàu xuất phát rời cảng nước ngoài (ETD / OnBoard Date)
+    public DateTime? ShippingDateEndExpected { get; set; } // Ngày dự kiến tàu cập cảng đích (ETA)
+    public DateTime? ShippingDateEnd { get; set; } // Ngày thực tế tàu cập cảng đích (ATA / Port Arrived Date)
+    public string? VesselName { get; set; } // Tên tàu vận tải chuyên dụng chở ô tô (vd: GLOVIS COURAGE, MORNING CAROLINE...)
+    public string? VoyageNo { get; set; } // Số chuyến hải trình (vd: V2603S)
+    public int TotalCars { get; set; } // Tổng số lượng xe trong lô Packing List
+    public int TotalRepaired { get; set; } // Tổng số xe phát hiện trầy xước/lỗi vận chuyển cần khắc phục sửa chữa
+    public string? Remark { get; set; } // Ghi chú lô xe
+    public string? CancelReason { get; set; } // Lý do hủy lô xe
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<PackingListDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Packing List nhập khẩu (DMS.Sales Car_VINForPL / CT_PackingListDetail): Quản lý từng số khung xe VIN 17 ký tự, số máy, mã chìa khóa, model xe, phiên bản cấu hình, mã màu ngoại thất, lệnh sản xuất HMC, cờ đánh dấu hư hại xước xát vỏ xe do vận chuyển biển (FlagRepair), ghi chú sửa chữa và kho lưu bãi tiếp nhận.</summary>
+public sealed class PackingListDetail
+{
+    public long Id { get; set; }
+    public long PackingListId { get; set; }
+    public string PackingListNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN)
+    public string? EngineNo { get; set; } // Số máy
+    public string? KeyNo { get; set; } // Mã chìa khóa xe
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, PALISADE, IONIQ5, TUCSON, CRETA, CUSTIN, ACCENT...)
+    public string ModelName { get; set; } = ""; // Tên model xe
+    public string? SpecCode { get; set; } // Mã cấu hình xe (SF25-PRE-01, PL22-EXC-01...)
+    public string? SpecDescription { get; set; } // Mô tả bản xe
+    public string? ColorCode { get; set; } // Mã màu ngoại thất (WW2, NKA, MB1, WH1, R3R...)
+    public string? ColorName { get; set; } // Tên màu xe
+    public string? WorkOrderNo { get; set; } // Lệnh sản xuất HMC (WO-HMC-2026-001)
+    public string? ProductionMonth { get; set; } // Tháng sản xuất xe tại HMC (yyyy-MM)
+    public bool FlagRepair { get; set; } = false; // Cờ xe phát hiện lỗi/hư hại vận chuyển đường biển cần sửa chữa
+    public string? RepairRemark { get; set; } // Biên bản giám định hư hại / ghi chú sửa chữa xe
+    public string? StorageCodeCurrent { get; set; } // Kho tiếp nhận lưu bãi hiện tại (KHO_TONG_HN, KHO_TONG_SG, KHO_CANG_HP, KHO_CANG_CL...)
+    public DateTime? StoreDate { get; set; } // Ngày thực tế xe nhập kho bãi lưu trữ
+    public PackingListDetailStatus Status { get; set; } = PackingListDetailStatus.Draft; // Trạng thái dòng xe
+    public string? Remark { get; set; }
+}
+
+
 
 
 

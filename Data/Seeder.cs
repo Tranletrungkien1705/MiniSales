@@ -2083,6 +2083,64 @@ public static class Seeder
                 );
                 CREATE INDEX IF NOT EXISTS IX_PlanEstimateOrderDetails_PLEOrdNo ON PlanEstimateOrderDetails(PLEOrdNo);
                 CREATE INDEX IF NOT EXISTS IX_PlanEstimateOrderDetails_ModelCode ON PlanEstimateOrderDetails(ModelCode);
+
+                CREATE TABLE IF NOT EXISTS PackingLists (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PackingListNo TEXT NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    LCNo TEXT,
+                    PortCode TEXT NOT NULL,
+                    PortName TEXT,
+                    PLType INTEGER NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    ShippingDateStart TEXT,
+                    ShippingDateEndExpected TEXT,
+                    ShippingDateEnd TEXT,
+                    VesselName TEXT,
+                    VoyageNo TEXT,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    TotalRepaired INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    CancelReason TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PackingLists_OrgId_PackingListNo ON PackingLists(OrgId, PackingListNo);
+                CREATE INDEX IF NOT EXISTS IX_PackingLists_OrgId_ContractNo ON PackingLists(OrgId, ContractNo);
+                CREATE INDEX IF NOT EXISTS IX_PackingLists_OrgId_LCNo ON PackingLists(OrgId, LCNo);
+                CREATE INDEX IF NOT EXISTS IX_PackingLists_OrgId_PortCode ON PackingLists(OrgId, PortCode);
+
+                CREATE TABLE IF NOT EXISTS PackingListDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PackingListId INTEGER NOT NULL,
+                    PackingListNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    EngineNo TEXT,
+                    KeyNo TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    WorkOrderNo TEXT,
+                    ProductionMonth TEXT,
+                    FlagRepair INTEGER NOT NULL DEFAULT 0,
+                    RepairRemark TEXT,
+                    StorageCodeCurrent TEXT,
+                    StoreDate TEXT,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    FOREIGN KEY(PackingListId) REFERENCES PackingLists(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_PackingListDetails_PackingListNo ON PackingListDetails(PackingListNo);
+                CREATE INDEX IF NOT EXISTS IX_PackingListDetails_Vin ON PackingListDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_PackingListDetails_ModelCode ON PackingListDetails(ModelCode);
             ");
         }
         catch
@@ -9443,6 +9501,304 @@ public static class Seeder
             };
 
             db.PlanEstimateOrders.AddRange(ple1, ple2, ple3, ple4);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.PackingLists.AnyAsync(o => o.OrgId == orgId))
+        {
+            var pl1 = new PackingList
+            {
+                OrgId = orgId,
+                PackingListNo = "2603PL0001",
+                ContractNo = "HMC-2026-VN01",
+                LCNo = "LC2601001",
+                PortCode = "CANG_CAT_LAI",
+                PortName = "Cảng Cát Lái (TP. Hồ Chí Minh)",
+                PLType = PackingListType.CBU,
+                Status = PackingListStatus.Completed,
+                ShippingDateStart = DateTime.Today.AddDays(-22),
+                ShippingDateEndExpected = DateTime.Today.AddDays(-12),
+                ShippingDateEnd = DateTime.Today.AddDays(-11),
+                VesselName = "GLOVIS COURAGE",
+                VoyageNo = "V2603S",
+                TotalCars = 3,
+                TotalRepaired = 1,
+                Remark = "Lô xe nguyên chiếc CBU nhập khẩu từ Ulsan HMC cập cảng Cát Lái, đã thông quan và nghiệm thu nhập kho an toàn",
+                CreatedBy = "IMPORT_HQ_SPECIALIST",
+                CreatedAt = DateTime.Today.AddDays(-25),
+                LUDateTime = DateTime.Today.AddDays(-10),
+                LUBy = "WAREHOUSE_MANAGER_SG",
+                Details = new List<PackingListDetail>
+                {
+                    new()
+                    {
+                        PackingListNo = "2603PL0001",
+                        Vin = "KMHE281BBSB200001",
+                        EngineNo = "G4KP-200001",
+                        KeyNo = "K2001",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All-New",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 HTRAC Xăng Cao Cấp nhập khẩu",
+                        ColorCode = "WW2",
+                        ColorName = "Trắng ngọc trai",
+                        WorkOrderNo = "WO-HMC-202602-011",
+                        ProductionMonth = "2026-02",
+                        FlagRepair = false,
+                        StorageCodeCurrent = "KHO_TONG_SG",
+                        StoreDate = DateTime.Today.AddDays(-10),
+                        Status = PackingListDetailStatus.StockIn,
+                        Remark = "Xe hoàn hảo nguyên trạng"
+                    },
+                    new()
+                    {
+                        PackingListNo = "2603PL0001",
+                        Vin = "KMHE281BBSB200002",
+                        EngineNo = "D4HB-200002",
+                        KeyNo = "K2002",
+                        ModelCode = "PALISADE",
+                        ModelName = "Hyundai Palisade Exclusive",
+                        SpecCode = "PL22-EXC-01",
+                        SpecDescription = "Palisade 2.2D Exclusive 7 chỗ CBU",
+                        ColorCode = "BK1",
+                        ColorName = "Đen Ánh Kim",
+                        WorkOrderNo = "WO-HMC-202602-012",
+                        ProductionMonth = "2026-02",
+                        FlagRepair = true,
+                        RepairRemark = "Xước nhẹ lớp màng bảo vệ cản sau do cọ xát dây chằng trên boong tàu, đã xử lý sơn bóng đạt chuẩn KCS xuất xưởng",
+                        StorageCodeCurrent = "KHO_TONG_SG",
+                        StoreDate = DateTime.Today.AddDays(-10),
+                        Status = PackingListDetailStatus.StockIn,
+                        Remark = "Đã sửa chữa và nghiệm thu đạt KCS"
+                    },
+                    new()
+                    {
+                        PackingListNo = "2603PL0001",
+                        Vin = "KMHE281BBSB200003",
+                        EngineNo = "G4KP-200003",
+                        KeyNo = "K2003",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All-New",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 HTRAC Xăng Cao Cấp nhập khẩu",
+                        ColorCode = "MB1",
+                        ColorName = "Xanh ánh kim",
+                        WorkOrderNo = "WO-HMC-202602-013",
+                        ProductionMonth = "2026-02",
+                        FlagRepair = false,
+                        StorageCodeCurrent = "KHO_TONG_SG",
+                        StoreDate = DateTime.Today.AddDays(-10),
+                        Status = PackingListDetailStatus.StockIn,
+                        Remark = "Xe hoàn hảo nguyên trạng"
+                    }
+                }
+            };
+
+            var pl2 = new PackingList
+            {
+                OrgId = orgId,
+                PackingListNo = "2603PL0002",
+                ContractNo = "HMC-2026-VN02",
+                LCNo = "LC2602003",
+                PortCode = "CANG_HAI_PHONG",
+                PortName = "Cảng Hải Phòng (Tân Vũ / Đình Vũ)",
+                PLType = PackingListType.CBU,
+                Status = PackingListStatus.PortArrived,
+                ShippingDateStart = DateTime.Today.AddDays(-12),
+                ShippingDateEndExpected = DateTime.Today.AddDays(-2),
+                ShippingDateEnd = DateTime.Today.AddDays(-1),
+                VesselName = "MORNING CAROLINE",
+                VoyageNo = "V2603N",
+                TotalCars = 3,
+                TotalRepaired = 1,
+                Remark = "Lô xe Ioniq 5 EV và Custin CBU cập cảng Hải Phòng, đang phối hợp Chi cục Hải quan làm thủ tục thông quan giám định",
+                CreatedBy = "IMPORT_HQ_SPECIALIST",
+                CreatedAt = DateTime.Today.AddDays(-15),
+                LUDateTime = DateTime.Today.AddDays(-1),
+                LUBy = "IMPORT_LOGISTICS_HP",
+                Details = new List<PackingListDetail>
+                {
+                    new()
+                    {
+                        PackingListNo = "2603PL0002",
+                        Vin = "KMHE281BBSB200004",
+                        EngineNo = "EM07-200004",
+                        KeyNo = "K2004",
+                        ModelCode = "IONIQ5",
+                        ModelName = "Hyundai Ioniq 5 EV Thuần Điện",
+                        SpecCode = "IQ5-EV-01",
+                        SpecDescription = "Ioniq 5 Prestige Long Range pin 72.6 kWh",
+                        ColorCode = "WH1",
+                        ColorName = "Trắng Gravity",
+                        WorkOrderNo = "WO-HMC-202602-088",
+                        ProductionMonth = "2026-02",
+                        FlagRepair = false,
+                        StorageCodeCurrent = "KHO_CANG_HP",
+                        Status = PackingListDetailStatus.PortArrived,
+                        Remark = "Đang lưu bãi chờ thông quan"
+                    },
+                    new()
+                    {
+                        PackingListNo = "2603PL0002",
+                        Vin = "KMHE281BBSB200005",
+                        EngineNo = "EM07-200005",
+                        KeyNo = "K2005",
+                        ModelCode = "IONIQ5",
+                        ModelName = "Hyundai Ioniq 5 EV Thuần Điện",
+                        SpecCode = "IQ5-EV-01",
+                        SpecDescription = "Ioniq 5 Prestige Long Range pin 72.6 kWh",
+                        ColorCode = "MB2",
+                        ColorName = "Xám nhám Digital Teal",
+                        WorkOrderNo = "WO-HMC-202602-089",
+                        ProductionMonth = "2026-02",
+                        FlagRepair = true,
+                        RepairRemark = "Gương chiếu hậu bên lái bị trầy mỏng trong container cố định, đã lập biên bản giám định bảo hiểm hàng hải",
+                        StorageCodeCurrent = "KHO_CANG_HP",
+                        Status = PackingListDetailStatus.PortArrived,
+                        Remark = "Chờ xử lý phụ tùng thay thế KCS"
+                    },
+                    new()
+                    {
+                        PackingListNo = "2603PL0002",
+                        Vin = "KMHE281BBSB200006",
+                        EngineNo = "G4NN-200006",
+                        KeyNo = "K2006",
+                        ModelCode = "CUSTIN",
+                        ModelName = "Hyundai Custin MPV 7 Chỗ",
+                        SpecCode = "CS20-PRE-01",
+                        SpecDescription = "Custin 2.0T Cao Cấp ghế thương gia",
+                        ColorCode = "WW1",
+                        ColorName = "Trắng tuyết",
+                        WorkOrderNo = "WO-HMC-202602-090",
+                        ProductionMonth = "2026-02",
+                        FlagRepair = false,
+                        StorageCodeCurrent = "KHO_CANG_HP",
+                        Status = PackingListDetailStatus.PortArrived,
+                        Remark = "Đang lưu bãi chờ thông quan"
+                    }
+                }
+            };
+
+            var pl3 = new PackingList
+            {
+                OrgId = orgId,
+                PackingListNo = "2603PL0003",
+                ContractNo = "HMC-2026-VN03",
+                LCNo = "LC2603001",
+                PortCode = "CANG_CAT_LAI",
+                PortName = "Cảng Cát Lái (TP. Hồ Chí Minh)",
+                PLType = PackingListType.CBU,
+                Status = PackingListStatus.Shipping,
+                ShippingDateStart = DateTime.Today.AddDays(-3),
+                ShippingDateEndExpected = DateTime.Today.AddDays(7),
+                VesselName = "HOEGH TARGET",
+                VoyageNo = "V2603W",
+                TotalCars = 2,
+                TotalRepaired = 0,
+                Remark = "Lô xe Palisade & Santa Fe Hybrid đang trên hải trình từ cảng Pyeongtaek về Cát Lái",
+                CreatedBy = "IMPORT_HQ_SPECIALIST",
+                CreatedAt = DateTime.Today.AddDays(-4),
+                Details = new List<PackingListDetail>
+                {
+                    new()
+                    {
+                        PackingListNo = "2603PL0003",
+                        Vin = "KMHE281BBSB200007",
+                        EngineNo = "G4FT-200007",
+                        KeyNo = "K2007",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All-New",
+                        SpecCode = "SF16-HYB-01",
+                        SpecDescription = "Santa Fe Hybrid 1.6T-GDi AWD",
+                        ColorCode = "WW2",
+                        ColorName = "Trắng ngọc trai",
+                        WorkOrderNo = "WO-HMC-202603-001",
+                        ProductionMonth = "2026-03",
+                        FlagRepair = false,
+                        Status = PackingListDetailStatus.OnBoard,
+                        Remark = "Tàu đang trên biển"
+                    },
+                    new()
+                    {
+                        PackingListNo = "2603PL0003",
+                        Vin = "KMHE281BBSB200008",
+                        EngineNo = "D4HB-200008",
+                        KeyNo = "K2008",
+                        ModelCode = "PALISADE",
+                        ModelName = "Hyundai Palisade Exclusive",
+                        SpecCode = "PL22-PRE-01",
+                        SpecDescription = "Palisade 2.2D Prestige 6 chỗ cao cấp",
+                        ColorCode = "R3R",
+                        ColorName = "Đỏ mận",
+                        WorkOrderNo = "WO-HMC-202603-002",
+                        ProductionMonth = "2026-03",
+                        FlagRepair = false,
+                        Status = PackingListDetailStatus.OnBoard,
+                        Remark = "Tàu đang trên biển"
+                    }
+                }
+            };
+
+            var pl4 = new PackingList
+            {
+                OrgId = orgId,
+                PackingListNo = "2603PL0004",
+                ContractNo = "HMC-2026-VN04",
+                LCNo = "LC2603002",
+                PortCode = "CANG_CAI_MEP",
+                PortName = "Cảng Quốc tế Cái Mép - Thị Vải (Bà Rịa - Vũng Tàu)",
+                PLType = PackingListType.CKD,
+                Status = PackingListStatus.Draft,
+                ShippingDateEndExpected = DateTime.Today.AddDays(18),
+                VesselName = "GLOVIS CORONA",
+                VoyageNo = "V2604S",
+                TotalCars = 2,
+                TotalRepaired = 0,
+                Remark = "Lô linh kiện lắp ráp CKD phục vụ nhà máy sản xuất HTMV, chuẩn bị nhận lệnh xuất bến",
+                CreatedBy = "IMPORT_HQ_SPECIALIST",
+                CreatedAt = DateTime.Today.AddDays(-1),
+                Details = new List<PackingListDetail>
+                {
+                    new()
+                    {
+                        PackingListNo = "2603PL0004",
+                        Vin = "KMHE281BBSB200009",
+                        EngineNo = "G4FL-200009",
+                        KeyNo = "K2009",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta Smart / Premium",
+                        SpecCode = "CR15-CKD-01",
+                        SpecDescription = "Bộ linh kiện đóng gói CKD Creta 1.5",
+                        ColorCode = "WW2",
+                        ColorName = "Trắng",
+                        WorkOrderNo = "WO-HMC-202603-030",
+                        ProductionMonth = "2026-03",
+                        FlagRepair = false,
+                        Status = PackingListDetailStatus.Draft,
+                        Remark = "Chờ đóng container"
+                    },
+                    new()
+                    {
+                        PackingListNo = "2603PL0004",
+                        Vin = "KMHE281BBSB200010",
+                        EngineNo = "G4LC-200010",
+                        KeyNo = "K2010",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent Sedan",
+                        SpecCode = "AC15-CKD-01",
+                        SpecDescription = "Bộ linh kiện đóng gói CKD Accent 1.5 AT",
+                        ColorCode = "BK1",
+                        ColorName = "Đen",
+                        WorkOrderNo = "WO-HMC-202603-031",
+                        ProductionMonth = "2026-03",
+                        FlagRepair = false,
+                        Status = PackingListDetailStatus.Draft,
+                        Remark = "Chờ đóng container"
+                    }
+                }
+            };
+
+            db.PackingLists.AddRange(pl1, pl2, pl3, pl4);
             await db.SaveChangesAsync();
         }
     }

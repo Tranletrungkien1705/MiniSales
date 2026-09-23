@@ -82,6 +82,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<SupportRetail> SupportRetails => Set<SupportRetail>();
     public DbSet<PlanEstimateOrder> PlanEstimateOrders => Set<PlanEstimateOrder>();
     public DbSet<PlanEstimateOrderDetail> PlanEstimateOrderDetails => Set<PlanEstimateOrderDetail>();
+    public DbSet<PackingList> PackingLists => Set<PackingList>();
+    public DbSet<PackingListDetail> PackingListDetails => Set<PackingListDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -292,5 +294,18 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PlanEstimateOrderDetail>().ToTable("PlanEstimateOrderDetails");
         b.Entity<PlanEstimateOrderDetail>().HasIndex(x => x.PLEOrdNo);
         b.Entity<PlanEstimateOrderDetail>().HasIndex(x => x.ModelCode);
+        b.Entity<PackingList>().ToTable("PackingLists");
+        b.Entity<PackingList>().HasIndex(x => new { x.OrgId, x.PackingListNo }).IsUnique();
+        b.Entity<PackingList>().HasIndex(x => new { x.OrgId, x.ContractNo });
+        b.Entity<PackingList>().HasIndex(x => new { x.OrgId, x.LCNo });
+        b.Entity<PackingList>().HasIndex(x => new { x.OrgId, x.PortCode });
+        b.Entity<PackingList>().Property(x => x.PLType).HasConversion<int>();
+        b.Entity<PackingList>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PackingList>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PackingListId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PackingListDetail>().ToTable("PackingListDetails");
+        b.Entity<PackingListDetail>().HasIndex(x => x.PackingListNo);
+        b.Entity<PackingListDetail>().HasIndex(x => x.Vin);
+        b.Entity<PackingListDetail>().HasIndex(x => x.ModelCode);
+        b.Entity<PackingListDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

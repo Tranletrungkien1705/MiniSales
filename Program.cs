@@ -61,6 +61,7 @@ builder.Services.AddScoped<IBusinessPlanService, BusinessPlanService>();
 builder.Services.AddScoped<ICalcFnExpPmDcService, CalcFnExpPmDcService>();
 builder.Services.AddScoped<ISalesPolicyService, SalesPolicyService>();
 builder.Services.AddScoped<IPlanEstimateOrderService, PlanEstimateOrderService>();
+builder.Services.AddScoped<IPackingListService, PackingListService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -3531,6 +3532,132 @@ app.MapDelete("/api/plan-estimate-orders/{pleOrdNo}", async (string pleOrdNo, IP
     {
         var ok = await svc.DeleteDraftAsync(pleOrdNo);
         return ok ? Results.Ok(new { success = true, message = $"Đã xóa bản nháp kế hoạch dự kiến đặt hàng {pleOrdNo}" }) : Results.NotFound(new { error = $"Không tìm thấy kế hoạch {pleOrdNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Danh sách Đóng gói / Lô xe Ô tô Nhập khẩu (Packing List Management - CT_PackingList + Car_VINForPL · CTPackingListController / CTPackingList.txt / 05_QUAN_LY_XE.md / PL.xlsx) =====
+app.MapGet("/api/packing-lists/seq", async (IPackingListService svc) =>
+    Results.Ok(new { success = true, packingListNo = await svc.GetNextPackingListNoSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/packing-lists/ports", async (IPackingListService svc) =>
+    Results.Ok(await svc.GetPortsAsync())).RequireAuthorization();
+
+app.MapGet("/api/packing-lists/eligible-vins", async (string? contractNo, IPackingListService svc) =>
+    Results.Ok(await svc.GetEligibleVINsAsync(contractNo))).RequireAuthorization();
+
+app.MapGet("/api/packing-lists/stats", async (IPackingListService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/packing-lists", async (
+    IPackingListService svc,
+    string? packingListNo,
+    string? contractNo,
+    string? lcNo,
+    string? portCode,
+    PackingListType? plType,
+    PackingListStatus? status,
+    string? vin,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    int pageIndex = 0,
+    int pageSize = 50) =>
+    Results.Ok(await svc.SearchAsync(packingListNo, contractNo, lcNo, portCode, plType, status, vin, dateFrom, dateTo, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/packing-lists/{packingListNo}", async (string packingListNo, IPackingListService svc) =>
+{
+    var item = await svc.GetByPackingListNoAsync(packingListNo);
+    return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" }) : Results.Ok(item);
+}).RequireAuthorization();
+
+app.MapPost("/api/packing-lists", async (CreatePackingListDto dto, IPackingListService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/packing-lists/auto", async (AutoGeneratePackingListDto dto, IPackingListService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAutoAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/packing-lists/{packingListNo}/ship-dates", async (string packingListNo, UpdateShipDatesDto dto, IPackingListService svc) =>
+{
+    try
+    {
+        var item = await svc.UpdateShipDatesAsync(packingListNo, dto);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/packing-lists/{packingListNo}/expected-date", async (string packingListNo, UpdateExpectedShipDateDto dto, IPackingListService svc) =>
+{
+    try
+    {
+        var item = await svc.UpdateExpectedShipDateAsync(packingListNo, dto);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/packing-lists/{packingListNo}/vin-status", async (string packingListNo, BatchUpdateVinStatusDto dto, IPackingListService svc) =>
+{
+    try
+    {
+        var item = await svc.UpdateVinStatusAsync(packingListNo, dto);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/packing-lists/{packingListNo}/complete-stock-in", async (string packingListNo, CompleteStockInDto dto, IPackingListService svc) =>
+{
+    try
+    {
+        var item = await svc.CompleteStockInAsync(packingListNo, dto);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/packing-lists/{packingListNo}/cancel", async (string packingListNo, CancelPackingListDto dto, IPackingListService svc) =>
+{
+    try
+    {
+        var item = await svc.CancelAsync(packingListNo, dto);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/packing-lists/{packingListNo}", async (string packingListNo, IPackingListService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(packingListNo);
+        return ok ? Results.Ok(new { success = true, message = $"Đã xóa bản nháp Packing List {packingListNo}" }) : Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/packing-lists/{packingListNo}/cars", async (string packingListNo, List<AddPackingListCarDto> items, IPackingListService svc) =>
+{
+    try
+    {
+        var item = await svc.AddCarsAsync(packingListNo, items);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/packing-lists/{packingListNo}/cars/{vin}", async (string packingListNo, string vin, IPackingListService svc) =>
+{
+    try
+    {
+        var item = await svc.RemoveCarAsync(packingListNo, vin);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo} hoặc xe {vin}" }) : Results.Ok(item);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
