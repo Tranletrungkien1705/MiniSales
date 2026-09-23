@@ -3168,6 +3168,30 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_DealerInventoryThresholds_OrgId_DealerCode ON DealerInventoryThresholds(OrgId, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_DealerInventoryThresholds_OrgId_ModelCode ON DealerInventoryThresholds(OrgId, ModelCode);
 
+                CREATE TABLE IF NOT EXISTS StorageTransactions (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    RefNo TEXT NOT NULL,
+                    RefType INTEGER NOT NULL,
+                    StorageCode TEXT NOT NULL,
+                    StorageCodeTo TEXT,
+                    DTimeFrom TEXT NOT NULL,
+                    DTimeTo TEXT,
+                    RefNoTo TEXT,
+                    FlagInDay TEXT NOT NULL DEFAULT '0',
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedDTime TEXT NOT NULL,
+                    LogLUBy TEXT,
+                    LogLUDateTime TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_StorageTransactions_OrgId_Vin_RefNo ON StorageTransactions(OrgId, Vin, RefNo);
+                CREATE INDEX IF NOT EXISTS IX_StorageTransactions_OrgId_Vin ON StorageTransactions(OrgId, Vin);
+                CREATE INDEX IF NOT EXISTS IX_StorageTransactions_OrgId_RefNo ON StorageTransactions(OrgId, RefNo);
+                CREATE INDEX IF NOT EXISTS IX_StorageTransactions_OrgId_StorageCode ON StorageTransactions(OrgId, StorageCode);
+                CREATE INDEX IF NOT EXISTS IX_StorageTransactions_OrgId_StorageCodeTo ON StorageTransactions(OrgId, StorageCodeTo);
+
                 CREATE TABLE IF NOT EXISTS CustomerVisits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -14362,11 +14386,20 @@ public static class Seeder
                     new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL001", DealerName = "Đại lý Hyundai Hà Nội", ModelCode = "SF25", ModelName = "Santa Fe", Qty = 5, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL001", DealerName = "Đại lý Hyundai Hà Nội", ModelCode = "TU20", ModelName = "Tucson", Qty = 8, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL002", DealerName = "Đại lý Hyundai Đà Nẵng", ModelCode = "CR10", ModelName = "Creta", Qty = 6, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
-                    new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL003", DealerName = "Đại lý Hyundai Sài Gòn", ModelCode = "AC10", ModelName = "Accent", Qty = 10, FlagActive = "0", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
-                );
-            }
-
-            await db.SaveChangesAsync();
+                            new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL003", DealerName = "Đại lý Hyundai Sài Gòn", ModelCode = "AC10", ModelName = "Accent", Qty = 10, FlagActive = "0", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
+                        );
+                    }
+                    // Lịch sử giao dịch kho xe (Sto_StorageTransaction / Storage.cs / Sto_StorageTransaction_AddX|_Check|_Get_HQ)
+                    if (!await db.StorageTransactions.AnyAsync(o => o.OrgId == orgId))
+                    {
+                        db.StorageTransactions.AddRange(
+                            new StorageTransaction { OrgId = orgId, Vin = "RLUGT41DBST012693", RefNo = "2609PL0001", RefType = StorageTransactionRefType.PL, StorageCode = "K01", StorageCodeTo = null, DTimeFrom = DateTime.Now.AddDays(-40), DTimeTo = null, RefNoTo = null, FlagInDay = "0", Remark = "Nhập kho theo Packing List lô xe CBU", CreatedBy = "HQ_STORAGE_USER", CreatedDTime = DateTime.Now.AddDays(-40), LogLUBy = "HQ_STORAGE_USER", LogLUDateTime = DateTime.Now.AddDays(-40) },
+                            new StorageTransaction { OrgId = orgId, Vin = "RLUGT41DBST012694", RefNo = "2609PL0001", RefType = StorageTransactionRefType.PL, StorageCode = "K01", StorageCodeTo = "K02", DTimeFrom = DateTime.Now.AddDays(-40), DTimeTo = DateTime.Now.AddDays(-35), RefNoTo = "2609BBGN0001", FlagInDay = "0", Remark = "Điều chuyển từ K01 sang K02", CreatedBy = "HQ_STORAGE_USER", CreatedDTime = DateTime.Now.AddDays(-40), LogLUBy = "HQ_STORAGE_USER", LogLUDateTime = DateTime.Now.AddDays(-35) },
+                            new StorageTransaction { OrgId = orgId, Vin = "RLUGT41DBST012695", RefNo = "2609BBGN0001", RefType = StorageTransactionRefType.BBGN, StorageCode = "K02", StorageCodeTo = null, DTimeFrom = DateTime.Now.AddDays(-20), DTimeTo = null, RefNoTo = null, FlagInDay = "0", Remark = "Nhập kho theo biên bản giao nhận", CreatedBy = "HQ_STORAGE_USER", CreatedDTime = DateTime.Now.AddDays(-20), LogLUBy = "HQ_STORAGE_USER", LogLUDateTime = DateTime.Now.AddDays(-20) },
+                            new StorageTransaction { OrgId = orgId, Vin = "RLUGT41DBST012696", RefNo = "2609PL0002", RefType = StorageTransactionRefType.PL, StorageCode = "K03", StorageCodeTo = "K03", DTimeFrom = DateTime.Now.AddDays(-10), DTimeTo = DateTime.Now.AddDays(-10), RefNoTo = "2609BBGN0002", FlagInDay = "1", Remark = "Nhập xuất trong ngày — chỉ tính phí lưu kho cho kho xuất", CreatedBy = "HQ_STORAGE_USER", CreatedDTime = DateTime.Now.AddDays(-10), LogLUBy = "HQ_STORAGE_USER", LogLUDateTime = DateTime.Now.AddDays(-10) }
+                        );
+                    }
+                    await db.SaveChangesAsync();
         }
     }
 }

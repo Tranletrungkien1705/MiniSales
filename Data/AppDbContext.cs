@@ -139,6 +139,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<MaintainTask> MaintainTasks => Set<MaintainTask>();
     public DbSet<MaintainTaskItem> MaintainTaskItems => Set<MaintainTaskItem>();
     public DbSet<DealerInventoryThreshold> DealerInventoryThresholds => Set<DealerInventoryThreshold>();
+    public DbSet<StorageTransaction> StorageTransactions => Set<StorageTransaction>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -648,5 +649,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerInventoryThreshold>().HasIndex(x => new { x.OrgId, x.DealerCode, x.ModelCode }).IsUnique();
         b.Entity<DealerInventoryThreshold>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<DealerInventoryThreshold>().HasIndex(x => new { x.OrgId, x.ModelCode });
+
+        b.Entity<StorageTransaction>().ToTable("StorageTransactions");
+        b.Entity<StorageTransaction>().HasIndex(x => new { x.OrgId, x.Vin, x.RefNo }).IsUnique();
+        b.Entity<StorageTransaction>().HasIndex(x => new { x.OrgId, x.Vin });
+        b.Entity<StorageTransaction>().HasIndex(x => new { x.OrgId, x.RefNo });
+        b.Entity<StorageTransaction>().HasIndex(x => new { x.OrgId, x.StorageCode });
+        b.Entity<StorageTransaction>().HasIndex(x => new { x.OrgId, x.StorageCodeTo });
+        b.Entity<StorageTransaction>().Property(x => x.RefType).HasConversion<int>();
     }
 }

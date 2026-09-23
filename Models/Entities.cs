@@ -4506,4 +4506,30 @@ public sealed class DealerInventoryThreshold
     public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}/// <summary>Loại nghiệp vụ tạo giao dịch kho (DMS.Sales TConst.Sto_StorageTransaction_RefType): PL = Packing List (nhập kho theo lô), BBGN = Biên bản giao nhận (nhập kho theo lệnh giao xe).</summary>
+public enum StorageTransactionRefType { PL = 0, BBGN = 1 }
+
+/// <summary>
+/// Lịch sử giao dịch kho xe (DMS.Sales Sto_StorageTransaction / StoStorageTransactionController / Storage.cs /
+/// Sto_StorageTransaction_AddX|_Check|_Get_HQ): lưu vết xe nằm ở kho nào, từ ngày nào tới ngày nào (nhập/xuất kho),
+/// phục vụ dựng lại lịch sử lưu kho và tính phí lưu kho. Khóa nghiệp vụ = (VIN, RefNo).
+/// </summary>
+public sealed class StorageTransaction
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string Vin { get; set; } = ""; // Số VIN xe (bắt buộc)
+    public string RefNo { get; set; } = ""; // Mã nghiệp vụ tạo (nhập kho) — bắt buộc
+    public StorageTransactionRefType RefType { get; set; } = StorageTransactionRefType.PL; // Loại nghiệp vụ tạo (PL | BBGN)
+    public string StorageCode { get; set; } = ""; // Mã kho nhập (bắt buộc)
+    public string? StorageCodeTo { get; set; } // Mã kho xuất (không bắt buộc — nguồn đã comment guard)
+    public DateTime DTimeFrom { get; set; } = DateTime.Now; // Ngày nhập kho (bắt buộc)
+    public DateTime? DTimeTo { get; set; } // Ngày xuất kho (không bắt buộc — nguồn đã comment guard)
+    public string? RefNoTo { get; set; } // Mã nghiệp vụ xuất (xuất kho)
+    public string FlagInDay { get; set; } = "0"; // Cờ nhập xuất trong ngày ('1' = nhập & xuất cùng ngày, chỉ tính phí cho kho xuất)
+    public string? Remark { get; set; } // Ghi chú
+    public string? CreatedBy { get; set; } // Người tạo
+    public DateTime CreatedDTime { get; set; } = DateTime.Now; // Ngày tạo bản ghi
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
 }

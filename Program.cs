@@ -91,6 +91,7 @@ builder.Services.AddScoped<ISalesManService, SalesManService>();
 builder.Services.AddScoped<IStorageMasterService, StorageMasterService>();
 builder.Services.AddScoped<IMaintainTaskService, MaintainTaskService>();
 builder.Services.AddScoped<IDealerInventoryThresholdService, DealerInventoryThresholdService>();
+builder.Services.AddScoped<IStorageTransactionService, StorageTransactionService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -6160,6 +6161,37 @@ app.MapDelete("/api/dealer-inventory-thresholds/{dealerCode}/{modelCode}", async
 {
     var r = await svc.DeleteAsync(dealerCode, modelCode);
     return r ? Results.Ok(new { deleted = true, dealerCode, modelCode }) : Results.NotFound(new { dealerCode, modelCode });
+}).RequireAuthorization();
+
+// ===== Lịch sử giao dịch kho xe (Sto_StorageTransaction - DMS.Sales Storage.cs / StoStorageTransactionController) =====
+app.MapGet("/api/storage-transactions/reftypes", () => Results.Ok(new
+{
+    data = new[]
+    {
+        new { code = "PL", name = "Packing List (nhập kho theo lô)" },
+        new { code = "BBGN", name = "Biên bản giao nhận (nhập kho theo lệnh giao xe)" }
+    }
+})).RequireAuthorization();
+
+app.MapGet("/api/storage-transactions", async (IStorageTransactionService svc,
+    string? vin, string? refNo, string? refType, string? storageCode, string? storageCodeTo, string? refNoTo,
+    DateTime? createdFrom, DateTime? createdTo, DateTime? dTimeFrom, DateTime? dTimeFromTo, DateTime? dTimeToFrom, DateTime? dTimeTo) =>
+    Results.Ok(await svc.SearchAsync(vin, refNo, refType, storageCode, storageCodeTo, refNoTo,
+        createdFrom, createdTo, dTimeFrom, dTimeFromTo, dTimeToFrom, dTimeTo))).RequireAuthorization();
+
+app.MapGet("/api/storage-transactions/stats", async (IStorageTransactionService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/storage-transactions/{vin}/{refNo}", async (string vin, string refNo, IStorageTransactionService svc) =>
+{
+    var r = await svc.GetAsync(vin, refNo);
+    return r is null ? Results.NotFound(new { vin, refNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/storage-transactions", async (List<StorageTransactionRowDto> rows, IStorageTransactionService svc, ClaimsPrincipal u) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(rows, u.Identity?.Name ?? u.FindFirst("name")?.Value)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
 app.Run();
