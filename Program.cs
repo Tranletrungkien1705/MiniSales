@@ -53,6 +53,7 @@ builder.Services.AddScoped<IStorageRearrangeCBService, StorageRearrangeCBService
 builder.Services.AddScoped<ICarCancelService, CarCancelService>();
 builder.Services.AddScoped<IMapVinService, MapVinService>();
 builder.Services.AddScoped<IRetailInvoiceService, RetailInvoiceService>();
+builder.Services.AddScoped<ICarRedeemService, CarRedeemService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2615,6 +2616,112 @@ app.MapPost("/api/retail-invoices/{reqInvoiceNo}/cancel", async (string reqInvoi
     {
         var r = await svc.CancelAsync(reqInvoiceNo, dto);
         return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Đề nghị Giải chấp Xe ô tô Thế chấp Ngân hàng / Nhà phân phối (Car Mortgage Redemption Management - DMS.Sales RD_ReqRedeem + RD_ReqRedeemDtl / RDReqRedeemController / Redeem.cs) =====
+app.MapGet("/api/car-redeems", async (ICarRedeemService svc, string? status, string? redeemType, string? dealerCode, string? bankCode, string? vin, string? reqDMNo, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, redeemType, dealerCode, bankCode, vin, reqDMNo, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/car-redeems/stats", async (ICarRedeemService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/car-redeems/eligible-cars", async (ICarRedeemService svc, string? dealerCode, string? bankCode) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealerCode, bankCode))).RequireAuthorization();
+
+app.MapGet("/api/car-redeems/{reqDMNo}", async (string reqDMNo, ICarRedeemService svc) =>
+{
+    var r = await svc.GetByNoAsync(reqDMNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giải chấp '{reqDMNo}'." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/car-redeems", async (CreateCarRedeemRequestDto dto, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.CreateAsync(dto);
+        return Results.Created($"/api/car-redeems/{r.ReqDMNo}", r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/car-redeems/{reqDMNo}", async (string reqDMNo, UpdateCarRedeemRequestDto dto, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(reqDMNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/car-redeems/{reqDMNo}", async (string reqDMNo, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(reqDMNo);
+        return Results.Ok(new { success = r, message = $"Đã xóa đề nghị giải chấp '{reqDMNo}'." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-redeems/{reqDMNo}/approve-detail/{vin}", async (string reqDMNo, string vin, ApproveRedeemDetailDto? dto, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveDtlAsync(reqDMNo, vin, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-redeems/{reqDMNo}/approve-all", async (string reqDMNo, ApproveRedeemRequestDto? dto, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAllAsync(reqDMNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-redeems/{reqDMNo}/reject", async (string reqDMNo, RejectRedeemRequestDto dto, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(reqDMNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-redeems/{reqDMNo}/cancel", async (string reqDMNo, CancelRedeemRequestDto dto, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(reqDMNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-redeems/{reqDMNo}/cars", async (string reqDMNo, AddCarRedeemDetailDto dto, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(reqDMNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/car-redeems/{reqDMNo}/cars/{vin}", async (string reqDMNo, string vin, ICarRedeemService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(reqDMNo, vin);
+        return Results.Ok(new { success = true, result = r });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

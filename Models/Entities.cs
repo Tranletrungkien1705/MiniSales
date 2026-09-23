@@ -1884,6 +1884,77 @@ public sealed class RetailInvoiceRequestProduct
     public string? Remark { get; set; }
 }
 
+/// <summary>Hình thức đề nghị giải chấp xe ô tô (DMS.Sales RD_ReqRedeem / RD_ReqRedeemDtl TypeDMReq: Direct = Giải chấp trực tiếp, Guarantee = Giải chấp theo thư bảo lãnh ngân hàng).</summary>
+public enum CarRedeemType { Direct = 0, Guarantee = 1 }
+
+/// <summary>Trạng thái đề nghị giải chấp xe ô tô (DMS.Sales RD_ReqRedeem DMReqStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [Đã duyệt hoàn tất], Rejected = 'R' [Từ chối], Cancelled = 'C' [Hủy]).</summary>
+public enum CarRedeemStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái dòng xe trong đề nghị giải chấp (DMS.Sales RD_ReqRedeemDtl DMReqDtlStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [Đã giải chấp], Rejected = 'R' [Từ chối], Cancelled = 'C' [Hủy]).</summary>
+public enum CarRedeemDtlStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Quản lý Đề nghị Giải chấp Xe ô tô Thế chấp Ngân hàng / Nhà phân phối (DMS.Sales RD_ReqRedeem / RDReqRedeemController / Redeem.cs / Thế chấp, Giải chấp, Bàn giao hồ sơ.xlsx): quản lý thủ tục giải chấp tài sản bảo đảm ngân hàng để rút giấy tờ xe ô tô gốc (CQ, phiếu kiểm tra chất lượng, tờ khai hải quan), chuyển ngân hàng bàn giao tài sản sang HTC.HO và bàn giao xe cho khách hàng.</summary>
+public sealed class CarRedeemRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ReqDMNo { get; set; } = ""; // Số ĐN giải chấp (PK ReqDMNo, format: {yyMM}RDM{seq:D5}, vd: 2603RDM00001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý đề nghị
+    public string? DealerName { get; set; } // Tên đại lý
+    public CarRedeemStatus Status { get; set; } = CarRedeemStatus.Pending; // Trạng thái đề nghị
+    public CarRedeemType RedeemType { get; set; } = CarRedeemType.Direct; // Loại giải chấp (Trực tiếp / Bảo lãnh)
+    public int TotalCars { get; set; } // Tổng số lượng xe trong đề nghị
+    public int ApprovedCars { get; set; } // Số lượng xe đã được giải chấp hoàn tất
+    public string? BankCode { get; set; } // Mã ngân hàng thế chấp / bàn giao tài sản chính
+    public string? BankName { get; set; } // Tên ngân hàng thế chấp
+    public string? Remark { get; set; } // Ghi chú đề nghị giải chấp
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? RejectedBy { get; set; }
+    public DateTime? RejectedAt { get; set; }
+    public string? RejectReason { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelReason { get; set; }
+
+    public List<CarRedeemRequestDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Đề nghị giải chấp (DMS.Sales RD_ReqRedeemDtl): theo dõi từng số khung VIN, mã định danh xe CarId, số máy, số kiểm định CQNo, ngân hàng thế chấp ban đầu (MortageBankCode: VCB, TCB, CTG, BIDV...), mã Đề nghị giao giấy tờ DRListCode, số bảo lãnh và trạng thái duyệt giải chấp (khi duyệt đổi MortageBankCode thành HTC.HO).</summary>
+public sealed class CarRedeemRequestDetail
+{
+    public long Id { get; set; }
+    public long RedeemRequestId { get; set; }
+    public string ReqDMNo { get; set; } = ""; // Số ĐN giải chấp
+    public string CarId { get; set; } = ""; // Mã xe thương mại hệ thống Car_Car
+    public string Vin { get; set; } = ""; // Số khung VIN chuẩn 17 ký tự
+    public string ModelCode { get; set; } = ""; // Mã model (SF25, TU20, CR15, AC14...)
+    public string ModelName { get; set; } = ""; // Tên model xe
+    public string? SpecCode { get; set; } // Mã cấu hình
+    public string? SpecDescription { get; set; } // Mô tả bản xe (AC_SpecDescription)
+    public string? ColorCode { get; set; } // Mã màu
+    public string? ColorName { get; set; } // Tên màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public string? CQNo { get; set; } // Số chứng nhận chất lượng xuất xưởng / Đăng kiểm
+    public string? CONo { get; set; } // Số chứng nhận nguồn gốc xuất xứ
+    public string? DeclarationNo { get; set; } // Số tờ khai hải quan (TKHQ)
+    public string MortageBankCode { get; set; } = ""; // Ngân hàng bàn giao tài sản ban đầu; khi duyệt chuyển sang 'HTC.HO'
+    public string? MortageBankName { get; set; } // Tên ngân hàng thế chấp
+    public CarRedeemType TypeDMReq { get; set; } = CarRedeemType.Direct; // Loại giải chấp dòng xe (Direct / Guarantee)
+    public string DealerCode { get; set; } = ""; // Đại lý sở hữu xe
+    public string? DealerName { get; set; }
+    public string? GuaranteeNo { get; set; } // Số thư bảo lãnh thanh toán liên quan (Pmt_Guarantee)
+    public string? DRListCode { get; set; } // Số Đề nghị giao giấy tờ xe (Car_DocReqList)
+    public string? DocumentsStatus { get; set; } = "Full"; // Trạng thái giấy tờ xe (Full / Approved)
+    public CarRedeemDtlStatus Status { get; set; } = CarRedeemDtlStatus.Pending; // Trạng thái dòng: Pending -> Approved
+    public DateTime? ApprovedAt { get; set; }
+    public string? ApprovedBy { get; set; }
+    public string? Remark { get; set; }
+}
+
+
 
 
 

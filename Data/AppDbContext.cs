@@ -66,6 +66,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<RetailInvoiceRequest> RetailInvoiceRequests => Set<RetailInvoiceRequest>();
     public DbSet<RetailInvoiceRequestDetail> RetailInvoiceRequestDetails => Set<RetailInvoiceRequestDetail>();
     public DbSet<RetailInvoiceRequestProduct> RetailInvoiceRequestProducts => Set<RetailInvoiceRequestProduct>();
+    public DbSet<CarRedeemRequest> CarRedeemRequests => Set<CarRedeemRequest>();
+    public DbSet<CarRedeemRequestDetail> CarRedeemRequestDetails => Set<CarRedeemRequestDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -206,5 +208,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<RetailInvoiceRequest>().Property(x => x.AdjType).HasConversion<int>();
         b.Entity<RetailInvoiceRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RetailInvoiceRequestId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<RetailInvoiceRequest>().HasMany(x => x.Products).WithOne().HasForeignKey(x => x.RetailInvoiceRequestId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CarRedeemRequest>().HasIndex(x => new { x.OrgId, x.ReqDMNo }).IsUnique();
+        b.Entity<CarRedeemRequest>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarRedeemRequest>().Property(x => x.RedeemType).HasConversion<int>();
+        b.Entity<CarRedeemRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RedeemRequestId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CarRedeemRequestDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarRedeemRequestDetail>().Property(x => x.TypeDMReq).HasConversion<int>();
     }
 }

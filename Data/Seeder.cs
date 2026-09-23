@@ -1492,6 +1492,63 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(RetailInvoiceRequestId) REFERENCES RetailInvoiceRequests(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarRedeemRequests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ReqDMNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    Status INTEGER NOT NULL,
+                    RedeemType INTEGER NOT NULL,
+                    TotalCars INTEGER NOT NULL,
+                    ApprovedCars INTEGER NOT NULL,
+                    BankCode TEXT,
+                    BankName TEXT,
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ApprovedBy TEXT,
+                    ApprovedAt TEXT,
+                    RejectedBy TEXT,
+                    RejectedAt TEXT,
+                    RejectReason TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT,
+                    CancelReason TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarRedeemRequests_OrgId_ReqDMNo ON CarRedeemRequests(OrgId, ReqDMNo);
+
+                CREATE TABLE IF NOT EXISTS CarRedeemRequestDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    RedeemRequestId INTEGER NOT NULL,
+                    ReqDMNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    CQNo TEXT,
+                    CONo TEXT,
+                    DeclarationNo TEXT,
+                    MortageBankCode TEXT NOT NULL,
+                    MortageBankName TEXT,
+                    TypeDMReq INTEGER NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    GuaranteeNo TEXT,
+                    DRListCode TEXT,
+                    DocumentsStatus TEXT,
+                    Status INTEGER NOT NULL,
+                    ApprovedAt TEXT,
+                    ApprovedBy TEXT,
+                    Remark TEXT,
+                    FOREIGN KEY(RedeemRequestId) REFERENCES CarRedeemRequests(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -6954,6 +7011,209 @@ public static class Seeder
             };
 
             db.RetailInvoiceRequests.AddRange(ri1, ri2, ri3, ri4, ri5);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.CarRedeemRequests.AnyAsync(o => o.OrgId == orgId))
+        {
+            var rdm1 = new CarRedeemRequest
+            {
+                OrgId = orgId,
+                ReqDMNo = "2603RDM00001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                Status = CarRedeemStatus.Approved,
+                RedeemType = CarRedeemType.Direct,
+                TotalCars = 2,
+                ApprovedCars = 2,
+                BankCode = "VCB",
+                BankName = "Ngân hàng Ngoại thương Việt Nam (Vietcombank)",
+                Remark = "Đề nghị giải chấp lô 02 xe Santa Fe & Tucson thế chấp Vietcombank rút hồ sơ gốc bàn giao khách hàng",
+                CreatedBy = "DL_NV_HO",
+                CreatedAt = DateTime.Today.AddDays(-10),
+                ApprovedBy = "HTC_SUPERVISOR",
+                ApprovedAt = DateTime.Today.AddDays(-8),
+                Details = new List<CarRedeemRequestDetail>
+                {
+                    new CarRedeemRequestDetail
+                    {
+                        ReqDMNo = "2603RDM00001",
+                        CarId = "CAR-KMHE281BBSA129841",
+                        Vin = "KMHE281BBSA129841",
+                        ModelCode = "SF25",
+                        ModelName = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE",
+                        SpecDescription = "Santa Fe 2.5 xăng cao cấp",
+                        ColorCode = "WH",
+                        ColorName = "Trắng",
+                        EngineNo = "G4KP123456",
+                        CQNo = "CQ-2026-129841",
+                        CONo = "CO-2026-HQ12984",
+                        DeclarationNo = "TKHQ-2026-9841",
+                        MortageBankCode = "HTC.HO",
+                        MortageBankName = "Nhà phân phối ô tô Hyundai (HTC Head Office - Không thế chấp)",
+                        TypeDMReq = CarRedeemType.Direct,
+                        DealerCode = "VN001",
+                        DealerName = "Hyundai Đông Đô",
+                        DRListCode = "DRL2603001",
+                        DocumentsStatus = "Full",
+                        Status = CarRedeemDtlStatus.Approved,
+                        ApprovedAt = DateTime.Today.AddDays(-8),
+                        ApprovedBy = "HTC_SUPERVISOR",
+                        Remark = "Đã hoàn tất thanh toán cọc và nghĩa vụ tài chính, giải chấp tài sản gốc"
+                    },
+                    new CarRedeemRequestDetail
+                    {
+                        ReqDMNo = "2603RDM00001",
+                        CarId = "CAR-KMHE281BBSA129842",
+                        Vin = "KMHE281BBSA129842",
+                        ModelCode = "TU20",
+                        ModelName = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD",
+                        SpecDescription = "Tucson 2.0 máy dầu đặc biệt",
+                        ColorCode = "BK",
+                        ColorName = "Đen",
+                        EngineNo = "D4HD654321",
+                        CQNo = "CQ-2026-129842",
+                        CONo = "CO-2026-HQ12985",
+                        DeclarationNo = "TKHQ-2026-9842",
+                        MortageBankCode = "HTC.HO",
+                        MortageBankName = "Nhà phân phối ô tô Hyundai (HTC Head Office - Không thế chấp)",
+                        TypeDMReq = CarRedeemType.Direct,
+                        DealerCode = "VN001",
+                        DealerName = "Hyundai Đông Đô",
+                        DRListCode = "DRL2603001",
+                        DocumentsStatus = "Full",
+                        Status = CarRedeemDtlStatus.Approved,
+                        ApprovedAt = DateTime.Today.AddDays(-8),
+                        ApprovedBy = "HTC_SUPERVISOR",
+                        Remark = "Đã hoàn tất thủ tục giải chấp tài sản bảo đảm ngân hàng"
+                    }
+                }
+            };
+
+            var rdm2 = new CarRedeemRequest
+            {
+                OrgId = orgId,
+                ReqDMNo = "2603RDM00002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                Status = CarRedeemStatus.Pending,
+                RedeemType = CarRedeemType.Guarantee,
+                TotalCars = 2,
+                ApprovedCars = 1,
+                BankCode = "TCB",
+                BankName = "Ngân hàng Kỹ thương Việt Nam (Techcombank)",
+                Remark = "Đề nghị giải chấp theo thư bảo lãnh ngân hàng Techcombank đợt thanh toán quý 1",
+                CreatedBy = "DL_SALES_MNGR",
+                CreatedAt = DateTime.Today.AddDays(-2),
+                Details = new List<CarRedeemRequestDetail>
+                {
+                    new CarRedeemRequestDetail
+                    {
+                        ReqDMNo = "2603RDM00002",
+                        CarId = "CAR-KMHE281BBSA129843",
+                        Vin = "KMHE281BBSA129843",
+                        ModelCode = "CR15",
+                        ModelName = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE",
+                        SpecDescription = "Creta 1.5 cao cấp 2 tone",
+                        ColorCode = "RD",
+                        ColorName = "Đỏ",
+                        EngineNo = "G4FL789012",
+                        CQNo = "CQ-2026-129843",
+                        CONo = "CO-2026-HQ12986",
+                        DeclarationNo = "TKHQ-2026-9843",
+                        MortageBankCode = "HTC.HO",
+                        MortageBankName = "Nhà phân phối ô tô Hyundai (HTC Head Office - Không thế chấp)",
+                        TypeDMReq = CarRedeemType.Guarantee,
+                        DealerCode = "VN002",
+                        DealerName = "Hyundai Nam Trung",
+                        GuaranteeNo = "BL26030001",
+                        DRListCode = "DRL2603002",
+                        DocumentsStatus = "Full",
+                        Status = CarRedeemDtlStatus.Approved,
+                        ApprovedAt = DateTime.Today.AddDays(-1),
+                        ApprovedBy = "HTC_SUPERVISOR",
+                        Remark = "Đã đối soát thư bảo lãnh Techcombank khớp lệnh UNC"
+                    },
+                    new CarRedeemRequestDetail
+                    {
+                        ReqDMNo = "2603RDM00002",
+                        CarId = "CAR-KMHE281BBSA129844",
+                        Vin = "KMHE281BBSA129844",
+                        ModelCode = "SF25",
+                        ModelName = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE",
+                        SpecDescription = "Santa Fe 2.5 xăng cao cấp",
+                        ColorCode = "GR",
+                        ColorName = "Xám",
+                        EngineNo = "G4KP345678",
+                        CQNo = "CQ-2026-129844",
+                        CONo = "CO-2026-HQ12987",
+                        DeclarationNo = "TKHQ-2026-9844",
+                        MortageBankCode = "TCB",
+                        MortageBankName = "Ngân hàng Kỹ thương Việt Nam (Techcombank)",
+                        TypeDMReq = CarRedeemType.Guarantee,
+                        DealerCode = "VN002",
+                        DealerName = "Hyundai Nam Trung",
+                        GuaranteeNo = "BL26030001",
+                        DRListCode = "DRL2603002",
+                        DocumentsStatus = "Full",
+                        Status = CarRedeemDtlStatus.Pending,
+                        Remark = "Chờ phòng Tài chính NPP kiểm tra đối trừ dư nợ bảo lãnh"
+                    }
+                }
+            };
+
+            var rdm3 = new CarRedeemRequest
+            {
+                OrgId = orgId,
+                ReqDMNo = "2603RDM00003",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                Status = CarRedeemStatus.Rejected,
+                RedeemType = CarRedeemType.Direct,
+                TotalCars = 1,
+                ApprovedCars = 0,
+                BankCode = "BIDV",
+                BankName = "Ngân hàng Đầu tư và Phát triển Việt Nam (BIDV)",
+                Remark = "Đề nghị giải chấp rút hồ sơ xe Stargazer 1.5 AT",
+                CreatedBy = "DL_ACCOUNTANT",
+                CreatedAt = DateTime.Today.AddDays(-5),
+                RejectedBy = "HTC_ACCOUNTING",
+                RejectedAt = DateTime.Today.AddDays(-4),
+                RejectReason = "Đại lý chưa thanh toán đủ số dư nợ bảo lãnh quá hạn tại BIDV, yêu cầu tất toán trước khi giải chấp",
+                Details = new List<CarRedeemRequestDetail>
+                {
+                    new CarRedeemRequestDetail
+                    {
+                        ReqDMNo = "2603RDM00003",
+                        CarId = "CAR-KMHE281BBSA129845",
+                        Vin = "KMHE281BBSA129845",
+                        ModelCode = "SG15",
+                        ModelName = "Stargazer X 1.5",
+                        SpecCode = "SG15-PRE",
+                        SpecDescription = "Stargazer X Cao Cấp",
+                        ColorCode = "WH",
+                        ColorName = "Trắng",
+                        EngineNo = "G4FL901234",
+                        CQNo = "CQ-2026-129845",
+                        CONo = "CO-2026-HQ12988",
+                        DeclarationNo = "TKHQ-2026-9845",
+                        MortageBankCode = "BIDV",
+                        MortageBankName = "Ngân hàng Đầu tư và Phát triển Việt Nam (BIDV)",
+                        TypeDMReq = CarRedeemType.Direct,
+                        DealerCode = "VN003",
+                        DealerName = "Hyundai Tây Hồ",
+                        DocumentsStatus = "Full",
+                        Status = CarRedeemDtlStatus.Rejected,
+                        Remark = "Từ chối: Chưa tất toán nợ quá hạn"
+                    }
+                }
+            };
+
+            db.CarRedeemRequests.AddRange(rdm1, rdm2, rdm3);
             await db.SaveChangesAsync();
         }
     }
