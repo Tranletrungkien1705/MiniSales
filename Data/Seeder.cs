@@ -2884,6 +2884,28 @@ public static class Seeder
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerZones_OrgId_DealerCode_ZoneCode ON DealerZones(OrgId, DealerCode, ZoneCode);
                 CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_DealerCode ON DealerZones(OrgId, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_ZoneCode ON DealerZones(OrgId, ZoneCode);
+
+                CREATE TABLE IF NOT EXISTS CustomerVisits (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    CtmVisitCode TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    Gender INTEGER NOT NULL,
+                    RangeAgeCode TEXT,
+                    ModelCode TEXT,
+                    ModelName TEXT,
+                    VisitDTime TEXT NOT NULL,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    LogLUBy TEXT,
+                    LogLUDTime TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CustomerVisits_OrgId_CtmVisitCode_DealerCode ON CustomerVisits(OrgId, CtmVisitCode, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_CustomerVisits_OrgId_DealerCode ON CustomerVisits(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_CustomerVisits_OrgId_ModelCode ON CustomerVisits(OrgId, ModelCode);
             ");
         }
         catch
@@ -13309,6 +13331,16 @@ public static class Seeder
                 db.DealerZones.AddRange(
                     new DealerZone { OrgId = orgId, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", ZoneCode = "MB", ZoneName = "Miền Bắc", Remark = "Đại lý khu vực Hà Nội", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" },
                     new DealerZone { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", ZoneCode = "MN", ZoneName = "Miền Nam", Remark = "Đại lý khu vực phía Nam", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" }
+                );
+            }
+
+            // Lượt khách đến thăm đại lý (Dlr_CtmVisit / DlrCtmVisitController)
+            if (!await db.CustomerVisits.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.CustomerVisits.AddRange(
+                    new CustomerVisit { OrgId = orgId, CtmVisitCode = "CV26090001", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", Gender = CustomerVisitGender.Male, RangeAgeCode = "25-34", ModelCode = "SF25", ModelName = "Santa Fe 2.5 HTRAC", VisitDTime = DateTime.Now.AddDays(-5), FlagActive = "1", Remark = "Khách quan tâm Santa Fe", CreatedBy = "CHUYEN_VIEN_DL", CreatedAt = DateTime.Now.AddDays(-5), LogLUBy = "CHUYEN_VIEN_DL", LogLUDTime = DateTime.Now.AddDays(-5) },
+                    new CustomerVisit { OrgId = orgId, CtmVisitCode = "CV26090002", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", Gender = CustomerVisitGender.Female, RangeAgeCode = "35-44", ModelCode = "TU20", ModelName = "Tucson 2.0 AT", VisitDTime = DateTime.Now.AddDays(-3), FlagActive = "1", Remark = "Khách xem Tucson", CreatedBy = "CHUYEN_VIEN_DL", CreatedAt = DateTime.Now.AddDays(-3), LogLUBy = "CHUYEN_VIEN_DL", LogLUDTime = DateTime.Now.AddDays(-3) },
+                    new CustomerVisit { OrgId = orgId, CtmVisitCode = "CV26090003", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", Gender = CustomerVisitGender.Male, RangeAgeCode = "45-54", ModelCode = "CR15", ModelName = "Creta 1.5 Cao Cấp", VisitDTime = DateTime.Now.AddDays(-1), FlagActive = "1", Remark = "Khách xem Creta", CreatedBy = "CHUYEN_VIEN_DL", CreatedAt = DateTime.Now.AddDays(-1), LogLUBy = "CHUYEN_VIEN_DL", LogLUDTime = DateTime.Now.AddDays(-1) }
                 );
             }
 

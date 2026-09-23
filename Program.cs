@@ -76,6 +76,7 @@ builder.Services.AddScoped<IDealerCustomerService, DealerCustomerService>();
 builder.Services.AddScoped<ICarPriceUpdateService, CarPriceUpdateService>();
 builder.Services.AddScoped<IWarrantyExpiresService, WarrantyExpiresService>();
 builder.Services.AddScoped<IDealerZoneService, DealerZoneService>();
+builder.Services.AddScoped<ICustomerVisitService, CustomerVisitService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5176,6 +5177,45 @@ app.MapDelete("/api/dealer-zones/{dealerCode}/{zoneCode}", async (string dealerC
 app.MapPost("/api/dealer-zones/import", async (List<DealerZoneImportRowDto> rows, IDealerZoneService svc) =>
 {
     try { return Results.Ok(await svc.ImportDealerZonesAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý lượt khách đến thăm đại lý (Customer Visit - DMS.Sales Dlr_CtmVisit / DlrCtmVisitController) =====
+app.MapGet("/api/customer-visits", async (ICustomerVisitService svc, string? ctmVisitCode, string? dealerCode, string? modelCode, string? gender, string? flagActive) =>
+    Results.Ok(await svc.SearchAsync(ctmVisitCode, dealerCode, modelCode, gender, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/customer-visits/stats", async (ICustomerVisitService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/customer-visits/{ctmVisitCode}/{dealerCode}", async (string ctmVisitCode, string dealerCode, ICustomerVisitService svc) =>
+{
+    var r = await svc.GetAsync(ctmVisitCode, dealerCode);
+    return r is null ? Results.NotFound(new { ctmVisitCode, dealerCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/customer-visits", async (CreateCustomerVisitDto dto, ICustomerVisitService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/customer-visits/{ctmVisitCode}/{dealerCode}", async (string ctmVisitCode, string dealerCode, UpdateCustomerVisitDto dto, ICustomerVisitService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(ctmVisitCode, dealerCode, dto);
+        return r is null ? Results.NotFound(new { ctmVisitCode, dealerCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/customer-visits/{ctmVisitCode}/{dealerCode}", async (string ctmVisitCode, string dealerCode, ICustomerVisitService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteAsync(ctmVisitCode, dealerCode);
+        return ok ? Results.Ok(new { success = true, ctmVisitCode, dealerCode }) : Results.NotFound(new { ctmVisitCode, dealerCode });
+    }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 

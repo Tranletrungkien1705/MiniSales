@@ -3883,3 +3883,26 @@ public sealed class DealerZone
     public DateTime LogLUDTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người cập nhật gần nhất
 }
+/// <summary>Giới tính khách hàng đến thăm đại lý (DMS.Sales Dlr_CtmVisit Gender: M = Nam, F = Nữ).</summary>
+public enum CustomerVisitGender { Male = 0, Female = 1 }
+
+/// <summary>Lượt khách đến thăm đại lý (DMS.Sales Dlr_CtmVisit / DlrCtmVisitController / DLR_CtmVisit_Create_DL): ghi nhận mỗi lượt khách hàng ghé showroom đại lý để tư vấn xe, phục vụ phân tích nhu cầu thị trường theo giới tính, nhóm tuổi và dòng xe quan tâm. Khóa nghiệp vụ = (CtmVisitCode, DealerCode).</summary>
+public sealed class CustomerVisit
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string CtmVisitCode { get; set; } = ""; // Mã lượt thăm (khóa nghiệp vụ, sinh tự động hoặc user nhập)
+    public string DealerCode { get; set; } = ""; // Mã đại lý tạo lượt thăm
+    public string? DealerName { get; set; } // Tên đại lý (tra cứu từ dữ liệu đại lý)
+    public CustomerVisitGender Gender { get; set; } = CustomerVisitGender.Male; // Giới tính khách (M/F)
+    public string? RangeAgeCode { get; set; } // Nhóm tuổi khách (vd: 25-34)
+    public string? ModelCode { get; set; } // Mã model xe khách quan tâm
+    public string? ModelName { get; set; } // Tên dòng xe quan tâm (tra cứu từ Mst_CarModel)
+    public DateTime VisitDTime { get; set; } = DateTime.Now; // Thời điểm khách đến thăm
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public string? Remark { get; set; } // Ghi chú
+    public string? CreatedBy { get; set; } // Người tạo lượt thăm
+    public DateTime CreatedAt { get; set; } = DateTime.Now; // Thời điểm tạo
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+    public DateTime LogLUDTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+}

@@ -112,6 +112,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<WarrantyExpiresMaster> WarrantyExpires => Set<WarrantyExpiresMaster>();
     public DbSet<ZoneMaster> Zones => Set<ZoneMaster>();
     public DbSet<DealerZone> DealerZones => Set<DealerZone>();
+    public DbSet<CustomerVisit> CustomerVisits => Set<CustomerVisit>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -496,5 +497,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DealerZone>().HasIndex(x => new { x.OrgId, x.DealerCode, x.ZoneCode }).IsUnique();
         b.Entity<DealerZone>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<DealerZone>().HasIndex(x => new { x.OrgId, x.ZoneCode });
+
+        b.Entity<CustomerVisit>().ToTable("CustomerVisits");
+        b.Entity<CustomerVisit>().HasIndex(x => new { x.OrgId, x.CtmVisitCode, x.DealerCode }).IsUnique();
+        b.Entity<CustomerVisit>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<CustomerVisit>().HasIndex(x => new { x.OrgId, x.ModelCode });
+        b.Entity<CustomerVisit>().Property(x => x.Gender).HasConversion<int>();
     }
 }
