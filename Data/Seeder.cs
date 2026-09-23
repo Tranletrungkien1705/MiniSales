@@ -13461,6 +13461,64 @@ public static class Seeder
                 );
             }
 
+            // Yêu cầu vận chuyển khi chuyển kho (Sto_RearrangeTranspReq / Storage.cs / FrmMngRearrangeTranspReq)
+            if (!await db.RearrangeTransportRequests.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.RearrangeTransportRequests.AddRange(
+                    new RearrangeTransportRequest
+                    {
+                        OrgId = orgId,
+                        SRTReqNo = "SRT26090001",
+                        TransporterCode = "VTL001",
+                        TransporterName = "Công ty Vận tải Hòa Bình",
+                        TransportContractNo = "HĐVT-2026-001",
+                        StorageCodeFrom = "KHO_HPH",
+                        StorageCodeTo = "KHO_TT",
+                        Status = RearrangeTranspReqStatus.Pending,
+                        TotalCars = 2,
+                        PlateNo = "29H-123.45",
+                        DriverName = "Nguyễn Văn Tài",
+                        DriverPhone = "0912345678",
+                        ExpectedStartDate = DateTime.Today.AddDays(1),
+                        ExpectedEndDate = DateTime.Today.AddDays(2),
+                        Remark = "Điều chuyển xe từ kho cảng về kho trung tâm",
+                        CreatedBy = "HQ_LOGISTICS_USER",
+                        CreatedAt = DateTime.Now.AddDays(-1),
+                        Details = new List<RearrangeTransportRequestDetail>
+                        {
+                            new RearrangeTransportRequestDetail { SRTReqNo = "SRT26090001", Vin = "KMHXX00A1NU123456", Model = "Santa Fe 2.5 HTRAC", RefOrdNo = "SR26090001", StorageCodeFrom = "KHO_HPH", StorageCodeTo = "KHO_TT", Status = RearrangeTranspReqDtlStatus.Pending },
+                            new RearrangeTransportRequestDetail { SRTReqNo = "SRT26090001", Vin = "KMHXX00A1NU123457", Model = "Tucson 2.0 AT", RefOrdNo = "SR26090001", StorageCodeFrom = "KHO_HPH", StorageCodeTo = "KHO_TT", Status = RearrangeTranspReqDtlStatus.Pending }
+                        }
+                    },
+                    new RearrangeTransportRequest
+                    {
+                        OrgId = orgId,
+                        SRTReqNo = "SRT26090002",
+                        TransporterCode = "VTL002",
+                        TransporterName = "Công ty Vận tải Thăng Long",
+                        TransportContractNo = "HĐVT-2026-002",
+                        StorageCodeFrom = "KHO_TT",
+                        StorageCodeTo = "KHO_DL",
+                        Status = RearrangeTranspReqStatus.Approved,
+                        TotalCars = 1,
+                        PlateNo = "29H-678.90",
+                        DriverName = "Trần Văn Lái",
+                        DriverPhone = "0987654321",
+                        ExpectedStartDate = DateTime.Today.AddDays(-2),
+                        ExpectedEndDate = DateTime.Today.AddDays(-1),
+                        Remark = "Điều chuyển xe về kho đại lý",
+                        CreatedBy = "HQ_LOGISTICS_USER",
+                        CreatedAt = DateTime.Now.AddDays(-3),
+                        ApprovedBy = "TP_DIEUPHOI_LOGISTICS",
+                        ApprovedAt = DateTime.Now.AddDays(-2),
+                        Details = new List<RearrangeTransportRequestDetail>
+                        {
+                            new RearrangeTransportRequestDetail { SRTReqNo = "SRT26090002", Vin = "KMHXX00A1NU123458", Model = "Creta 1.5 Cao Cấp", RefOrdNo = "SR26090002", StorageCodeFrom = "KHO_TT", StorageCodeTo = "KHO_DL", Status = RearrangeTranspReqDtlStatus.Approved }
+                        }
+                    }
+                );
+            }
+
             await db.SaveChangesAsync();
         }
     }

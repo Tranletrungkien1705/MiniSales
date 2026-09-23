@@ -80,6 +80,7 @@ builder.Services.AddScoped<ICustomerVisitService, CustomerVisitService>();
 builder.Services.AddScoped<ITransporterService, TransporterService>();
 builder.Services.AddScoped<IQuotaService, QuotaService>();
 builder.Services.AddScoped<ISalesManViolateService, SalesManViolateService>();
+builder.Services.AddScoped<IRearrangeTransportRequestService, RearrangeTransportRequestService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5417,6 +5418,95 @@ app.MapDelete("/api/salesman-violates/{smCode}/{violateNumber:int}", async (stri
 {
     var ok = await svc.DeleteAsync(smCode, violateNumber);
     return ok ? Results.Ok(new { success = true, smCode, violateNumber }) : Results.NotFound(new { smCode, violateNumber });
+}).RequireAuthorization();
+
+// ===== Yêu cầu vận chuyển khi chuyển kho (Sto_RearrangeTranspReq / Storage.cs / FrmMngRearrangeTranspReq) =====
+app.MapPost("/api/rearrange-transp-reqs", async (CreateRearrangeTranspReqDto dto, IRearrangeTransportRequestService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/rearrange-transp-reqs", async (IRearrangeTransportRequestService svc, string? status, string? transporterCode, string? srtReqNo, string? vin) =>
+    Results.Ok(await svc.ListAsync(status, transporterCode, srtReqNo, vin))).RequireAuthorization();
+
+app.MapGet("/api/rearrange-transp-reqs/stats", async (IRearrangeTransportRequestService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/rearrange-transp-reqs/{srtReqNo}", async (string srtReqNo, IRearrangeTransportRequestService svc) =>
+{
+    var r = await svc.DetailAsync(srtReqNo);
+    return r is null ? Results.NotFound(new { srtReqNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/rearrange-transp-reqs/{srtReqNo}", async (string srtReqNo, UpdateRearrangeTranspReqDto dto, IRearrangeTransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(srtReqNo, dto);
+        return r is null ? Results.NotFound(new { srtReqNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-transp-reqs/{srtReqNo}/approve", async (string srtReqNo, ApproveRearrangeTranspReqDto? dto, IRearrangeTransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.ApproveAsync(srtReqNo, dto);
+        return r is null ? Results.NotFound(new { srtReqNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-transp-reqs/{srtReqNo}/reject", async (string srtReqNo, RejectRearrangeTranspReqDto dto, IRearrangeTransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(srtReqNo, dto);
+        return r is null ? Results.NotFound(new { srtReqNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-transp-reqs/{srtReqNo}/cancel", async (string srtReqNo, CancelRearrangeTranspReqDto dto, IRearrangeTransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(srtReqNo, dto);
+        return r is null ? Results.NotFound(new { srtReqNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/rearrange-transp-reqs/{srtReqNo}", async (string srtReqNo, IRearrangeTransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteAsync(srtReqNo);
+        return r is null ? Results.NotFound(new { srtReqNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/rearrange-transp-reqs/{srtReqNo}/cars", async (string srtReqNo, AddRearrangeTranspReqCarDto dto, IRearrangeTransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(srtReqNo, dto);
+        return r is null ? Results.NotFound(new { srtReqNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/rearrange-transp-reqs/{srtReqNo}/cars/{vin}", async (string srtReqNo, string vin, IRearrangeTransportRequestService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(srtReqNo, vin);
+        return r is null ? Results.NotFound(new { srtReqNo, vin }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
 app.Run();

@@ -4002,3 +4002,56 @@ public sealed class SalesManViolate
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
 }
+
+/// <summary>Trạng thái Yêu cầu vận chuyển khi chuyển kho (DMS.Sales Sto_RearrangeTranspReq / Sto_TranspReq TranspReqStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [Đã duyệt điều xe], Rejected = 'R' [Từ chối], Cancelled = 'C' [Đã hủy]).</summary>
+public enum RearrangeTranspReqStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái từng dòng xe trong YCVT chuyển kho (DMS.Sales Sto_RearrangeTranspReqDtl TranspReqDtlStatus: Pending = 'P', Approved = 'A', Rejected = 'R', Cancelled = 'C').</summary>
+public enum RearrangeTranspReqDtlStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
+
+/// <summary>Yêu cầu vận chuyển khi chuyển kho xe ô tô (DMS.Sales Sto_RearrangeTranspReq / Sto_RearrangeTranspReqDtl / Storage.cs / FrmMngRearrangeTranspReq): gom nhóm các xe VIN (mỗi VIN gắn 1 lệnh điều chuyển kho Sto_StorageRearrange đã duyệt A2) vào 1 yêu cầu vận chuyển theo nhà vận chuyển, phục vụ điều độ xe lồng khi chuyển kho nội bộ. Khóa nghiệp vụ = SRTReqNo.</summary>
+public sealed class RearrangeTransportRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SRTReqNo { get; set; } = ""; // Mã yêu cầu vận chuyển chuyển kho (PK SRTReqNo, vd: SRT26090001)
+    public string TransporterCode { get; set; } = ""; // Mã nhà vận chuyển (Mst_Transporter, phải tồn tại + FlagActive='1')
+    public string? TransporterName { get; set; } // Tên nhà vận chuyển (tra cứu từ Mst_Transporter)
+    public string? TransportContractNo { get; set; } // Số hợp đồng vận chuyển
+    public string? DealerCode { get; set; } // Mã đại lý liên quan (nếu có)
+    public string? StorageCodeFrom { get; set; } // Kho xuất phát (tổng hợp từ các dòng xe)
+    public string? StorageCodeTo { get; set; } // Kho đích đến (tổng hợp từ các dòng xe)
+    public RearrangeTranspReqStatus Status { get; set; } = RearrangeTranspReqStatus.Pending; // Trạng thái YCVT (P -> A / R / C)
+    public int TotalCars { get; set; } // Tổng số xe trong yêu cầu
+    public string? PlateNo { get; set; } // Biển số xe lồng / xe chuyên dùng chở xe
+    public string? DriverName { get; set; } // Tài xế lái xe chuyên chở
+    public string? DriverPhone { get; set; } // SĐT tài xế
+    public DateTime? ExpectedStartDate { get; set; } // Ngày dự kiến bốc xe xuất kho
+    public DateTime? ExpectedEndDate { get; set; } // Ngày dự kiến giao xe đến kho đích
+    public string? Remark { get; set; } // Ghi chú yêu cầu
+    public string? RejectReason { get; set; } // Lý do từ chối (RejectHQ)
+    public string? CancelReason { get; set; } // Lý do hủy yêu cầu
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<RearrangeTransportRequestDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe trong YCVT chuyển kho (DMS.Sales Sto_RearrangeTranspReqDtl): liên kết số khung VIN, lệnh điều chuyển kho nguồn (RefOrdNo = StorageRearrangeNo), kho xuất và kho nhận.</summary>
+public sealed class RearrangeTransportRequestDetail
+{
+    public long Id { get; set; }
+    public long RearrangeTranspReqId { get; set; }
+    public string SRTReqNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung VIN (17 ký tự)
+    public string? Model { get; set; } // Dòng xe
+    public string? RefOrdNo { get; set; } // Số lệnh điều chuyển kho nguồn (StorageRearrangeNo)
+    public string? StorageCodeFrom { get; set; } // Kho xuất xe
+    public string? StorageCodeTo { get; set; } // Kho nhận xe
+    public RearrangeTranspReqDtlStatus Status { get; set; } = RearrangeTranspReqDtlStatus.Pending;
+    public string? Remark { get; set; }
+}

@@ -118,6 +118,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<TransporterDriver> TransporterDrivers => Set<TransporterDriver>();
     public DbSet<QuotaMaster> Quotas => Set<QuotaMaster>();
     public DbSet<SalesManViolate> SalesManViolates => Set<SalesManViolate>();
+    public DbSet<RearrangeTransportRequest> RearrangeTransportRequests => Set<RearrangeTransportRequest>();
+    public DbSet<RearrangeTransportRequestDetail> RearrangeTransportRequestDetails => Set<RearrangeTransportRequestDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -530,5 +532,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<SalesManViolate>().HasIndex(x => new { x.OrgId, x.SMCode });
         b.Entity<SalesManViolate>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<SalesManViolate>().Property(x => x.ViolateType).HasConversion<int>();
+
+        b.Entity<RearrangeTransportRequest>().ToTable("RearrangeTransportRequests");
+        b.Entity<RearrangeTransportRequest>().HasIndex(x => new { x.OrgId, x.SRTReqNo }).IsUnique();
+        b.Entity<RearrangeTransportRequest>().HasIndex(x => new { x.OrgId, x.TransporterCode });
+        b.Entity<RearrangeTransportRequest>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<RearrangeTransportRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RearrangeTranspReqId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<RearrangeTransportRequestDetail>().ToTable("RearrangeTransportRequestDetails");
+        b.Entity<RearrangeTransportRequestDetail>().HasIndex(x => x.SRTReqNo);
+        b.Entity<RearrangeTransportRequestDetail>().HasIndex(x => x.Vin);
+        b.Entity<RearrangeTransportRequestDetail>().Property(x => x.Status).HasConversion<int>();
     }
 }
