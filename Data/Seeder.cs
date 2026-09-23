@@ -2885,6 +2885,22 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_DealerCode ON DealerZones(OrgId, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_ZoneCode ON DealerZones(OrgId, ZoneCode);
 
+                CREATE TABLE IF NOT EXISTS DelayTransports (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    StorageCode TEXT NOT NULL,
+                    StorageName TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    DelayTransport REAL NOT NULL DEFAULT 0,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DelayTransports_OrgId_StorageCode_DealerCode ON DelayTransports(OrgId, StorageCode, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_DelayTransports_OrgId_StorageCode ON DelayTransports(OrgId, StorageCode);
+                CREATE INDEX IF NOT EXISTS IX_DelayTransports_OrgId_DealerCode ON DelayTransports(OrgId, DealerCode);
+
                 CREATE TABLE IF NOT EXISTS SalesManViolates (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -13428,6 +13444,16 @@ public static class Seeder
                 db.DealerZones.AddRange(
                     new DealerZone { OrgId = orgId, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", ZoneCode = "MB", ZoneName = "Miền Bắc", Remark = "Đại lý khu vực Hà Nội", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" },
                     new DealerZone { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", ZoneCode = "MN", ZoneName = "Miền Nam", Remark = "Đại lý khu vực phía Nam", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" }
+                );
+            }
+
+            // Hạn mức độ trễ vận tải theo Kho & Đại lý (Mst_DelayTransports / Master.1.cs / MstDelayTransportsController)
+            if (!await db.DelayTransports.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.DelayTransports.AddRange(
+                    new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_HN", StorageName = "Kho Tổng Hyundai Ninh Bình", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", DelayTransport = 3m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_HN", StorageName = "Kho Tổng Hyundai Ninh Bình", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", DelayTransport = 5m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_SG", StorageName = "Kho Tổng Nam Bộ Hiệp Phước", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", DelayTransport = 2m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 

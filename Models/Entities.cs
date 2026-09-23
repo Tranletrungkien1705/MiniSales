@@ -3883,6 +3883,22 @@ public sealed class DealerZone
     public DateTime LogLUDTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người cập nhật gần nhất
 }
+
+/// <summary>Hạn mức độ trễ vận tải theo Kho & Đại lý (DMS.Sales Mst_DelayTransports / Master.1.cs / MstDelayTransportsController / Mst_DelayTransports_Get|Create|Update|Delete|Import): danh mục quy định số ngày trễ vận tải tối đa (DelayTransport) được chấp nhận khi giao xe từ một Kho (StorageCode) tới một Đại lý (DealerCode). Khóa nghiệp vụ = (StorageCode, DealerCode). Dùng để đối soát phạt chậm vận tải (Pmt_TransportIns) và tính chi phí lưu kho (Pmt_PaymentStorage).</summary>
+public sealed class DelayTransportMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string StorageCode { get; set; } = ""; // Mã kho (khóa nghiệp vụ, tham chiếu Mst_Storage.StorageCode)
+    public string? StorageName { get; set; } // Tên kho (tra cứu từ Mst_Storage)
+    public string DealerCode { get; set; } = ""; // Mã đại lý (khóa nghiệp vụ, tham chiếu Mst_Dealer.DealerCode)
+    public string? DealerName { get; set; } // Tên đại lý (tra cứu từ Mst_Dealer)
+    public decimal DelayTransport { get; set; } // Hạn mức độ trễ vận tải (số ngày, >= 0)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
 /// <summary>Giới tính khách hàng đến thăm đại lý (DMS.Sales Dlr_CtmVisit Gender: M = Nam, F = Nữ).</summary>
 public enum CustomerVisitGender { Male = 0, Female = 1 }
 

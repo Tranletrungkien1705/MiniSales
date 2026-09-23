@@ -82,6 +82,7 @@ builder.Services.AddScoped<IQuotaService, QuotaService>();
 builder.Services.AddScoped<ISalesManViolateService, SalesManViolateService>();
 builder.Services.AddScoped<IRearrangeTransportRequestService, RearrangeTransportRequestService>();
 builder.Services.AddScoped<IOrderAllocationService, OrderAllocationService>();
+builder.Services.AddScoped<IDelayTransportService, DelayTransportService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5586,6 +5587,51 @@ app.MapDelete("/api/order-allocations/{allocationNo}", async (string allocationN
         var r = await svc.DeleteAsync(allocationNo);
         return r is null ? Results.NotFound(new { allocationNo }) : Results.Ok(r);
     }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Hạn mức độ trễ vận tải theo Kho & Đại lý (Delay Transport - DMS.Sales Mst_DelayTransports / Master.1.cs / MstDelayTransportsController) =====
+app.MapPost("/api/delay-transports", async (CreateDelayTransportDto dto, IDelayTransportService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/delay-transports", async (IDelayTransportService svc, string? keyWord, string? storageCode, string? dealerCode, string? flagActive) =>
+    Results.Ok(await svc.SearchAsync(keyWord, storageCode, dealerCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/delay-transports/stats", async (IDelayTransportService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/delay-transports/{storageCode}/{dealerCode}", async (string storageCode, string dealerCode, IDelayTransportService svc) =>
+{
+    var r = await svc.GetAsync(storageCode, dealerCode);
+    return r is null ? Results.NotFound(new { storageCode, dealerCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/delay-transports/{storageCode}/{dealerCode}", async (string storageCode, string dealerCode, UpdateDelayTransportDto dto, IDelayTransportService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(storageCode, dealerCode, dto);
+        return r is null ? Results.NotFound(new { storageCode, dealerCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/delay-transports/{storageCode}/{dealerCode}", async (string storageCode, string dealerCode, IDelayTransportService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteAsync(storageCode, dealerCode);
+        return r ? Results.Ok(new { deleted = true, storageCode, dealerCode }) : Results.NotFound(new { storageCode, dealerCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/delay-transports/import", async (List<DelayTransportImportRowDto> rows, IDelayTransportService svc) =>
+{
+    try { return Results.Ok(await svc.ImportAsync(rows)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
