@@ -2885,6 +2885,36 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_DealerCode ON DealerZones(OrgId, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_DealerZones_OrgId_ZoneCode ON DealerZones(OrgId, ZoneCode);
 
+                CREATE TABLE IF NOT EXISTS SalesManViolates (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    SMCode TEXT NOT NULL,
+                    ViolateNumber INTEGER NOT NULL DEFAULT 1,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    ViolateType INTEGER NOT NULL,
+                    ViolateDateStart TEXT NOT NULL,
+                    ViolateDateEnd TEXT,
+                    SMHyundaiCode TEXT,
+                    SMName TEXT,
+                    SMDateOfBirth TEXT,
+                    IdentityCardNo TEXT,
+                    SMPhoneNo TEXT,
+                    SMType TEXT,
+                    SMStatus TEXT,
+                    Remark TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    UpdateBy TEXT,
+                    UpdateDTime TEXT,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_SalesManViolates_OrgId_SMCode_ViolateNumber ON SalesManViolates(OrgId, SMCode, ViolateNumber);
+                CREATE INDEX IF NOT EXISTS IX_SalesManViolates_OrgId_SMCode ON SalesManViolates(OrgId, SMCode);
+                CREATE INDEX IF NOT EXISTS IX_SalesManViolates_OrgId_DealerCode ON SalesManViolates(OrgId, DealerCode);
+
                 CREATE TABLE IF NOT EXISTS CustomerVisits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -13398,6 +13428,15 @@ public static class Seeder
                 db.DealerZones.AddRange(
                     new DealerZone { OrgId = orgId, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", ZoneCode = "MB", ZoneName = "Miền Bắc", Remark = "Đại lý khu vực Hà Nội", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" },
                     new DealerZone { OrgId = orgId, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", ZoneCode = "MN", ZoneName = "Miền Nam", Remark = "Đại lý khu vực phía Nam", FlagActive = "1", LogLUDTime = DateTime.Now.AddDays(-45), LogLUBy = "SYSADMIN" }
+                );
+            }
+
+            // Chế tài / Vi phạm Nhân viên Bán hàng (HR_SalesManViolate / MasterData.HR.cs)
+            if (!await db.SalesManViolates.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.SalesManViolates.AddRange(
+                    new SalesManViolate { OrgId = orgId, SMCode = "SM001", ViolateNumber = 1, DealerCode = "VN001", DealerName = "Hyundai Đông Đô", ViolateType = ViolateType.Temporary, ViolateDateStart = DateTime.Today.AddDays(-20), ViolateDateEnd = DateTime.Today.AddDays(10), SMHyundaiCode = "HD001", SMName = "Nguyễn Văn An", SMDateOfBirth = new DateTime(1990, 5, 12), IdentityCardNo = "001090012345", SMPhoneNo = "0912345678", SMType = "TVBH", SMStatus = "CHINGTHUC", Remark = "Vi phạm quy trình tư vấn bán hàng", FlagActive = "1", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddDays(-20), LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new SalesManViolate { OrgId = orgId, SMCode = "SM002", ViolateNumber = 1, DealerCode = "VN002", DealerName = "Hyundai Nam Trung", ViolateType = ViolateType.Permanent, ViolateDateStart = DateTime.Today.AddDays(-15), ViolateDateEnd = null, SMHyundaiCode = "HD002", SMName = "Trần Thị Bình", SMDateOfBirth = new DateTime(1992, 8, 3), IdentityCardNo = "079092023456", SMPhoneNo = "0987654321", SMType = "TVBH", SMStatus = "CHINGTHUC", Remark = "Vi phạm nghiêm trọng — gian lận doanh số", FlagActive = "1", CreatedBy = "CHUYEN_VIEN_NPP", CreatedAt = DateTime.Now.AddDays(-15), LogLUDateTime = DateTime.Now.AddDays(-15), LogLUBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 

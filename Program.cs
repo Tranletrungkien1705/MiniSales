@@ -79,6 +79,7 @@ builder.Services.AddScoped<IDealerZoneService, DealerZoneService>();
 builder.Services.AddScoped<ICustomerVisitService, CustomerVisitService>();
 builder.Services.AddScoped<ITransporterService, TransporterService>();
 builder.Services.AddScoped<IQuotaService, QuotaService>();
+builder.Services.AddScoped<ISalesManViolateService, SalesManViolateService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5381,6 +5382,41 @@ app.MapPost("/api/quotas/import", async (List<QuotaImportRowDto> rows, IQuotaSer
 {
     try { return Results.Ok(await svc.ImportAsync(rows)); }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Chế tài / Vi phạm Nhân viên Bán hàng (HR_SalesManViolate / MasterData.HR.cs) =====
+app.MapGet("/api/salesman-violates", async (string? smCode, string? dealerCode, string? violateType, string? flagActive, ISalesManViolateService svc) =>
+    Results.Ok(await svc.SearchAsync(smCode, dealerCode, violateType, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/salesman-violates/stats", async (ISalesManViolateService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/salesman-violates/{smCode}/{violateNumber:int}", async (string smCode, int violateNumber, ISalesManViolateService svc) =>
+{
+    var r = await svc.GetAsync(smCode, violateNumber);
+    return r is null ? Results.NotFound(new { smCode, violateNumber }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/salesman-violates", async (CreateSalesManViolateDto dto, ISalesManViolateService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/salesman-violates/{smCode}/{violateNumber:int}", async (string smCode, int violateNumber, UpdateSalesManViolateDto dto, ISalesManViolateService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(smCode, violateNumber, dto);
+        return r is null ? Results.NotFound(new { smCode, violateNumber }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/salesman-violates/{smCode}/{violateNumber:int}", async (string smCode, int violateNumber, ISalesManViolateService svc) =>
+{
+    var ok = await svc.DeleteAsync(smCode, violateNumber);
+    return ok ? Results.Ok(new { success = true, smCode, violateNumber }) : Results.NotFound(new { smCode, violateNumber });
 }).RequireAuthorization();
 
 app.Run();

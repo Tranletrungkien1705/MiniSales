@@ -117,6 +117,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<TransporterCar> TransporterCars => Set<TransporterCar>();
     public DbSet<TransporterDriver> TransporterDrivers => Set<TransporterDriver>();
     public DbSet<QuotaMaster> Quotas => Set<QuotaMaster>();
+    public DbSet<SalesManViolate> SalesManViolates => Set<SalesManViolate>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -523,5 +524,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.DealerCode, x.SpecCode }).IsUnique();
         b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<QuotaMaster>().HasIndex(x => new { x.OrgId, x.SpecCode });
+
+        b.Entity<SalesManViolate>().ToTable("SalesManViolates");
+        b.Entity<SalesManViolate>().HasIndex(x => new { x.OrgId, x.SMCode, x.ViolateNumber }).IsUnique();
+        b.Entity<SalesManViolate>().HasIndex(x => new { x.OrgId, x.SMCode });
+        b.Entity<SalesManViolate>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<SalesManViolate>().Property(x => x.ViolateType).HasConversion<int>();
     }
 }

@@ -3971,3 +3971,34 @@ public sealed class QuotaMaster
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
 }
+/// <summary>Loại vi phạm chế tài nhân viên bán hàng (DMS.Sales Mst_ViolateType.ViolateTypeId: TT = Tạm thời [có thời hạn], VV = Vĩnh viễn [không thời hạn]).</summary>
+public enum ViolateType { Temporary = 0, Permanent = 1 }
+
+/// <summary>Chế tài / Vi phạm Nhân viên Bán hàng (DMS.Sales HR_SalesManViolate / MasterData.HR.cs / HR_SalesManViolate_Get|Create|Update): ghi nhận vi phạm chế tài của nhân viên bán hàng đại lý (tạm thời có thời hạn hoặc vĩnh viễn). Khóa nghiệp vụ = (SMCode, ViolateNumber) — ViolateNumber tự tăng theo từng nhân viên. Nhân viên đã vi phạm Vĩnh viễn (VV) thì không được lập vi phạm mới; vi phạm Tạm thời (TT) bắt buộc có ngày kết thúc và phải lớn hơn ngày kết thúc vi phạm gần nhất.</summary>
+public sealed class SalesManViolate
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SMCode { get; set; } = ""; // Mã nhân viên bán hàng (khóa nghiệp vụ, tham chiếu Mst_SalesMan.SMCode)
+    public int ViolateNumber { get; set; } = 1; // Số thứ tự vi phạm của nhân viên (tự tăng, khóa nghiệp vụ cùng SMCode)
+    public string DealerCode { get; set; } = ""; // Mã đại lý của nhân viên (phải khớp Mst_SalesMan.DealerCode)
+    public string? DealerName { get; set; } // Tên đại lý (tra cứu từ dữ liệu đại lý)
+    public ViolateType ViolateType { get; set; } = ViolateType.Temporary; // Loại vi phạm (TT tạm thời / VV vĩnh viễn)
+    public DateTime ViolateDateStart { get; set; } = DateTime.Today; // Ngày bắt đầu hiệu lực chế tài (bắt buộc)
+    public DateTime? ViolateDateEnd { get; set; } // Ngày kết thúc chế tài (bắt buộc với TT, để trống với VV)
+    public string? SMHyundaiCode { get; set; } // Mã nhân viên Hyundai (phải khớp Mst_SalesMan.SMHyundaiCode)
+    public string? SMName { get; set; } // Tên nhân viên bán hàng
+    public DateTime? SMDateOfBirth { get; set; } // Ngày sinh nhân viên
+    public string? IdentityCardNo { get; set; } // Số CMND/CCCD nhân viên
+    public string? SMPhoneNo { get; set; } // Số điện thoại nhân viên
+    public string? SMType { get; set; } // Loại nhân viên bán hàng
+    public string? SMStatus { get; set; } // Trạng thái nhân viên tại thời điểm ghi nhận vi phạm
+    public string? Remark { get; set; } // Ghi chú / lý do vi phạm
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public string? CreatedBy { get; set; } // Người tạo vi phạm
+    public DateTime CreatedAt { get; set; } = DateTime.Now; // Thời điểm tạo
+    public string? UpdateBy { get; set; } // Người cập nhật gần nhất
+    public DateTime? UpdateDTime { get; set; } // Thời điểm cập nhật gần nhất
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}
