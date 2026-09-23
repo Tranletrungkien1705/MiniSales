@@ -1954,9 +1954,80 @@ public sealed class CarRedeemRequestDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái Yêu cầu Bảo hiểm Xe ô tô (DMS.Sales Ins_InsuranceReq InsReqStatus: Pending = 'P' [Chờ duyệt], Approved = 'A' [Đã duyệt], Rejected = 'R' [Từ chối], Cancelled = 'C' [Hủy]).</summary>
+public enum CarInsuranceStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
 
+/// <summary>Trạng thái từng dòng xe trong Yêu cầu Bảo hiểm (DMS.Sales Ins_InsuranceReqDtl InsReqDtlStatus: Pending = 'P', Approved = 'A', Rejected = 'R', Cancelled = 'C').</summary>
+public enum CarInsuranceDtlStatus { Pending = 0, Approved = 1, Rejected = 2, Cancelled = 3 }
 
+/// <summary>Loại chứng từ gốc phát sinh bảo hiểm xe (DMS.Sales TConst.Sto_TranspReqType: CARTRANSPORT = Lệnh giao xe, CARRETRIEVE = Lệnh thu hồi, STORAGEREARRANGE = Điều chuyển kho, STORAGEREARRCB = Điều chuyển đóng thùng).</summary>
+public enum CarInsuranceRefOrdType { CarTransport = 0, CarRetrieve = 1, StorageRearrange = 2, StorageRearrangeCB = 3 }
 
+/// <summary>Yêu cầu Bảo hiểm Xe ô tô Vận chuyển & Giao nhận (DMS.Sales Ins_InsuranceReq + Ins_InsuranceReqDtl / Master.cs / 08_BAO_HIEM.md): quản lý quy trình gửi yêu cầu bảo hiểm cho các lô xe ô tô vận chuyển (theo Lệnh giao xe DO, Thu hồi xe, Điều chuyển kho hoặc Điều chuyển đóng thùng) tới các công ty bảo hiểm (BIC, PTI, PJICO, Bảo Việt...), duyệt bảo hiểm kèm số đơn PolicyNo, quản lý phí bảo hiểm và kiểm soát an toàn vận tải.</summary>
+public sealed class CarInsuranceRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string InsReqNo { get; set; } = ""; // Mã yêu cầu bảo hiểm (PK InsReqNo, format: {yyMM}IN{seq:D5}, vd: 2603IN00001)
+    public string InsCompanyCode { get; set; } = ""; // Mã công ty bảo hiểm: BIC, PTI, PJICO, BV, MIC...
+    public string? InsCompanyName { get; set; } // Tên công ty bảo hiểm
+    public string InsTypeCode { get; set; } = ""; // Mã loại hình bảo hiểm: BHVC (Vật chất), BHTNDS (TNDS), BHVT (Vận chuyển)...
+    public string? InsTypeName { get; set; } // Tên loại hình bảo hiểm
+    public DateTime EffectiveDate { get; set; } = DateTime.Today; // Ngày bắt đầu hiệu lực bảo hiểm
+    public DateTime? ExpiryDate { get; set; } // Ngày hết hạn bảo hiểm
+    public int TotalCars { get; set; } // Tổng số xe trong yêu cầu
+    public int ApprovedCars { get; set; } // Số xe đã được duyệt bảo hiểm
+    public decimal TotalAmount { get; set; } // Tổng giá trị bảo hiểm các xe (tổng UnitPrice)
+    public decimal TotalPremiumAmount { get; set; } // Tổng phí bảo hiểm phải đóng (tổng InsAmount)
+    public string? PolicyNo { get; set; } // Số đơn / hợp đồng bảo hiểm được công ty bảo hiểm cấp
+    public DateTime? PolicyDate { get; set; } // Ngày cấp đơn bảo hiểm
+    public CarInsuranceStatus Status { get; set; } = CarInsuranceStatus.Pending; // Trạng thái yêu cầu: P -> A / R / C
+    public string? Remark { get; set; } // Ghi chú yêu cầu bảo hiểm
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public DateTime? RejectedDate { get; set; }
+    public string? RejectedBy { get; set; }
+    public string? CancelReason { get; set; } // Lý do hủy yêu cầu
+    public DateTime? CancelledDate { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.Now; // Ngày lập yêu cầu
+    public string? CreatedBy { get; set; }
+    public DateTime? ApprovedDate { get; set; } // Ngày duyệt yêu cầu bảo hiểm
+    public string? ApprovedBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
 
+    public List<CarInsuranceRequestDetail> Details { get; set; } = new();
+}
 
-
+/// <summary>Chi tiết dòng xe ô tô trong Yêu cầu Bảo hiểm (DMS.Sales Ins_InsuranceReqDtl): quản lý số khung VIN xe, mã định danh CarId, loại và số chứng từ gốc (Lệnh giao DO, Thu hồi, Điều chuyển kho, Đóng thùng), đơn vị vận tải, giá trị xe tính bảo hiểm, tỷ lệ phí bảo hiểm (Rate), số ngày bảo hiểm và số tiền phí bảo hiểm (InsAmount).</summary>
+public sealed class CarInsuranceRequestDetail
+{
+    public long Id { get; set; }
+    public long InsuranceRequestId { get; set; }
+    public string InsReqNo { get; set; } = ""; // Mã yêu cầu bảo hiểm
+    public string CarId { get; set; } = ""; // Mã xe thương mại hệ thống Car_Car
+    public string Vin { get; set; } = ""; // Số khung VIN xe (17 ký tự)
+    public string? ModelCode { get; set; } // Mã model
+    public string ModelName { get; set; } = ""; // Tên model xe (Santa Fe, Tucson, Creta, Accent...)
+    public string? SpecCode { get; set; } // Mã cấu hình xe (spec)
+    public string? SpecDescription { get; set; } // Mô tả bản xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? ColorName { get; set; } // Tên màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public CarInsuranceRefOrdType RefOrdType { get; set; } = CarInsuranceRefOrdType.CarTransport; // Loại lệnh nguồn: CARTRANSPORT, CARRETRIEVE, STORAGEREARRANGE, STORAGEREARRCB
+    public string RefOrdNo { get; set; } = ""; // Số lệnh nguồn tương ứng
+    public string? TransporterCode { get; set; } // Mã đơn vị vận chuyển
+    public string? TransporterName { get; set; } // Tên đơn vị vận chuyển
+    public string? LocationFrom { get; set; } // Địa điểm bốc xe xuất phát
+    public string? LocationTo { get; set; } // Địa điểm nhận xe đến
+    public DateTime? ExpectedStartDate { get; set; } // Ngày dự kiến bắt đầu vận chuyển
+    public decimal Price { get; set; } // Giá trị xe tính bảo hiểm (VNĐ)
+    public decimal Rate { get; set; } = 0.15m; // Tỷ lệ phí bảo hiểm (%)
+    public int InsuranceDay { get; set; } = 30; // Số ngày bảo hiểm
+    public decimal InsAmount { get; set; } // Phí bảo hiểm xe = Price * Rate / 100 (VNĐ)
+    public string? PolicyNo { get; set; } // Số đơn bảo hiểm riêng cho xe (nếu có)
+    public CarInsuranceDtlStatus Status { get; set; } = CarInsuranceDtlStatus.Pending; // Trạng thái dòng xe: P -> A / R / C
+    public string? Remark { get; set; } // Ghi chú dòng xe
+    public string? ApprovedBy { get; set; }
+    public DateTime? ApprovedDate { get; set; }
+}

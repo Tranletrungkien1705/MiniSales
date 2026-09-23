@@ -1199,6 +1199,53 @@ public static class Seeder
                     FOREIGN KEY(CBRequestId) REFERENCES CarBodyRequests(Id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS DriveTests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    DriveTestCode TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    DriverTestGroup INTEGER NOT NULL,
+                    DriverTestType INTEGER NOT NULL,
+                    DriveDTime TEXT NOT NULL,
+                    CustomerCode TEXT NOT NULL,
+                    FullName TEXT NOT NULL,
+                    Gender TEXT NOT NULL,
+                    RangeAgeCode TEXT NOT NULL,
+                    DriverLicenseNo TEXT NOT NULL,
+                    IDCardNo TEXT,
+                    PhoneNo TEXT NOT NULL,
+                    Email TEXT,
+                    Address TEXT,
+                    ProvinceCode TEXT,
+                    ProvinceName TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT,
+                    DrvTestPlateNo TEXT NOT NULL,
+                    DrvTestVIN TEXT,
+                    SalesManCode TEXT,
+                    SalesManName TEXT,
+                    Evaluation TEXT,
+                    CustomerIntent TEXT,
+                    EstimatedContractDate TEXT,
+                    SupportAmount REAL NOT NULL,
+                    ApprovedAmount REAL NOT NULL,
+                    Status INTEGER NOT NULL,
+                    FlagActive INTEGER NOT NULL DEFAULT 1,
+                    CreatedDate TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    ApprovedDate TEXT,
+                    ApprovedBy TEXT,
+                    RejectDate TEXT,
+                    RejectBy TEXT,
+                    RejectRemark TEXT,
+                    CancelledDate TEXT,
+                    CancelledBy TEXT,
+                    CancelRemark TEXT,
+                    Remark TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DriveTests_OrgId_DriveTestCode ON DriveTests(OrgId, DriveTestCode);
+
                 CREATE TABLE IF NOT EXISTS StorageRearrangeCBOrders (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -1549,11 +1596,85 @@ public static class Seeder
                     Remark TEXT,
                     FOREIGN KEY(RedeemRequestId) REFERENCES CarRedeemRequests(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS CarInsuranceRequests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    InsReqNo TEXT NOT NULL,
+                    InsCompanyCode TEXT NOT NULL,
+                    InsCompanyName TEXT,
+                    InsTypeCode TEXT NOT NULL,
+                    InsTypeName TEXT,
+                    EffectiveDate TEXT NOT NULL,
+                    ExpiryDate TEXT,
+                    TotalCars INTEGER NOT NULL,
+                    ApprovedCars INTEGER NOT NULL,
+                    TotalAmount REAL NOT NULL,
+                    TotalPremiumAmount REAL NOT NULL,
+                    PolicyNo TEXT,
+                    PolicyDate TEXT,
+                    Status INTEGER NOT NULL,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    RejectedDate TEXT,
+                    RejectedBy TEXT,
+                    CancelReason TEXT,
+                    CancelledDate TEXT,
+                    CancelledBy TEXT,
+                    CreatedDate TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    ApprovedDate TEXT,
+                    ApprovedBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarInsuranceRequests_OrgId_InsReqNo ON CarInsuranceRequests(OrgId, InsReqNo);
+
+                CREATE TABLE IF NOT EXISTS CarInsuranceRequestDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    InsuranceRequestId INTEGER NOT NULL,
+                    InsReqNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    ModelCode TEXT,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    RefOrdType INTEGER NOT NULL,
+                    RefOrdNo TEXT NOT NULL,
+                    TransporterCode TEXT,
+                    TransporterName TEXT,
+                    LocationFrom TEXT,
+                    LocationTo TEXT,
+                    ExpectedStartDate TEXT,
+                    Price REAL NOT NULL,
+                    Rate REAL NOT NULL,
+                    InsuranceDay INTEGER NOT NULL,
+                    InsAmount REAL NOT NULL,
+                    PolicyNo TEXT,
+                    Status INTEGER NOT NULL,
+                    Remark TEXT,
+                    ApprovedBy TEXT,
+                    ApprovedDate TEXT,
+                    FOREIGN KEY(InsuranceRequestId) REFERENCES CarInsuranceRequests(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
         {
             // Bỏ qua nếu DB là Postgres hoặc đã có bảng
+        }
+
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync("ALTER TABLE DriveTests ADD COLUMN FlagActive INTEGER NOT NULL DEFAULT 1;");
+        }
+        catch
+        {
+            // Bỏ qua nếu cột đã tồn tại
         }
 
         var orgId = TenantContext.DefaultOrgId;
@@ -7214,6 +7335,224 @@ public static class Seeder
             };
 
             db.CarRedeemRequests.AddRange(rdm1, rdm2, rdm3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.InsuranceRequests.AnyAsync(o => o.OrgId == orgId))
+        {
+            var ins1 = new CarInsuranceRequest
+            {
+                OrgId = orgId,
+                InsReqNo = "2603IN00001",
+                InsCompanyCode = "BIC",
+                InsCompanyName = "Tổng công ty Bảo hiểm BIDV",
+                InsTypeCode = "BHVT",
+                InsTypeName = "Bảo hiểm hàng hóa vận tải",
+                EffectiveDate = DateTime.Today.AddDays(-10),
+                ExpiryDate = DateTime.Today.AddDays(20),
+                TotalCars = 2,
+                ApprovedCars = 2,
+                TotalAmount = 2_300_000_000m,
+                TotalPremiumAmount = 3_450_000m,
+                PolicyNo = "POL-BIC-2603-00088",
+                PolicyDate = DateTime.Today.AddDays(-10),
+                Status = CarInsuranceStatus.Approved,
+                Remark = "Bảo hiểm vận chuyển lô xe giao cho đại lý Hyundai Đông Đô",
+                CreatedBy = "TRANSP_DISPATCHER",
+                CreatedDate = DateTime.Today.AddDays(-11),
+                ApprovedBy = "BIC_OFFICER_01",
+                ApprovedDate = DateTime.Today.AddDays(-10),
+                Details = new List<CarInsuranceRequestDetail>
+                {
+                    new CarInsuranceRequestDetail
+                    {
+                        InsReqNo = "2603IN00001",
+                        CarId = "CAR-KMHE281BBSA129841",
+                        Vin = "KMHE281BBSA129841",
+                        ModelCode = "SF25",
+                        ModelName = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF-PREM",
+                        SpecDescription = "Santa Fe 2.5 Xăng Cao Cấp",
+                        ColorCode = "WH",
+                        ColorName = "Trắng Tinh Khôi",
+                        EngineNo = "G4KP-098231",
+                        RefOrdType = CarInsuranceRefOrdType.CarTransport,
+                        RefOrdNo = "DO2603010001",
+                        TransporterCode = "TRP-VTA",
+                        TransporterName = "Công ty TNHH Vận Tải An Phát",
+                        LocationFrom = "Kho Tổng NPP Hyundai Hà Nam",
+                        LocationTo = "Hyundai Đông Đô - Giải Phóng, Hà Nội",
+                        ExpectedStartDate = DateTime.Today.AddDays(-10),
+                        Price = 1_350_000_000m,
+                        Rate = 0.15m,
+                        InsuranceDay = 30,
+                        InsAmount = 2_025_000m,
+                        PolicyNo = "POL-BIC-2603-00088",
+                        Status = CarInsuranceDtlStatus.Approved,
+                        ApprovedBy = "BIC_OFFICER_01",
+                        ApprovedDate = DateTime.Today.AddDays(-10),
+                        Remark = "Xe kiểm tra ngoại quan nguyên đai nguyên kiện"
+                    },
+                    new CarInsuranceRequestDetail
+                    {
+                        InsReqNo = "2603IN00001",
+                        CarId = "CAR-KMHE281BBSA129842",
+                        Vin = "KMHE281BBSA129842",
+                        ModelCode = "TU20",
+                        ModelName = "Tucson 2.0 AT Đặc Biệt",
+                        SpecCode = "TU-SPEC",
+                        SpecDescription = "Tucson 2.0 AT Xăng Đặc Biệt",
+                        ColorCode = "BK",
+                        ColorName = "Đen Huyền Bí",
+                        EngineNo = "G4NL-112349",
+                        RefOrdType = CarInsuranceRefOrdType.CarTransport,
+                        RefOrdNo = "DO2603010002",
+                        TransporterCode = "TRP-VTA",
+                        TransporterName = "Công ty TNHH Vận Tải An Phát",
+                        LocationFrom = "Kho Tổng NPP Hyundai Hà Nam",
+                        LocationTo = "Hyundai Đông Đô - Giải Phóng, Hà Nội",
+                        ExpectedStartDate = DateTime.Today.AddDays(-10),
+                        Price = 950_000_000m,
+                        Rate = 0.15m,
+                        InsuranceDay = 30,
+                        InsAmount = 1_425_000m,
+                        PolicyNo = "POL-BIC-2603-00088",
+                        Status = CarInsuranceDtlStatus.Approved,
+                        ApprovedBy = "BIC_OFFICER_01",
+                        ApprovedDate = DateTime.Today.AddDays(-10),
+                        Remark = "Xe xuất kho đúng tiêu chuẩn kỹ thuật xuất xưởng"
+                    }
+                }
+            };
+
+            var ins2 = new CarInsuranceRequest
+            {
+                OrgId = orgId,
+                InsReqNo = "2603IN00002",
+                InsCompanyCode = "PTI",
+                InsCompanyName = "Tổng công ty Cổ phần Bảo hiểm Bưu điện",
+                InsTypeCode = "BHVC",
+                InsTypeName = "Bảo hiểm vật chất xe ô tô",
+                EffectiveDate = DateTime.Today.AddDays(-2),
+                ExpiryDate = DateTime.Today.AddDays(28),
+                TotalCars = 2,
+                ApprovedCars = 0,
+                TotalAmount = 1_415_000_000m,
+                TotalPremiumAmount = 3_537_500m,
+                Status = CarInsuranceStatus.Pending,
+                Remark = "Đề nghị cấp bảo hiểm thân vỏ xe điều chuyển liên kho nội bộ và xe thu hồi đại lý",
+                CreatedBy = "STO_DISPATCHER",
+                CreatedDate = DateTime.Today.AddDays(-2),
+                Details = new List<CarInsuranceRequestDetail>
+                {
+                    new CarInsuranceRequestDetail
+                    {
+                        InsReqNo = "2603IN00002",
+                        CarId = "CAR-KMHE281BBSA129843",
+                        Vin = "KMHE281BBSA129843",
+                        ModelCode = "CR15",
+                        ModelName = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR-PREM",
+                        SpecDescription = "Creta 1.5 Cao Cấp 2 Tone",
+                        ColorCode = "RD",
+                        ColorName = "Đỏ Quyến Rũ",
+                        EngineNo = "G4FL-449102",
+                        RefOrdType = CarInsuranceRefOrdType.StorageRearrange,
+                        RefOrdNo = "SR2603000001",
+                        TransporterCode = "LOG-HTC",
+                        TransporterName = "Đội Vận Tải Nội Bộ HTC",
+                        LocationFrom = "Kho Cảng Đình Vũ Hải Phòng",
+                        LocationTo = "Kho Tổng NPP Hyundai Hà Nam",
+                        ExpectedStartDate = DateTime.Today.AddDays(-1),
+                        Price = 730_000_000m,
+                        Rate = 0.25m,
+                        InsuranceDay = 30,
+                        InsAmount = 1_825_000m,
+                        Status = CarInsuranceDtlStatus.Pending,
+                        Remark = "Xe CBU nhập khẩu nguyên chiếc đã xong thủ tục hải quan"
+                    },
+                    new CarInsuranceRequestDetail
+                    {
+                        InsReqNo = "2603IN00002",
+                        CarId = "CAR-KMHE281BBSA129844",
+                        Vin = "KMHE281BBSA129844",
+                        ModelCode = "ST15",
+                        ModelName = "Stargazer X Cao Cấp",
+                        SpecCode = "ST-PREM",
+                        SpecDescription = "Stargazer X 1.5 CVT Cao Cấp",
+                        ColorCode = "SL",
+                        ColorName = "Bạc Ánh Kim",
+                        EngineNo = "G4FL-991203",
+                        RefOrdType = CarInsuranceRefOrdType.CarRetrieve,
+                        RefOrdNo = "CR2603000001",
+                        TransporterCode = "LOG-HTC",
+                        TransporterName = "Đội Vận Tải Nội Bộ HTC",
+                        LocationFrom = "Hyundai Nam Trung - Nam Định",
+                        LocationTo = "Kho Tổng NPP Hyundai Hà Nam",
+                        ExpectedStartDate = DateTime.Today,
+                        Price = 685_000_000m,
+                        Rate = 0.25m,
+                        InsuranceDay = 30,
+                        InsAmount = 1_712_500m,
+                        Status = CarInsuranceDtlStatus.Pending,
+                        Remark = "Xe thu hồi từ đại lý về phục vụ điều phối vùng"
+                    }
+                }
+            };
+
+            var ins3 = new CarInsuranceRequest
+            {
+                OrgId = orgId,
+                InsReqNo = "2603IN00003",
+                InsCompanyCode = "PJICO",
+                InsCompanyName = "Tổng công ty Cổ phần Bảo hiểm Petrolimex",
+                InsTypeCode = "BHVT",
+                InsTypeName = "Bảo hiểm hàng hóa vận tải",
+                EffectiveDate = DateTime.Today.AddDays(-5),
+                ExpiryDate = DateTime.Today.AddDays(25),
+                TotalCars = 1,
+                ApprovedCars = 0,
+                TotalAmount = 820_000_000m,
+                TotalPremiumAmount = 1_230_000m,
+                Status = CarInsuranceStatus.Rejected,
+                Remark = "Bảo hiểm vận chuyển xe chassis sang xưởng đóng thùng Nam Việt",
+                RejectReason = "Tuyến vận tải đường đèo dốc đặc biệt mùa mưa lũ vượt khung rủi ro tiêu chuẩn, cần bổ sung phụ phí rủi ro cao",
+                CreatedBy = "TRANSP_STAFF",
+                CreatedDate = DateTime.Today.AddDays(-5),
+                RejectedBy = "PJICO_UW_02",
+                RejectedDate = DateTime.Today.AddDays(-4),
+                Details = new List<CarInsuranceRequestDetail>
+                {
+                    new CarInsuranceRequestDetail
+                    {
+                        InsReqNo = "2603IN00003",
+                        CarId = "CAR-KMHE281BBSA129845",
+                        Vin = "KMHE281BBSA129845",
+                        ModelCode = "EX8",
+                        ModelName = "Hyundai Mighty EX8 GTL",
+                        SpecCode = "EX8-CHAS",
+                        SpecDescription = "Mighty EX8 Chassis Xe Tải",
+                        ColorCode = "BL",
+                        ColorName = "Xanh Cửu Long",
+                        EngineNo = "D4CC-552140",
+                        RefOrdType = CarInsuranceRefOrdType.StorageRearrangeCB,
+                        RefOrdNo = "2603RCB000001",
+                        TransporterCode = "LOG-HTC",
+                        TransporterName = "Đội Vận Chuyển Chassis Chuyên Nghiệp",
+                        LocationFrom = "Kho Tổng NPP Hyundai Hà Nam",
+                        LocationTo = "Xưởng Đóng Thùng Nam Việt - Hưng Yên",
+                        ExpectedStartDate = DateTime.Today.AddDays(-4),
+                        Price = 820_000_000m,
+                        Rate = 0.15m,
+                        InsuranceDay = 30,
+                        InsAmount = 1_230_000m,
+                        Status = CarInsuranceDtlStatus.Rejected,
+                        Remark = "Từ chối duyệt: Cần thẩm định lại tuyến đường vận tải"
+                    }
+                }
+            };
+
+            db.InsuranceRequests.AddRange(ins1, ins2, ins3);
             await db.SaveChangesAsync();
         }
     }

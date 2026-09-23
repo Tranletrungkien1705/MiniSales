@@ -54,6 +54,7 @@ builder.Services.AddScoped<ICarCancelService, CarCancelService>();
 builder.Services.AddScoped<IMapVinService, MapVinService>();
 builder.Services.AddScoped<IRetailInvoiceService, RetailInvoiceService>();
 builder.Services.AddScoped<ICarRedeemService, CarRedeemService>();
+builder.Services.AddScoped<ICarInsuranceService, CarInsuranceService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2722,6 +2723,108 @@ app.MapDelete("/api/car-redeems/{reqDMNo}/cars/{vin}", async (string reqDMNo, st
     {
         var r = await svc.RemoveCarAsync(reqDMNo, vin);
         return Results.Ok(new { success = true, result = r });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Yêu cầu Bảo hiểm Xe ô tô Vận chuyển & Giao nhận (Vehicle Insurance Request Management - DMS.Sales Ins_InsuranceReq + Ins_InsuranceReqDtl / Master.cs / 08_BAO_HIEM.md) =====
+app.MapGet("/api/car-insurances", async (ICarInsuranceService svc, string? status, string? insCompanyCode, string? insTypeCode, string? refOrdType, string? vin, string? insReqNo, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, insCompanyCode, insTypeCode, refOrdType, vin, insReqNo, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/car-insurances/stats", async (ICarInsuranceService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/car-insurances/eligible-cars", async (ICarInsuranceService svc, string? refOrdType, string? keyword) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(refOrdType, keyword))).RequireAuthorization();
+
+app.MapGet("/api/car-insurances/companies", (ICarInsuranceService svc) =>
+    Results.Ok(svc.GetCompanies())).RequireAuthorization();
+
+app.MapGet("/api/car-insurances/types", (ICarInsuranceService svc) =>
+    Results.Ok(svc.GetInsuranceTypes())).RequireAuthorization();
+
+app.MapGet("/api/car-insurances/{insReqNo}", async (string insReqNo, ICarInsuranceService svc) =>
+{
+    var item = await svc.GetByNoAsync(insReqNo);
+    return item is null ? Results.NotFound(new { error = $"Không tìm thấy yêu cầu bảo hiểm '{insReqNo}'." }) : Results.Ok(item);
+}).RequireAuthorization();
+
+app.MapPost("/api/car-insurances", async (CreateCarInsuranceRequestDto dto, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var result = await svc.CreateAsync(dto);
+        return Results.Created($"/api/car-insurances/{result.InsReqNo}", result);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/car-insurances/{insReqNo}/cars/{vin}", async (string insReqNo, string vin, UpdateCarInsuranceDetailDto dto, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var result = await svc.UpdateDetailAsync(insReqNo, vin, dto);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/car-insurances/{insReqNo}", async (string insReqNo, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(insReqNo);
+        return Results.Ok(new { success = ok });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-insurances/{insReqNo}/approve", async (string insReqNo, ApproveCarInsuranceRequestDto? dto, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var result = await svc.ApproveAsync(insReqNo, dto);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-insurances/{insReqNo}/reject", async (string insReqNo, RejectCarInsuranceRequestDto dto, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var result = await svc.RejectAsync(insReqNo, dto);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-insurances/{insReqNo}/cancel", async (string insReqNo, CancelCarInsuranceRequestDto dto, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var result = await svc.CancelAsync(insReqNo, dto);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-insurances/{insReqNo}/cars", async (string insReqNo, AddCarInsuranceDetailDto dto, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var result = await svc.AddCarAsync(insReqNo, dto);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/car-insurances/{insReqNo}/cars/{vin}", async (string insReqNo, string vin, ICarInsuranceService svc) =>
+{
+    try
+    {
+        var result = await svc.RemoveCarAsync(insReqNo, vin);
+        return Results.Ok(new { success = true, result });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

@@ -68,6 +68,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<RetailInvoiceRequestProduct> RetailInvoiceRequestProducts => Set<RetailInvoiceRequestProduct>();
     public DbSet<CarRedeemRequest> CarRedeemRequests => Set<CarRedeemRequest>();
     public DbSet<CarRedeemRequestDetail> CarRedeemRequestDetails => Set<CarRedeemRequestDetail>();
+    public DbSet<CarInsuranceRequest> InsuranceRequests => Set<CarInsuranceRequest>();
+    public DbSet<CarInsuranceRequestDetail> InsuranceRequestDetails => Set<CarInsuranceRequestDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -172,13 +174,17 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<BankBillMinutes>().Property(x => x.Status).HasConversion<int>();
         b.Entity<BankBillMinutes>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.BankBillMinutesId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<BankBillMinutesDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarTestCar>().ToTable("CarTestCars");
         b.Entity<CarTestCar>().HasIndex(x => new { x.OrgId, x.TestCarCode }).IsUnique();
         b.Entity<CarTestCar>().Property(x => x.TestCarStatus).HasConversion<int>();
         b.Entity<CarTestCar>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.TestCarId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CarTestCarDetail>().ToTable("CarTestCarDetails");
         b.Entity<CarTestCarDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarBodyRequest>().ToTable("CarBodyRequests");
         b.Entity<CarBodyRequest>().HasIndex(x => new { x.OrgId, x.CBReqNo }).IsUnique();
         b.Entity<CarBodyRequest>().Property(x => x.Status).HasConversion<int>();
         b.Entity<CarBodyRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.CBRequestId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CarBodyRequestDetail>().ToTable("CarBodyRequestDetails");
         b.Entity<CarBodyRequestDetail>().Property(x => x.Status).HasConversion<int>();
         b.Entity<DealerDriveTest>().HasIndex(x => new { x.OrgId, x.DriveTestCode }).IsUnique();
         b.Entity<DealerDriveTest>().Property(x => x.Status).HasConversion<int>();
@@ -214,5 +220,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CarRedeemRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RedeemRequestId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<CarRedeemRequestDetail>().Property(x => x.Status).HasConversion<int>();
         b.Entity<CarRedeemRequestDetail>().Property(x => x.TypeDMReq).HasConversion<int>();
+        b.Entity<CarInsuranceRequest>().ToTable("CarInsuranceRequests");
+        b.Entity<CarInsuranceRequest>().HasIndex(x => new { x.OrgId, x.InsReqNo }).IsUnique();
+        b.Entity<CarInsuranceRequest>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarInsuranceRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.InsuranceRequestId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<CarInsuranceRequestDetail>().ToTable("CarInsuranceRequestDetails");
+        b.Entity<CarInsuranceRequestDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<CarInsuranceRequestDetail>().Property(x => x.RefOrdType).HasConversion<int>();
     }
 }
