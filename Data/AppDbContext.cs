@@ -96,6 +96,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentStorageDetail> PaymentStorageDetails => Set<PaymentStorageDetail>();
     public DbSet<InventoryCostMaster> InventoryCosts => Set<InventoryCostMaster>();
     public DbSet<CarVinProfile> CarVinProfiles => Set<CarVinProfile>();
+    public DbSet<PerformanceInvoice> PerformanceInvoices => Set<PerformanceInvoice>();
+    public DbSet<PerformanceInvoiceDetail> PerformanceInvoiceDetails => Set<PerformanceInvoiceDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -382,5 +384,19 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.MortageStatus });
         b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.FlagDocReq });
         b.Entity<CarVinProfile>().Property(x => x.MortageStatus).HasConversion<int>();
+        b.Entity<PerformanceInvoice>().ToTable("PerformanceInvoices");
+        b.Entity<PerformanceInvoice>().HasIndex(x => new { x.OrgId, x.RefNo }).IsUnique();
+        b.Entity<PerformanceInvoice>().HasIndex(x => new { x.OrgId, x.ProductionMonth });
+        b.Entity<PerformanceInvoice>().HasIndex(x => new { x.OrgId, x.OrderMonth });
+        b.Entity<PerformanceInvoice>().HasIndex(x => new { x.OrgId, x.Status });
+        b.Entity<PerformanceInvoice>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PerformanceInvoice>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PerformanceInvoiceId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PerformanceInvoiceDetail>().ToTable("PerformanceInvoiceDetails");
+        b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.RefNo);
+        b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.LCTemp);
+        b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.WorkOrderNo);
+        b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.ContractNo);
+        b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.ModelCode);
+        b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.PortCode);
     }
 }

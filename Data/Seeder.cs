@@ -2571,6 +2571,61 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_CarVinProfiles_OrgId_CarId ON CarVinProfiles(OrgId, CarId);
                 CREATE INDEX IF NOT EXISTS IX_CarVinProfiles_OrgId_MortageStatus ON CarVinProfiles(OrgId, MortageStatus);
                 CREATE INDEX IF NOT EXISTS IX_CarVinProfiles_OrgId_FlagDocReq ON CarVinProfiles(OrgId, FlagDocReq);
+
+                CREATE TABLE IF NOT EXISTS PerformanceInvoices (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    RefNo TEXT NOT NULL,
+                    OrderMonth TEXT NOT NULL,
+                    ProductionMonth TEXT NOT NULL,
+                    ExpectedMonth TEXT NOT NULL,
+                    FlagAutoPL TEXT NOT NULL DEFAULT '1',
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    TotalQuantity INTEGER NOT NULL DEFAULT 0,
+                    TotalAmount REAL NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedBy TEXT,
+                    UpdatedAt TEXT,
+                    ConfirmedBy TEXT,
+                    ConfirmedAt TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PerformanceInvoices_OrgId_RefNo ON PerformanceInvoices(OrgId, RefNo);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoices_OrgId_ProductionMonth ON PerformanceInvoices(OrgId, ProductionMonth);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoices_OrgId_OrderMonth ON PerformanceInvoices(OrgId, OrderMonth);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoices_OrgId_Status ON PerformanceInvoices(OrgId, Status);
+
+                CREATE TABLE IF NOT EXISTS PerformanceInvoiceDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PerformanceInvoiceId INTEGER NOT NULL,
+                    RefNo TEXT NOT NULL,
+                    LCTemp TEXT NOT NULL,
+                    SpecCode TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT,
+                    ColorCode TEXT NOT NULL,
+                    ColorName TEXT,
+                    WorkOrderNo TEXT NOT NULL,
+                    PortCode TEXT NOT NULL,
+                    PlantCode TEXT NOT NULL,
+                    Quantity INTEGER NOT NULL DEFAULT 1,
+                    UnitPrice REAL NOT NULL DEFAULT 0,
+                    TotalAmount REAL NOT NULL DEFAULT 0,
+                    ContractNo TEXT,
+                    FlagAutoPL TEXT NOT NULL DEFAULT '1',
+                    Remark TEXT,
+                    FOREIGN KEY(PerformanceInvoiceId) REFERENCES PerformanceInvoices(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_RefNo ON PerformanceInvoiceDetails(RefNo);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_LCTemp ON PerformanceInvoiceDetails(LCTemp);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_WorkOrderNo ON PerformanceInvoiceDetails(WorkOrderNo);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_ContractNo ON PerformanceInvoiceDetails(ContractNo);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_ModelCode ON PerformanceInvoiceDetails(ModelCode);
+                CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_PortCode ON PerformanceInvoiceDetails(PortCode);
             ");
         }
         catch
@@ -12069,6 +12124,226 @@ public static class Seeder
                 };
 
                 db.CarVinProfiles.AddRange(vp1, vp2, vp3, vp4, vp5, vp6);
+            }
+
+            if (!await db.PerformanceInvoices.AnyAsync(o => o.OrgId == orgId))
+            {
+                var pi1 = new PerformanceInvoice
+                {
+                    OrgId = orgId,
+                    RefNo = "2603PI0001",
+                    OrderMonth = "2026-03-01",
+                    ProductionMonth = "2026-04-01",
+                    ExpectedMonth = "2026-05-01",
+                    FlagAutoPL = "1",
+                    Status = PerformanceInvoiceStatus.Confirmed,
+                    TotalQuantity = 50,
+                    TotalAmount = 52000000000m,
+                    Remark = "Kế hoạch đặt hàng sản xuất lô xe Santa Fe và Tucson tại nhà máy HMC Asan tháng 4/2026",
+                    CreatedBy = "HQ_ORDER_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-10),
+                    ConfirmedBy = "Vũ Đình Hùng (Giám đốc Khối Kế hoạch Bán buôn NPP)",
+                    ConfirmedAt = DateTime.Now.AddDays(-7),
+                    Details = new List<PerformanceInvoiceDetail>
+                    {
+                        new()
+                        {
+                            RefNo = "2603PI0001",
+                            LCTemp = "LC2603001",
+                            SpecCode = "SF25-PRE-01",
+                            ModelCode = "SANTAFE",
+                            ModelName = "Hyundai Santa Fe 2.5 HTRAC",
+                            ColorCode = "WH1",
+                            ColorName = "Trắng ngọc trai",
+                            WorkOrderNo = "WO2603001",
+                            PortCode = "HPH",
+                            PlantCode = "HMC-ASAN",
+                            Quantity = 30,
+                            UnitPrice = 1200000000m,
+                            TotalAmount = 36000000000m,
+                            ContractNo = null,
+                            FlagAutoPL = "1",
+                            Remark = "Đợt 1 nhập cảng Hải Phòng phục vụ đại lý miền Bắc"
+                        },
+                        new()
+                        {
+                            RefNo = "2603PI0001",
+                            LCTemp = "LC2603001",
+                            SpecCode = "TU20-STD-01",
+                            ModelCode = "TUCSON",
+                            ModelName = "Hyundai Tucson 2.0 AT",
+                            ColorCode = "BK1",
+                            ColorName = "Đen ánh kim",
+                            WorkOrderNo = "WO2603002",
+                            PortCode = "HPH",
+                            PlantCode = "HMC-ASAN",
+                            Quantity = 20,
+                            UnitPrice = 800000000m,
+                            TotalAmount = 16000000000m,
+                            ContractNo = null,
+                            FlagAutoPL = "1",
+                            Remark = "Đợt 1 Tucson tiêu chuẩn xăng nhập cảng Hải Phòng"
+                        }
+                    }
+                };
+
+                var pi2 = new PerformanceInvoice
+                {
+                    OrgId = orgId,
+                    RefNo = "2602PI0002",
+                    OrderMonth = "2026-02-01",
+                    ProductionMonth = "2026-03-01",
+                    ExpectedMonth = "2026-04-01",
+                    FlagAutoPL = "1",
+                    Status = PerformanceInvoiceStatus.Contracted,
+                    TotalQuantity = 40,
+                    TotalAmount = 32800000000m,
+                    Remark = "Lô xe Creta và Stargazer nhập khẩu Ulsan đã ký HĐ ngoại thương CT-HMC-2026-001",
+                    CreatedBy = "HQ_ORDER_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-30),
+                    ConfirmedBy = "Vũ Đình Hùng (Giám đốc Khối Kế hoạch Bán buôn NPP)",
+                    ConfirmedAt = DateTime.Now.AddDays(-28),
+                    Details = new List<PerformanceInvoiceDetail>
+                    {
+                        new()
+                        {
+                            RefNo = "2602PI0002",
+                            LCTemp = "LC2602002",
+                            SpecCode = "CR15-PRE-01",
+                            ModelCode = "CRETA",
+                            ModelName = "Hyundai Creta 1.5 Cao Cấp",
+                            ColorCode = "RD1",
+                            ColorName = "Đỏ mận",
+                            WorkOrderNo = "WO2602010",
+                            PortCode = "SGN",
+                            PlantCode = "HMC-ULSAN",
+                            Quantity = 25,
+                            UnitPrice = 800000000m,
+                            TotalAmount = 20000000000m,
+                            ContractNo = "CT-HMC-2026-001",
+                            FlagAutoPL = "1",
+                            Remark = "Creta bản cao cấp nhập cảng Sài Gòn"
+                        },
+                        new()
+                        {
+                            RefNo = "2602PI0002",
+                            LCTemp = "LC2602002",
+                            SpecCode = "SG15-PRE-01",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X",
+                            ColorCode = "SL1",
+                            ColorName = "Bạc",
+                            WorkOrderNo = "WO2602011",
+                            PortCode = "SGN",
+                            PlantCode = "HMC-ULSAN",
+                            Quantity = 15,
+                            UnitPrice = 853333333m,
+                            TotalAmount = 12800000000m,
+                            ContractNo = "CT-HMC-2026-001",
+                            FlagAutoPL = "1",
+                            Remark = "Stargazer X nhập cảng Sài Gòn"
+                        }
+                    }
+                };
+
+                var pi3 = new PerformanceInvoice
+                {
+                    OrgId = orgId,
+                    RefNo = "2603PI0003",
+                    OrderMonth = "2026-03-01",
+                    ProductionMonth = "2026-05-01",
+                    ExpectedMonth = "2026-06-01",
+                    FlagAutoPL = "1",
+                    Status = PerformanceInvoiceStatus.Pending,
+                    TotalQuantity = 35,
+                    TotalAmount = 38500000000m,
+                    Remark = "Bản dự thảo PI đặt xe Custin và Ioniq 5 cho kế hoạch quý 2/2026",
+                    CreatedBy = "HQ_ORDER_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-2),
+                    Details = new List<PerformanceInvoiceDetail>
+                    {
+                        new()
+                        {
+                            RefNo = "2603PI0003",
+                            LCTemp = "LC2603003",
+                            SpecCode = "CS20-PRE-01",
+                            ModelCode = "CUSTIN",
+                            ModelName = "Hyundai Custin 2.0T",
+                            ColorCode = "WH1",
+                            ColorName = "Trắng tuyết",
+                            WorkOrderNo = "WO2603020",
+                            PortCode = "HPH",
+                            PlantCode = "HMC-ASAN",
+                            Quantity = 20,
+                            UnitPrice = 950000000m,
+                            TotalAmount = 19000000000m,
+                            ContractNo = null,
+                            FlagAutoPL = "1",
+                            Remark = "Custin 2.0T Cao Cấp"
+                        },
+                        new()
+                        {
+                            RefNo = "2603PI0003",
+                            LCTemp = "LC2603003",
+                            SpecCode = "IO5-EXC-01",
+                            ModelCode = "IONIQ5",
+                            ModelName = "Hyundai Ioniq 5 Exclusive",
+                            ColorCode = "GY1",
+                            ColorName = "Xám nhám",
+                            WorkOrderNo = "WO2603021",
+                            PortCode = "HPH",
+                            PlantCode = "HMC-ASAN",
+                            Quantity = 15,
+                            UnitPrice = 1300000000m,
+                            TotalAmount = 19500000000m,
+                            ContractNo = null,
+                            FlagAutoPL = "1",
+                            Remark = "Xe điện Ioniq 5 nhập khẩu nguyên chiếc CBU"
+                        }
+                    }
+                };
+
+                var pi4 = new PerformanceInvoice
+                {
+                    OrgId = orgId,
+                    RefNo = "2601PI0004",
+                    OrderMonth = "2026-01-01",
+                    ProductionMonth = "2026-02-01",
+                    ExpectedMonth = "2026-03-01",
+                    FlagAutoPL = "0",
+                    Status = PerformanceInvoiceStatus.Cancelled,
+                    TotalQuantity = 10,
+                    TotalAmount = 5400000000m,
+                    CancelReason = "Điều chỉnh cơ cấu kế hoạch sản xuất xe lắp ráp trong nước sang lô tiếp theo",
+                    CancelledBy = "HQ_ORDER_MANAGER",
+                    CancelledAt = DateTime.Now.AddDays(-20),
+                    CreatedBy = "HQ_ORDER_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-45),
+                    Details = new List<PerformanceInvoiceDetail>
+                    {
+                        new()
+                        {
+                            RefNo = "2601PI0004",
+                            LCTemp = "LC2601004",
+                            SpecCode = "AC15-SPE-01",
+                            ModelCode = "ACCENT",
+                            ModelName = "Hyundai Accent 1.5 AT Đặc Biệt",
+                            ColorCode = "WH1",
+                            ColorName = "Trắng tuyết",
+                            WorkOrderNo = "WO2601005",
+                            PortCode = "HPH",
+                            PlantCode = "HTMV-NB",
+                            Quantity = 10,
+                            UnitPrice = 540000000m,
+                            TotalAmount = 5400000000m,
+                            ContractNo = null,
+                            FlagAutoPL = "0",
+                            Remark = "Đã hủy theo quyết định điều chuyển kế hoạch"
+                        }
+                    }
+                };
+
+                db.PerformanceInvoices.AddRange(pi1, pi2, pi3, pi4);
             }
 
             await db.SaveChangesAsync();

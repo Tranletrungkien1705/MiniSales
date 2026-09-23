@@ -67,6 +67,7 @@ builder.Services.AddScoped<ICustomsDeclarationService, CustomsDeclarationService
 builder.Services.AddScoped<IPaymentGPSService, PaymentGPSService>();
 builder.Services.AddScoped<IPaymentStorageService, PaymentStorageService>();
 builder.Services.AddScoped<ICarVinProfileService, CarVinProfileService>();
+builder.Services.AddScoped<IPerformanceInvoiceService, PerformanceInvoiceService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -4396,6 +4397,117 @@ app.MapDelete("/api/car-vin-profiles/{vin}", async (string vin, ICarVinProfileSe
     {
         var ok = await svc.DeleteAsync(vin);
         return ok ? Results.Ok(new { success = true, vin }) : Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Phiếu Hiệu Suất / Proforma Invoice (PI) Đặt hàng Sản xuất & Nhập khẩu Xe Ô tô Lô lớn (DMS.Sales Ord_PerformanceInvoice + Ord_PerformanceInvoiceDetail · OrdPerformanceInvoiceController / OrdPerformanceInvoice.txt / Order.cs / Car.cs) =====
+app.MapGet("/api/performance-invoices/seq", async (IPerformanceInvoiceService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextRefNoAsync() })).RequireAuthorization();
+
+app.MapGet("/api/performance-invoices/stats", async (IPerformanceInvoiceService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/performance-invoices/for-contract-oversea", async (string? refNo, string? orderMonthFrom, string? orderMonthTo, IPerformanceInvoiceService svc) =>
+    Results.Ok(await svc.SearchForCtrOverseaAsync(refNo, orderMonthFrom, orderMonthTo))).RequireAuthorization();
+
+app.MapGet("/api/performance-invoices/for-transport-plan", async (string? productMonthFrom, string? productMonthTo, IPerformanceInvoiceService svc) =>
+    Results.Ok(await svc.SearchForTrspPlanAsync(productMonthFrom, productMonthTo))).RequireAuthorization();
+
+app.MapGet("/api/performance-invoices", async (
+    string? refNo,
+    string? workOrderNo,
+    string? productionMonth,
+    string? orderMonth,
+    PerformanceInvoiceStatus? status,
+    string? modelCode,
+    string? portCode,
+    string? contractNo,
+    DateTime? createdFrom,
+    DateTime? createdTo,
+    int pageIndex = 0,
+    int pageSize = 50,
+    IPerformanceInvoiceService svc = default!) =>
+    Results.Ok(await svc.ListAsync(refNo, workOrderNo, productionMonth, orderMonth, status, modelCode, portCode, contractNo, createdFrom, createdTo, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/performance-invoices/{refNo}", async (string refNo, IPerformanceInvoiceService svc) =>
+{
+    var r = await svc.DetailAsync(refNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/performance-invoices", async (CreatePerformanceInvoiceDto dto, IPerformanceInvoiceService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/performance-invoices/{refNo}", async (string refNo, UpdatePerformanceInvoiceDto dto, IPerformanceInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(refNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/performance-invoices/{refNo}/confirm", async (string refNo, ConfirmPerformanceInvoiceDto? dto, IPerformanceInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.ConfirmAsync(refNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/performance-invoices/{refNo}/link-contract", async (string refNo, LinkContractNoDto dto, IPerformanceInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.LinkContractNoAsync(refNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/performance-invoices/{refNo}/unlink-contract", async (string refNo, UnlinkContractNoDto dto, IPerformanceInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.UnlinkContractNoAsync(refNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/performance-invoices/{refNo}/cancel", async (string refNo, CancelPerformanceInvoiceDto dto, IPerformanceInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(refNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/performance-invoices/{refNo}", async (string refNo, IPerformanceInvoiceService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(refNo);
+        return ok ? Results.Ok(new { success = true, refNo }) : Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo}." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/performance-invoices/{refNo}/details/{detailId:long}", async (string refNo, long detailId, IPerformanceInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDetailAsync(refNo, detailId);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo} hoặc dòng chi tiết {detailId}." }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

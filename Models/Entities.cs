@@ -3239,6 +3239,65 @@ public sealed class CarVinProfile
     public string? UpdatedBy { get; set; }
 }
 
+/// <summary>Trạng thái Phiếu hiệu suất / Proforma Invoice (DMS.Sales Ord_PerformanceInvoice: Pending = 0 [Chờ xác nhận], Confirmed = 1 [Đã chốt kế hoạch], Contracted = 2 [Đã vào HĐ ngoại], Cancelled = 3 [Đã hủy]).</summary>
+public enum PerformanceInvoiceStatus
+{
+    Pending = 0,
+    Confirmed = 1,
+    Contracted = 2,
+    Cancelled = 3
+}
+
+/// <summary>Quản lý Phiếu hiệu suất / Proforma Invoice đặt hàng sản xuất & nhập khẩu ô tô lô lớn giữa NPP và Nhà máy (DMS.Sales Ord_PerformanceInvoice / OrdPerformanceInvoiceController / OrdPerformanceInvoice.txt / Order.cs / Car.cs): Quản lý kế hoạch đặt hàng xe theo tháng đặt hàng (OrderMonth) và tháng sản xuất (ProductionMonth), tính tháng dự kiến giao (ExpectedMonth = ProductionMonth + 1 tháng), điều khiển cờ tự động sinh Packing List (FlagAutoPL), liên kết thư tín dụng L/C (LCTemp), lệnh sản xuất nhà máy (WorkOrderNo), cấu hình và màu sắc xe, phục vụ chốt hợp đồng ngoại thương (CT_ContractOversea) và điều phối chuỗi cung ứng xe ô tô.</summary>
+public sealed class PerformanceInvoice
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string RefNo { get; set; } = ""; // Số hiệu PI (PK RefNo, format {yyMM}PI{seq:D4}, vd: 2603PI0001)
+    public string OrderMonth { get; set; } = ""; // Tháng đặt hàng (yyyy-MM-01, vd: 2026-03-01)
+    public string ProductionMonth { get; set; } = ""; // Tháng sản xuất (yyyy-MM-01, vd: 2026-04-01)
+    public string ExpectedMonth { get; set; } = ""; // Tháng dự kiến hoàn tất/giao (yyyy-MM-01, ProductionMonth + 1 tháng)
+    public string FlagAutoPL { get; set; } = "1"; // Cờ tự động sinh Packing List: "1" = Có, "0" = Không
+    public PerformanceInvoiceStatus Status { get; set; } = PerformanceInvoiceStatus.Pending; // Trạng thái PI
+    public int TotalQuantity { get; set; } // Tổng số lượng xe trong PI
+    public decimal TotalAmount { get; set; } // Tổng giá trị PI
+    public string? Remark { get; set; } // Ghi chú PI
+    public string? CancelReason { get; set; } // Lý do hủy PI
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? UpdatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? ConfirmedBy { get; set; }
+    public DateTime? ConfirmedAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public List<PerformanceInvoiceDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết từng dòng xe trong Phiếu hiệu suất / Proforma Invoice (DMS.Sales Ord_PerformanceInvoiceDetail): quản lý số lượng xe theo mã L/C tạm, mã cấu hình spec, model, màu ngoại thất, lệnh sản xuất WorkOrderNo, mã cảng nhập khẩu và mã nhà máy sản xuất, theo dõi liên kết số hợp đồng ngoại thương ContractNo.</summary>
+public sealed class PerformanceInvoiceDetail
+{
+    public long Id { get; set; }
+    public long PerformanceInvoiceId { get; set; }
+    public string RefNo { get; set; } = ""; // Khóa ngoại số PI
+    public string LCTemp { get; set; } = ""; // Mã L/C tạm thời (vd: LC2603001)
+    public string SpecCode { get; set; } = ""; // Mã cấu hình xe (SF25-PRE, TU20-STD...)
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT, BN7I-CKD...)
+    public string? ModelName { get; set; } // Tên model xe
+    public string ColorCode { get; set; } = ""; // Mã màu ngoại thất (WHT, BLK, RED, SIL...)
+    public string? ColorName { get; set; } // Tên màu xe
+    public string WorkOrderNo { get; set; } = ""; // Số lệnh sản xuất nhà máy (WO2603001)
+    public string PortCode { get; set; } = ""; // Cảng nhập khẩu (HPH: Hải Phòng, SGN: Sài Gòn, CM: Cái Mép...)
+    public string PlantCode { get; set; } = ""; // Nhà máy sản xuất (HMC-ASAN, HMC-ULSAN, HTMV-NB...)
+    public int Quantity { get; set; } // Số lượng xe đặt hàng
+    public decimal UnitPrice { get; set; } // Đơn giá xe dự kiến
+    public decimal TotalAmount { get; set; } // Thành tiền = Quantity * UnitPrice
+    public string? ContractNo { get; set; } // Số hợp đồng ngoại thương (CT_ContractOversea) khi được gắn vào HĐ
+    public string FlagAutoPL { get; set; } = "1"; // Cờ tự động PL theo dòng
+    public string? Remark { get; set; }
+}
+
 
 
 
