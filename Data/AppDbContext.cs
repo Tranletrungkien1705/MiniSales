@@ -125,6 +125,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<OrderAllocationSession> OrderAllocationSessions => Set<OrderAllocationSession>();
     public DbSet<OrderDemandAllocation> OrderDemandAllocations => Set<OrderDemandAllocation>();
     public DbSet<OrderSupplyAllocation> OrderSupplyAllocations => Set<OrderSupplyAllocation>();
+    public DbSet<TransportFeeVersion> TransportFeeVersions => Set<TransportFeeVersion>();
+    public DbSet<TransportFeeDetail> TransportFeeDetails => Set<TransportFeeDetail>();
+    public DbSet<TransportFeeHistory> TransportFeeHistories => Set<TransportFeeHistory>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -572,5 +575,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<OrderSupplyAllocation>().HasIndex(x => x.AllocationNo);
         b.Entity<OrderSupplyAllocation>().HasIndex(x => x.SpecCode);
         b.Entity<OrderSupplyAllocation>().Property(x => x.Status).HasConversion<int>();
+
+        b.Entity<TransportFeeVersion>().ToTable("TransportFeeVersions");
+        b.Entity<TransportFeeVersion>().HasIndex(x => new { x.OrgId, x.TFVCode }).IsUnique();
+        b.Entity<TransportFeeVersion>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.VersionId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<TransportFeeDetail>().ToTable("TransportFeeDetails");
+        b.Entity<TransportFeeDetail>().HasIndex(x => x.TFVCode);
+        b.Entity<TransportFeeDetail>().HasIndex(x => new { x.ProvinceCodeFrom, x.DistrictCodeFrom, x.ProvinceCodeTo, x.DistrictCodeTo });
+        b.Entity<TransportFeeDetail>().HasIndex(x => x.TransporterCode);
+        b.Entity<TransportFeeDetail>().HasIndex(x => x.ModelCode);
+        b.Entity<TransportFeeHistory>().ToTable("TransportFeeHistories");
+        b.Entity<TransportFeeHistory>().HasIndex(x => new { x.OrgId, x.TFVCode });
     }
 }

@@ -2901,6 +2901,55 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_DelayTransports_OrgId_StorageCode ON DelayTransports(OrgId, StorageCode);
                 CREATE INDEX IF NOT EXISTS IX_DelayTransports_OrgId_DealerCode ON DelayTransports(OrgId, DealerCode);
 
+                CREATE TABLE IF NOT EXISTS TransportFeeVersions (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TFVCode TEXT NOT NULL,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    CreatedDate TEXT NOT NULL,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_TransportFeeVersions_OrgId_TFVCode ON TransportFeeVersions(OrgId, TFVCode);
+
+                CREATE TABLE IF NOT EXISTS TransportFeeDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    VersionId INTEGER NOT NULL,
+                    TFVCode TEXT NOT NULL,
+                    ProvinceCodeFrom TEXT NOT NULL,
+                    DistrictCodeFrom TEXT NOT NULL,
+                    ProvinceCodeTo TEXT NOT NULL,
+                    DistrictCodeTo TEXT NOT NULL,
+                    TransporterCode TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ValFee REAL NOT NULL DEFAULT 0,
+                    ExpectedDays INTEGER NOT NULL DEFAULT 0,
+                    IsReverseRoute INTEGER NOT NULL DEFAULT 0,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE INDEX IF NOT EXISTS IX_TransportFeeDetails_TFVCode ON TransportFeeDetails(TFVCode);
+                CREATE INDEX IF NOT EXISTS IX_TransportFeeDetails_Route ON TransportFeeDetails(ProvinceCodeFrom, DistrictCodeFrom, ProvinceCodeTo, DistrictCodeTo);
+                CREATE INDEX IF NOT EXISTS IX_TransportFeeDetails_TransporterCode ON TransportFeeDetails(TransporterCode);
+                CREATE INDEX IF NOT EXISTS IX_TransportFeeDetails_ModelCode ON TransportFeeDetails(ModelCode);
+
+                CREATE TABLE IF NOT EXISTS TransportFeeHistories (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TFVCode TEXT NOT NULL,
+                    ProvinceCodeFrom TEXT NOT NULL,
+                    DistrictCodeFrom TEXT NOT NULL,
+                    ProvinceCodeTo TEXT NOT NULL,
+                    DistrictCodeTo TEXT NOT NULL,
+                    TransporterCodeList TEXT,
+                    ModelCodeList TEXT,
+                    ValFee REAL NOT NULL DEFAULT 0,
+                    ExpectedDays INTEGER NOT NULL DEFAULT 0,
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE INDEX IF NOT EXISTS IX_TransportFeeHistories_OrgId_TFVCode ON TransportFeeHistories(OrgId, TFVCode);
+
                 CREATE TABLE IF NOT EXISTS SalesManViolates (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -13478,6 +13527,32 @@ public static class Seeder
                     new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_HN", StorageName = "Kho Tổng Hyundai Ninh Bình", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", DelayTransport = 3m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_HN", StorageName = "Kho Tổng Hyundai Ninh Bình", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", DelayTransport = 5m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_SG", StorageName = "Kho Tổng Nam Bộ Hiệp Phước", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", DelayTransport = 2m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Phiên bản bảng cước phí vận tải (Mst_TranspFeeVer / Mst_TranspFee / Mst_TranspFeeHist / MstTranspFeeController)
+            if (!await db.TransportFeeVersions.AnyAsync(o => o.OrgId == orgId))
+            {
+                var tfv = new TransportFeeVersion
+                {
+                    OrgId = orgId,
+                    TFVCode = "TFV001",
+                    FlagActive = "1",
+                    CreatedDate = DateTime.Now.AddDays(-30),
+                    LogLUDateTime = DateTime.Now.AddDays(-30),
+                    LogLUBy = "CHUYEN_VIEN_NPP"
+                };
+                tfv.Details.AddRange(new[]
+                {
+                    new TransportFeeDetail { TFVCode = "TFV001", ProvinceCodeFrom = "74", DistrictCodeFrom = "742", ProvinceCodeTo = "79", DistrictCodeTo = "760", TransporterCode = "DVVT001", ModelCode = "BN7I-CKD", ValFee = 5000000m, ExpectedDays = 3, IsReverseRoute = false, LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new TransportFeeDetail { TFVCode = "TFV001", ProvinceCodeFrom = "79", DistrictCodeFrom = "760", ProvinceCodeTo = "74", DistrictCodeTo = "742", TransporterCode = "DVVT001", ModelCode = "BN7I-CKD", ValFee = 5000000m, ExpectedDays = 3, IsReverseRoute = true, LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new TransportFeeDetail { TFVCode = "TFV001", ProvinceCodeFrom = "01", DistrictCodeFrom = "001", ProvinceCodeTo = "79", DistrictCodeTo = "760", TransporterCode = "DVVT001", ModelCode = "SF25", ValFee = 8000000m, ExpectedDays = 5, IsReverseRoute = false, LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new TransportFeeDetail { TFVCode = "TFV001", ProvinceCodeFrom = "79", DistrictCodeFrom = "760", ProvinceCodeTo = "01", DistrictCodeTo = "001", TransporterCode = "DVVT001", ModelCode = "SF25", ValFee = 8000000m, ExpectedDays = 5, IsReverseRoute = true, LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
+                });
+                db.TransportFeeVersions.Add(tfv);
+                db.TransportFeeHistories.AddRange(
+                    new TransportFeeHistory { OrgId = orgId, TFVCode = "TFV001", ProvinceCodeFrom = "74", DistrictCodeFrom = "742", ProvinceCodeTo = "79", DistrictCodeTo = "760", TransporterCodeList = "DVVT001", ModelCodeList = "BN7I-CKD", ValFee = 5000000m, ExpectedDays = 3, LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new TransportFeeHistory { OrgId = orgId, TFVCode = "TFV001", ProvinceCodeFrom = "01", DistrictCodeFrom = "001", ProvinceCodeTo = "79", DistrictCodeTo = "760", TransporterCodeList = "DVVT001", ModelCodeList = "SF25", ValFee = 8000000m, ExpectedDays = 5, LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 

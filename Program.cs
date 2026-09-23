@@ -84,6 +84,7 @@ builder.Services.AddScoped<IRearrangeTransportRequestService, RearrangeTransport
 builder.Services.AddScoped<IOrderAllocationService, OrderAllocationService>();
 builder.Services.AddScoped<IDelayTransportService, DelayTransportService>();
 builder.Services.AddScoped<IBankService, BankService>();
+builder.Services.AddScoped<ITransportFeeService, TransportFeeService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5678,6 +5679,47 @@ app.MapDelete("/api/banks/{bankCode}", async (string bankCode, IBankService svc)
 app.MapPost("/api/banks/import", async (List<BankImportRowDto> rows, IBankService svc) =>
 {
     try { return Results.Ok(await svc.ImportAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Cước phí vận tải (Transport Fee - DMS.Sales Mst_TranspFeeVer + Mst_TranspFee + Mst_TranspFeeHist / MstTranspFeeController) =====
+app.MapGet("/api/transport-fees/code", async (ITransportFeeService svc) =>
+    Results.Ok(new { tfvCode = await svc.GetTFVCodeAsync() })).RequireAuthorization();
+
+app.MapPost("/api/transport-fees", async (CreateTransportFeeVersionDto dto, ITransportFeeService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-fees", async (ITransportFeeService svc, string? tfvCode, string? flagActive, DateTime? createdDateFrom, DateTime? createdDateTo) =>
+    Results.Ok(await svc.SearchAsync(tfvCode, flagActive, createdDateFrom, createdDateTo))).RequireAuthorization();
+
+app.MapGet("/api/transport-fees/stats", async (ITransportFeeService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/transport-fees/lookup", async (ITransportFeeService svc, string provinceCodeFrom, string districtCodeFrom, string provinceCodeTo, string districtCodeTo, string transporterCode, string modelCode) =>
+{
+    var r = await svc.LookupAsync(provinceCodeFrom, districtCodeFrom, provinceCodeTo, districtCodeTo, transporterCode, modelCode);
+    return r is null ? Results.NotFound(new { provinceCodeFrom, districtCodeFrom, provinceCodeTo, districtCodeTo, transporterCode, modelCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-fees/{tfvCode}", async (string tfvCode, ITransportFeeService svc) =>
+{
+    var r = await svc.GetByTFVCodeAsync(tfvCode);
+    return r is null ? Results.NotFound(new { tfvCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-fees/{tfvCode}/history", async (string tfvCode, ITransportFeeService svc) =>
+    Results.Ok(await svc.GetHistByTFVCodeAsync(tfvCode))).RequireAuthorization();
+
+app.MapDelete("/api/transport-fees/{tfvCode}", async (string tfvCode, ITransportFeeService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteAsync(tfvCode);
+        return r ? Results.Ok(new { deleted = true, tfvCode }) : Results.NotFound(new { tfvCode });
+    }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 

@@ -4175,3 +4175,54 @@ public sealed class OrderSupplyAllocation
     public OrderSupplyStatus Status { get; set; } = OrderSupplyStatus.Pending;
     public string? Remark { get; set; }
 }
+
+/// <summary>Phiên bản bảng cước phí vận tải (DMS.Sales Mst_TranspFeeVer / MstTranspFeeController / Mst_TranspFeeVer_Get|Create|Delete): header quản lý phiên bản bảng cước phí vận tải xe. TFVCode là khóa nghiệp vụ duy nhất. Mỗi lần tạo phiên bản mới, toàn bộ bảng cước phí hiện hành (Mst_TranspFee) bị xóa và thay bằng dữ liệu phiên bản mới (chỉ phiên bản mới nhất có dữ liệu chi tiết).</summary>
+public sealed class TransportFeeVersion
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TFVCode { get; set; } = ""; // Mã phiên bản cước phí (khóa nghiệp vụ duy nhất, vd: TFV001)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime CreatedDate { get; set; } = DateTime.Now; // Ngày tạo phiên bản
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+
+    public List<TransportFeeDetail> Details { get; set; } = new();
+}
+
+/// <summary>Dòng cước phí vận tải theo tuyến (DMS.Sales Mst_TranspFee): mỗi dòng = 1 tuyến (tỉnh/huyện giao -> tỉnh/huyện nhận) + 1 nhà vận chuyển + 1 model xe, kèm cước phí (ValFee) và số ngày định mức (ExpectedDays). Khóa nghiệp vụ = (ProvinceCodeFrom, DistrictCodeFrom, ProvinceCodeTo, DistrictCodeTo, TransporterCode, ModelCode). Khi tạo phiên bản, server tự tách chuỗi ModelCode/TransporterCode cách phẩy thành nhiều dòng và tự sinh thêm tuyến ngược (đảo From/To).</summary>
+public sealed class TransportFeeDetail
+{
+    public long Id { get; set; }
+    public long VersionId { get; set; }
+    public string TFVCode { get; set; } = ""; // Mã phiên bản cước phí (FK -> TransportFeeVersion.TFVCode)
+    public string ProvinceCodeFrom { get; set; } = ""; // Mã tỉnh giao (bắt buộc)
+    public string DistrictCodeFrom { get; set; } = ""; // Mã huyện giao (bắt buộc)
+    public string ProvinceCodeTo { get; set; } = ""; // Mã tỉnh nhận (bắt buộc)
+    public string DistrictCodeTo { get; set; } = ""; // Mã huyện nhận (bắt buộc)
+    public string TransporterCode { get; set; } = ""; // Mã nhà vận chuyển (bắt buộc)
+    public string ModelCode { get; set; } = ""; // Mã model xe (bắt buộc)
+    public decimal ValFee { get; set; } // Cước phí vận tải (> 0)
+    public int ExpectedDays { get; set; } // Số ngày định mức vận chuyển (> 0)
+    public bool IsReverseRoute { get; set; } // Cờ tuyến tự sinh ngược (đảo From/To) — bám #tbl_genAuto
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
+/// <summary>Lịch sử cước phí vận tải (DMS.Sales Mst_TranspFeeHist): lưu vết mỗi lần tạo phiên bản cước phí, giữ nguyên chuỗi TransporterCodeList/ModelCodeList (cách phẩy) như dữ liệu nhập gốc để tra cứu lịch sử mọi phiên bản.</summary>
+public sealed class TransportFeeHistory
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TFVCode { get; set; } = ""; // Mã phiên bản cước phí
+    public string ProvinceCodeFrom { get; set; } = ""; // Mã tỉnh giao
+    public string DistrictCodeFrom { get; set; } = ""; // Mã huyện giao
+    public string ProvinceCodeTo { get; set; } = ""; // Mã tỉnh nhận
+    public string DistrictCodeTo { get; set; } = ""; // Mã huyện nhận
+    public string? TransporterCodeList { get; set; } // Danh sách mã nhà vận chuyển (chuỗi cách phẩy, dữ liệu nhập gốc)
+    public string? ModelCodeList { get; set; } // Danh sách mã model xe (chuỗi cách phẩy, dữ liệu nhập gốc)
+    public decimal ValFee { get; set; } // Cước phí vận tải
+    public int ExpectedDays { get; set; } // Số ngày định mức
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log
+    public string? LogLUBy { get; set; } // Người ghi log
+}
