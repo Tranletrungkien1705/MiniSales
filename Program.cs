@@ -55,6 +55,7 @@ builder.Services.AddScoped<IMapVinService, MapVinService>();
 builder.Services.AddScoped<IRetailInvoiceService, RetailInvoiceService>();
 builder.Services.AddScoped<ICarRedeemService, CarRedeemService>();
 builder.Services.AddScoped<ICarInsuranceService, CarInsuranceService>();
+builder.Services.AddScoped<ITransportPlanService, TransportPlanService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2825,6 +2826,130 @@ app.MapDelete("/api/car-insurances/{insReqNo}/cars/{vin}", async (string insReqN
     {
         var result = await svc.RemoveCarAsync(insReqNo, vin);
         return Results.Ok(new { success = true, result });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ==================== QUẢN LÝ KẾ HOẠCH VẬN TẢI XE Ô TÔ (Sto_TranspPlan / TranspPlan.cs) ====================
+app.MapGet("/api/transport-plans", async (
+    string? status, string? transporterCode, string? storageCode, string? dealerCode,
+    string? modelCode, bool? flagRealVin, DateTime? dateFrom, DateTime? dateTo,
+    string? vinPlan, string? vin, ITransportPlanService svc) =>
+{
+    var res = await svc.ListAsync(status, transporterCode, storageCode, dealerCode, modelCode, flagRealVin, dateFrom, dateTo, vinPlan, vin);
+    return Results.Ok(res);
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-plans/stats", async (ITransportPlanService svc) =>
+{
+    var res = await svc.GetStatsAsync();
+    return Results.Ok(res);
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-plans/eligible-cars", async (string? storageCode, string? keyword, ITransportPlanService svc) =>
+{
+    var res = await svc.GetEligibleCarsForPlanAsync(storageCode, keyword);
+    return Results.Ok(res);
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-plans/transporters", (ITransportPlanService svc) =>
+{
+    var res = svc.GetTransporters();
+    return Results.Ok(res);
+}).RequireAuthorization();
+
+app.MapGet("/api/transport-plans/{planNo}", async (string planNo, ITransportPlanService svc) =>
+{
+    var res = await svc.GetByPlanNoAsync(planNo);
+    return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch vận tải {planNo}" }) : Results.Ok(res);
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-plans", async (CreateTransportPlanDto dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var plan = await svc.CreateAsync(dto);
+        return Results.Created($"/api/transport-plans/{plan.PlanNo}", plan);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/transport-plans/{planNo}/by-kehoach", async (string planNo, UpdateByKeHoachDto dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.UpdateByKeHoachAsync(planNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/transport-plans/{planNo}/by-logistic", async (string planNo, UpdateByLogisticDto dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.UpdateByLogisticAsync(planNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/transport-plans/{planNo}/by-banhang", async (string planNo, UpdateByBanHangDto dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.UpdateByBanHangAsync(planNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-plans/{planNo}/map-vin-real", async (string planNo, MapVinRealDto dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.MapVinRealAsync(planNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-plans/{planNo}/approve", async (string planNo, ApproveTransportPlanDto? dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.ApproveAsync(planNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-plans/{planNo}/complete", async (string planNo, CompleteTransportPlanDto? dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.CompleteAsync(planNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transport-plans/{planNo}/cancel", async (string planNo, CancelTransportPlanDto dto, ITransportPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.CancelAsync(planNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transport-plans/{planNo}", async (string planNo, ITransportPlanService svc) =>
+{
+    try
+    {
+        var deleted = await svc.DeleteAsync(planNo);
+        return deleted ? Results.Ok(new { success = true, planNo }) : Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

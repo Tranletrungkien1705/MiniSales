@@ -2031,3 +2031,63 @@ public sealed class CarInsuranceRequestDetail
     public string? ApprovedBy { get; set; }
     public DateTime? ApprovedDate { get; set; }
 }
+
+/// <summary>Trạng thái Kế hoạch Vận tải xe ô tô (DMS.Sales Sto_TranspPlan TPStatus: Pending = 'P' [Chờ duyệt điều phối], Approved = 'A' [Đã duyệt kế hoạch], Finished = 'F' [Hoàn thành vận chuyển], Cancelled = 'C' [Hủy kế hoạch]).</summary>
+public enum TransportPlanStatus { Pending = 0, Approved = 1, Finished = 2, Cancelled = 3 }
+
+/// <summary>Trạng thái tiếp nhận của Đơn vị Vận tải đối với Kế hoạch (DMS.Sales Sto_TranspPlan TransporterStatus: Pending = 'P' [Chờ tiếp nhận], Accepted = 'A' [Đơn vị vận tải đã tiếp nhận xe], Delivering = 'D' [Đang trên đường vận chuyển], Finished = 'F' [Đã giao xe hoàn tất], Rejected = 'R' [Từ chối]).</summary>
+public enum TransporterPlanStatus { Pending = 0, Accepted = 1, Delivering = 2, Finished = 3, Rejected = 4 }
+
+/// <summary>Phương thức vận chuyển kế hoạch (DMS.Sales Sto_TranspPlan TPType: Road = 'ROAD' [Đường bộ], Water = 'WATER' [Đường thủy], Rail = 'RAIL' [Đường sắt]).</summary>
+public enum TransportPlanType { Road = 0, Water = 1, Rail = 2 }
+
+/// <summary>Kế hoạch Vận tải Xe ô tô (DMS.Sales Sto_TranspPlan / TranspPlan.cs / 09_VAN_CHUYEN.md): Quản lý việc lập kế hoạch vận chuyển xe từ kho/nhà máy đến đại lý theo kế hoạch kiểm tra chất lượng CQ, kế hoạch ngày vận chuyển dự kiến, phân bổ đơn vị vận tải, tự động sinh tuyến đường vận chuyển Tỉnh/Huyện đi - đến, điều phối kế hoạch theo 3 góc nhìn (Kế hoạch, Bán hàng, Logistics), mapping số khung VIN thực tế khi xe hoàn tất kiểm định và phê duyệt kế hoạch vận tải.</summary>
+public sealed class TransportPlan
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PlanNo { get; set; } = ""; // Mã kế hoạch vận tải ({yyMM}TP{seq:D4}, vd: 2603TP0001)
+    public string VINPlan { get; set; } = ""; // Mã số khung kế hoạch / VIN dự kiến
+    public string? VIN { get; set; } // Số khung thực tế (17 ký tự, null nếu chưa gán VIN thật)
+    public bool FlagRealVin { get; set; } // Cờ đã gán VIN thật: false = VIN kế hoạch, true = đã gán số khung thật
+    public string? CarId { get; set; } // Mã định danh xe trong hệ thống
+    public string? RefNo { get; set; } // Mã tham chiếu (Số đơn hàng, Số hợp đồng, Số WO)
+    public string? LCTemp { get; set; } // Số LC tạm
+    public string ModelCode { get; set; } = ""; // Mã model (TUCSON, SANTAFE, CRETA, ACCENT...)
+    public string ModelName { get; set; } = ""; // Tên model xe
+    public string? SpecCode { get; set; } // Mã phiên bản / ActualSpec
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? ColorName { get; set; } // Tên màu xe
+    public string StorageCode { get; set; } = ""; // Mã kho xuất phát
+    public string? StorageName { get; set; } // Tên kho xuất phát
+    public string DealerCode { get; set; } = ""; // Mã đại lý tiếp nhận
+    public string? DealerName { get; set; } // Tên đại lý tiếp nhận
+    public DateTime? CQStartDate { get; set; } // Ngày bắt đầu kiểm tra chất lượng Car Quality (CQ)
+    public DateTime ExpectedDate { get; set; } // Ngày vận chuyển dự kiến (ExpectedDate >= CQStartDate và >= Today khi tạo)
+    public DateTime? ActualDate { get; set; } // Ngày vận chuyển thực tế hoàn thành
+    public string? TransporterCode { get; set; } // Mã đơn vị vận tải (Mst_Transporter)
+    public string? TransporterName { get; set; } // Tên đơn vị vận tải
+    public TransportPlanType TPType { get; set; } = TransportPlanType.Road; // Phương thức vận chuyển: Road, Water, Rail
+    public string? FProvinceCode { get; set; } // Mã tỉnh/thành xuất phát (từ Kho)
+    public string? FProvinceName { get; set; } // Tên tỉnh/thành xuất phát
+    public string? FDistrictCode { get; set; } // Mã quận/huyện xuất phát
+    public string? FDistrictName { get; set; } // Tên quận/huyện xuất phát
+    public string? TProvinceCode { get; set; } // Mã tỉnh/thành đích đến (từ Đại lý)
+    public string? TProvinceName { get; set; } // Tên tỉnh/thành đích đến
+    public string? TDistrictCode { get; set; } // Mã quận/huyện đích đến
+    public string? TDistrictName { get; set; } // Tên quận/huyện đích đến
+    public TransportPlanStatus Status { get; set; } = TransportPlanStatus.Pending; // Trạng thái kế hoạch: Pending -> Approved -> Finished / Cancelled
+    public TransporterPlanStatus TransporterStatus { get; set; } = TransporterPlanStatus.Pending; // Trạng thái đơn vị vận tải
+    public string? Remark { get; set; } // Ghi chú
+    public string? CancelReason { get; set; } // Lý do hủy kế hoạch
+    public DateTime? CancelledDate { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime CreatedDate { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? ApprovedDate { get; set; }
+    public string? ApprovedBy { get; set; }
+    public DateTime? FinishedDate { get; set; }
+    public string? FinishedBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+}

@@ -1661,6 +1661,58 @@ public static class Seeder
                     ApprovedDate TEXT,
                     FOREIGN KEY(InsuranceRequestId) REFERENCES CarInsuranceRequests(Id) ON DELETE CASCADE
                 );
+
+                CREATE TABLE IF NOT EXISTS TransportPlans (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PlanNo TEXT NOT NULL,
+                    VINPlan TEXT NOT NULL,
+                    VIN TEXT,
+                    FlagRealVin INTEGER NOT NULL DEFAULT 0,
+                    CarId TEXT,
+                    RefNo TEXT,
+                    LCTemp TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    StorageCode TEXT NOT NULL,
+                    StorageName TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    CQStartDate TEXT,
+                    ExpectedDate TEXT NOT NULL,
+                    ActualDate TEXT,
+                    TransporterCode TEXT,
+                    TransporterName TEXT,
+                    TPType INTEGER NOT NULL DEFAULT 0,
+                    FProvinceCode TEXT,
+                    FProvinceName TEXT,
+                    FDistrictCode TEXT,
+                    FDistrictName TEXT,
+                    TProvinceCode TEXT,
+                    TProvinceName TEXT,
+                    TDistrictCode TEXT,
+                    TDistrictName TEXT,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    TransporterStatus INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    CancelReason TEXT,
+                    CancelledDate TEXT,
+                    CancelledBy TEXT,
+                    CreatedDate TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    ApprovedDate TEXT,
+                    ApprovedBy TEXT,
+                    FinishedDate TEXT,
+                    FinishedBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_TransportPlans_OrgId_PlanNo ON TransportPlans(OrgId, PlanNo);
+                CREATE INDEX IF NOT EXISTS IX_TransportPlans_OrgId_VINPlan ON TransportPlans(OrgId, VINPlan);
+                CREATE INDEX IF NOT EXISTS IX_TransportPlans_OrgId_Status ON TransportPlans(OrgId, Status);
             ");
         }
         catch
@@ -7553,6 +7605,133 @@ public static class Seeder
             };
 
             db.InsuranceRequests.AddRange(ins1, ins2, ins3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.TransportPlans.AnyAsync(o => o.OrgId == orgId))
+        {
+            var plan1 = new TransportPlan
+            {
+                OrgId = orgId,
+                PlanNo = "2603TP0001",
+                VINPlan = "PL-SANTAFE-2603-01",
+                VIN = "KMHE281BBSA129841",
+                FlagRealVin = true,
+                CarId = "CAR-SF-001",
+                RefNo = "CT26010001",
+                ModelCode = "SANTAFE",
+                ModelName = "Hyundai Santa Fe 2.5 HTRAC",
+                SpecCode = "SF-2.5-GAS",
+                ColorCode = "WH",
+                ColorName = "Trắng ngọc trai",
+                StorageCode = "KHO_TONG",
+                StorageName = "Kho Tổng Nhà máy Ninh Bình",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Hà Nội",
+                CQStartDate = DateTime.Today.AddDays(-5),
+                ExpectedDate = DateTime.Today.AddDays(2),
+                TransporterCode = "TRP-SAOMAI",
+                TransporterName = "Công ty Vận tải Sao Mai Express",
+                TPType = TransportPlanType.Road,
+                FProvinceCode = "NB",
+                FProvinceName = "Ninh Bình",
+                FDistrictCode = "NB-GK",
+                FDistrictName = "Gia Viễn",
+                TProvinceCode = "HN",
+                TProvinceName = "Hà Nội",
+                TDistrictCode = "HN-CG",
+                TDistrictName = "Cầu Giấy",
+                Status = TransportPlanStatus.Approved,
+                TransporterStatus = TransporterPlanStatus.Accepted,
+                Remark = "Kế hoạch vận tải xe Santa Fe giao đại lý Hyundai Hà Nội, xe đã kiểm định chất lượng CQ xuất xưởng",
+                CreatedBy = "HQ_LOGISTICS_PLANNER",
+                CreatedDate = DateTime.Today.AddDays(-4),
+                ApprovedBy = "HQ_LOGISTICS_DIRECTOR",
+                ApprovedDate = DateTime.Today.AddDays(-3)
+            };
+
+            var plan2 = new TransportPlan
+            {
+                OrgId = orgId,
+                PlanNo = "2603TP0002",
+                VINPlan = "PL-TUCSON-2603-02",
+                VIN = null,
+                FlagRealVin = false,
+                CarId = null,
+                RefNo = "CT26010002",
+                ModelCode = "TUCSON",
+                ModelName = "Hyundai Tucson 2.0 AT",
+                SpecCode = "TUC-2.0-GAS",
+                ColorCode = "BK",
+                ColorName = "Đen Ánh Kim",
+                StorageCode = "KHO_DONG_ANH",
+                StorageName = "Kho Trung chuyển Đông Anh",
+                DealerCode = "VN065",
+                DealerName = "Hyundai Đông Đô",
+                CQStartDate = DateTime.Today.AddDays(-1),
+                ExpectedDate = DateTime.Today.AddDays(4),
+                TransporterCode = "TRP-ANVIET",
+                TransporterName = "Đội xe Chuyên dùng An Việt Logistics",
+                TPType = TransportPlanType.Road,
+                FProvinceCode = "HN",
+                FProvinceName = "Hà Nội",
+                FDistrictCode = "HN-DA",
+                FDistrictName = "Đông Anh",
+                TProvinceCode = "HN",
+                TProvinceName = "Hà Nội",
+                TDistrictCode = "HN-DD",
+                TDistrictName = "Đống Đa",
+                Status = TransportPlanStatus.Pending,
+                TransporterStatus = TransporterPlanStatus.Pending,
+                Remark = "Kế hoạch điều phối xe Tucson chờ hoàn tất gán số khung thực tế sau dây chuyền lắp ráp",
+                CreatedBy = "HQ_LOGISTICS_PLANNER",
+                CreatedDate = DateTime.Today.AddDays(-2)
+            };
+
+            var plan3 = new TransportPlan
+            {
+                OrgId = orgId,
+                PlanNo = "2603TP0003",
+                VINPlan = "PL-CRETA-2603-03",
+                VIN = "KMHE281BBSA129843",
+                FlagRealVin = true,
+                CarId = "CAR-CR-003",
+                RefNo = "SO2603010003",
+                ModelCode = "CRETA",
+                ModelName = "Hyundai Creta 1.5 Cao Cấp",
+                SpecCode = "CR-1.5-PRE",
+                ColorCode = "RD",
+                ColorName = "Đỏ Mận",
+                StorageCode = "KHO_HAI_PHONG",
+                StorageName = "Kho Cảng Tân Vũ Hải Phòng",
+                DealerCode = "VS058",
+                DealerName = "Hyundai Bình Dương",
+                CQStartDate = DateTime.Today.AddDays(-10),
+                ExpectedDate = DateTime.Today.AddDays(-2),
+                ActualDate = DateTime.Today.AddDays(-1),
+                TransporterCode = "TRP-TRUONGHAI",
+                TransporterName = "Tổng công ty Vận tải Biển & Đường bộ Trường Hải",
+                TPType = TransportPlanType.Water,
+                FProvinceCode = "HP",
+                FProvinceName = "Hải Phòng",
+                FDistrictCode = "HP-HB",
+                FDistrictName = "Hồng Bàng",
+                TProvinceCode = "BD",
+                TProvinceName = "Bình Dương",
+                TDistrictCode = "BD-TDM",
+                TDistrictName = "Thủ Dầu Một",
+                Status = TransportPlanStatus.Finished,
+                TransporterStatus = TransporterPlanStatus.Finished,
+                Remark = "Kế hoạch vận tải xe Creta nhập khẩu bằng đường biển từ Hải Phòng vào Bình Dương hoàn tất giao xe",
+                CreatedBy = "HQ_LOGISTICS_PLANNER",
+                CreatedDate = DateTime.Today.AddDays(-8),
+                ApprovedBy = "HQ_LOGISTICS_DIRECTOR",
+                ApprovedDate = DateTime.Today.AddDays(-7),
+                FinishedBy = "TRP_DISPATCHER",
+                FinishedDate = DateTime.Today.AddDays(-1)
+            };
+
+            db.TransportPlans.AddRange(plan1, plan2, plan3);
             await db.SaveChangesAsync();
         }
     }

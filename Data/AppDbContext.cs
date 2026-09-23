@@ -70,6 +70,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarRedeemRequestDetail> CarRedeemRequestDetails => Set<CarRedeemRequestDetail>();
     public DbSet<CarInsuranceRequest> InsuranceRequests => Set<CarInsuranceRequest>();
     public DbSet<CarInsuranceRequestDetail> InsuranceRequestDetails => Set<CarInsuranceRequestDetail>();
+    public DbSet<TransportPlan> TransportPlans => Set<TransportPlan>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -227,5 +228,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CarInsuranceRequestDetail>().ToTable("CarInsuranceRequestDetails");
         b.Entity<CarInsuranceRequestDetail>().Property(x => x.Status).HasConversion<int>();
         b.Entity<CarInsuranceRequestDetail>().Property(x => x.RefOrdType).HasConversion<int>();
+        b.Entity<TransportPlan>().ToTable("TransportPlans");
+        b.Entity<TransportPlan>().HasIndex(x => new { x.OrgId, x.PlanNo }).IsUnique();
+        b.Entity<TransportPlan>().HasIndex(x => new { x.OrgId, x.VINPlan });
+        b.Entity<TransportPlan>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<TransportPlan>().Property(x => x.TransporterStatus).HasConversion<int>();
+        b.Entity<TransportPlan>().Property(x => x.TPType).HasConversion<int>();
     }
 }
