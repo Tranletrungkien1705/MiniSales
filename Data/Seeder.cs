@@ -1927,6 +1927,93 @@ public static class Seeder
                 );
                 CREATE INDEX IF NOT EXISTS IX_FnExpCalcSheetDetails_SheetId ON FnExpCalcSheetDetails(SheetId);
                 CREATE INDEX IF NOT EXISTS IX_FnExpCalcSheetDetails_Vin ON FnExpCalcSheetDetails(Vin);
+
+                CREATE TABLE IF NOT EXISTS SalesPolicies (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    SPSRCode TEXT NOT NULL,
+                    SPNo TEXT NOT NULL,
+                    StartDate TEXT NOT NULL,
+                    EndDate TEXT NOT NULL,
+                    SPSRType INTEGER NOT NULL DEFAULT 1,
+                    FormBusinessSupportCode INTEGER NOT NULL DEFAULT 0,
+                    SPSRRoot TEXT,
+                    FilePath TEXT,
+                    FileName TEXT,
+                    FlagMstValid TEXT NOT NULL DEFAULT '1',
+                    Status INTEGER NOT NULL DEFAULT 1,
+                    Remark TEXT,
+                    ApprovedAt TEXT,
+                    ApprovedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_SalesPolicies_OrgId_SPSRCode ON SalesPolicies(OrgId, SPSRCode);
+                CREATE INDEX IF NOT EXISTS IX_SalesPolicies_OrgId_SPNo ON SalesPolicies(OrgId, SPNo);
+
+                CREATE TABLE IF NOT EXISTS SalesPolicyDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SalesPolicyId INTEGER NOT NULL,
+                    SPSRCode TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    YearOfManufacture TEXT,
+                    AmountSupport REAL NOT NULL DEFAULT 0,
+                    SupportPercent REAL NOT NULL DEFAULT 0,
+                    MinQty INTEGER NOT NULL DEFAULT 1,
+                    Remark TEXT,
+                    FOREIGN KEY(SalesPolicyId) REFERENCES SalesPolicies(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_SalesPolicyDetails_SalesPolicyId ON SalesPolicyDetails(SalesPolicyId);
+                CREATE INDEX IF NOT EXISTS IX_SalesPolicyDetails_SPSRCode ON SalesPolicyDetails(SPSRCode);
+                CREATE INDEX IF NOT EXISTS IX_SalesPolicyDetails_DealerCode ON SalesPolicyDetails(DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_SalesPolicyDetails_ModelCode ON SalesPolicyDetails(ModelCode);
+
+                CREATE TABLE IF NOT EXISTS SupportRetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    SupportCode TEXT NOT NULL,
+                    SPSRCode TEXT NOT NULL,
+                    SPNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    Vin TEXT NOT NULL,
+                    CarId TEXT,
+                    ModelCode TEXT,
+                    ModelName TEXT,
+                    AmountSupport REAL NOT NULL DEFAULT 0,
+                    AmountHTCAppr REAL NOT NULL DEFAULT 0,
+                    DateSupport TEXT NOT NULL,
+                    HTCDatePayment TEXT,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    OSODApprovedDate TEXT,
+                    OSODSOCode TEXT,
+                    HTCInvoiceNo TEXT,
+                    HTCInvoiceDate TEXT,
+                    CDODDeliveryOutDate TEXT,
+                    DateFullStatus TEXT,
+                    PRDiscountNo TEXT,
+                    ApprovedAt TEXT,
+                    ApprovedBy TEXT,
+                    RejectedAt TEXT,
+                    RejectedBy TEXT,
+                    RejectReason TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    CancelReason TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_SupportRetails_OrgId_SupportCode ON SupportRetails(OrgId, SupportCode);
+                CREATE INDEX IF NOT EXISTS IX_SupportRetails_OrgId_SPSRCode_Vin ON SupportRetails(OrgId, SPSRCode, Vin);
+                CREATE INDEX IF NOT EXISTS IX_SupportRetails_OrgId_DealerCode ON SupportRetails(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_SupportRetails_OrgId_Vin ON SupportRetails(OrgId, Vin);
             ");
         }
         catch
@@ -8675,6 +8762,197 @@ public static class Seeder
             };
 
             db.FnExpCalcSheets.AddRange(sheet1, sheet2, sheet3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.SalesPolicies.AnyAsync())
+        {
+            var policy1 = new SalesPolicyMaster
+            {
+                OrgId = orgId,
+                SPSRCode = "SPSR26030001",
+                SPNo = "15/2026/QĐ-HTV-CSP",
+                StartDate = new DateTime(2026, 3, 1),
+                EndDate = new DateTime(2026, 3, 31),
+                SPSRType = SalesPolicyType.Retail,
+                FormBusinessSupportCode = BusinessSupportForm.Cash,
+                FlagMstValid = "1",
+                Status = SalesPolicyStatus.Valid,
+                Remark = "Chương trình hỗ trợ kích cầu bán lẻ xe Hyundai tháng 03/2026",
+                ApprovedAt = new DateTime(2026, 3, 1, 8, 30, 0),
+                ApprovedBy = "LEADER_HTC",
+                CreatedAt = new DateTime(2026, 3, 1, 8, 0, 0),
+                CreatedBy = "HTC_SALES_SPECIALIST",
+                Details = new List<SalesPolicyDetail>
+                {
+                    new() { SPSRCode = "SPSR26030001", DealerCode = "VS058", ModelCode = "SANTAFE", ModelName = "Santa Fe 2.5 HTRAC", SpecCode = "SF25-PREM", SpecDescription = "Bản cao cấp máy xăng 2.5 HTRAC", YearOfManufacture = "2026", AmountSupport = 25000000m, MinQty = 1, Remark = "Hỗ trợ 25 triệu/xe bán lẻ" },
+                    new() { SPSRCode = "SPSR26030001", DealerCode = "VS058", ModelCode = "CRETA", ModelName = "Creta 1.5 Smart", SpecCode = "CR15-SMT", SpecDescription = "Bản thông minh 1.5 CVT", YearOfManufacture = "2026", AmountSupport = 15000000m, MinQty = 1, Remark = "Hỗ trợ 15 triệu/xe bán lẻ" },
+                    new() { SPSRCode = "SPSR26030001", DealerCode = "VN012", ModelCode = "TUCSON", ModelName = "Tucson 2.0 AT Dầu", SpecCode = "TU20-DSL", SpecDescription = "Bản máy dầu 2.0 AT Đặc biệt", YearOfManufacture = "2026", AmountSupport = 20000000m, MinQty = 1, Remark = "Hỗ trợ 20 triệu/xe bán lẻ" },
+                    new() { SPSRCode = "SPSR26030001", DealerCode = "VN001", ModelCode = "ACCENT", ModelName = "Accent 1.5 AT", SpecCode = "AC15-AT", SpecDescription = "Bản 1.5 AT Đặc biệt 2026", YearOfManufacture = "2026", AmountSupport = 10000000m, MinQty = 1, Remark = "Hỗ trợ 10 triệu/xe bán lẻ" },
+                    new() { SPSRCode = "SPSR26030001", DealerCode = "ALL", ModelCode = "STARGAZER", ModelName = "Stargazer X", SpecCode = "SG-X", SpecDescription = "MPV 7 chỗ gầm cao", YearOfManufacture = "2026", AmountSupport = 18000000m, MinQty = 1, Remark = "Hỗ trợ toàn quốc 18 triệu/xe" }
+                }
+            };
+
+            var policy2 = new SalesPolicyMaster
+            {
+                OrgId = orgId,
+                SPSRCode = "SPSR26020002",
+                SPNo = "08/2026/QĐ-HTV-TB",
+                StartDate = new DateTime(2026, 2, 1),
+                EndDate = new DateTime(2026, 4, 30),
+                SPSRType = SalesPolicyType.Campaign,
+                FormBusinessSupportCode = BusinessSupportForm.RegistrationFee,
+                FlagMstValid = "1",
+                Status = SalesPolicyStatus.Valid,
+                Remark = "Chính sách hỗ trợ 50-100% lệ phí trước bạ xe ô tô Hyundai gầm cao Quý 1/2026",
+                ApprovedAt = new DateTime(2026, 2, 1, 9, 0, 0),
+                ApprovedBy = "LEADER_HTC",
+                CreatedAt = new DateTime(2026, 2, 1, 8, 30, 0),
+                CreatedBy = "HTC_SALES_SPECIALIST",
+                Details = new List<SalesPolicyDetail>
+                {
+                    new() { SPSRCode = "SPSR26020002", DealerCode = "ALL", ModelCode = "SANTAFE", ModelName = "Santa Fe All-New", SpecCode = "SF-TURBO", SpecDescription = "Bản 1.6 Turbo Hybrid", YearOfManufacture = "2026", AmountSupport = 50000000m, MinQty = 1, Remark = "Hỗ trợ 50% trước bạ tương đương 50 triệu" },
+                    new() { SPSRCode = "SPSR26020002", DealerCode = "ALL", ModelCode = "TUCSON", ModelName = "Tucson Turbo HTRAC", SpecCode = "TU-TURBO", SpecDescription = "Bản 1.6 Turbo", YearOfManufacture = "2026", AmountSupport = 40000000m, MinQty = 1, Remark = "Hỗ trợ 50% trước bạ tương đương 40 triệu" }
+                }
+            };
+
+            var policy3 = new SalesPolicyMaster
+            {
+                OrgId = orgId,
+                SPSRCode = "SPSR26010003",
+                SPNo = "02/2026/QĐ-HTV-PK",
+                StartDate = new DateTime(2026, 1, 1),
+                EndDate = new DateTime(2026, 6, 30),
+                SPSRType = SalesPolicyType.Wholesale,
+                FormBusinessSupportCode = BusinessSupportForm.Accessory,
+                FlagMstValid = "1",
+                Status = SalesPolicyStatus.Valid,
+                Remark = "Chính sách tặng gói phụ kiện cao cấp chính hãng Hyundai Accent 2026",
+                ApprovedAt = new DateTime(2026, 1, 2, 9, 30, 0),
+                ApprovedBy = "LEADER_HTC",
+                CreatedAt = new DateTime(2026, 1, 2, 8, 45, 0),
+                CreatedBy = "HTC_SALES_SPECIALIST",
+                Details = new List<SalesPolicyDetail>
+                {
+                    new() { SPSRCode = "SPSR26010003", DealerCode = "ALL", ModelCode = "ACCENT", ModelName = "Accent All-New", SpecCode = "AC15-PREM", SpecDescription = "Bản cao cấp 1.5 CVT", YearOfManufacture = "2026", AmountSupport = 12000000m, MinQty = 1, Remark = "Gói dán phim, camera, lót sàn chính hãng" }
+                }
+            };
+
+            db.SalesPolicies.AddRange(policy1, policy2, policy3);
+            await db.SaveChangesAsync();
+
+            // Seed hồ sơ hỗ trợ bán lẻ SupportRetails
+            var sup1 = new SupportRetail
+            {
+                OrgId = orgId,
+                SupportCode = "2603SPR00001",
+                SPSRCode = "SPSR26030001",
+                SPNo = "15/2026/QĐ-HTV-CSP",
+                DealerCode = "VS058",
+                DealerName = "Hyundai Bình Dương",
+                Vin = "RLUGT41DBST012693",
+                CarId = "CAR2026-SF0988",
+                ModelCode = "SANTAFE",
+                ModelName = "Santa Fe 2.5 HTRAC",
+                AmountSupport = 25000000m,
+                AmountHTCAppr = 25000000m,
+                DateSupport = new DateTime(2026, 3, 1),
+                HTCDatePayment = new DateTime(2026, 3, 20),
+                Status = SupportRetailStatus.Paid,
+                Remark = "Đã thẩm tra đủ hồ sơ và thanh toán giải ngân chi trả đại lý qua VCB",
+                OSODSOCode = "SO2603010001",
+                OSODApprovedDate = new DateTime(2026, 2, 25),
+                HTCInvoiceNo = "0001245",
+                HTCInvoiceDate = new DateTime(2026, 3, 5),
+                CDODDeliveryOutDate = new DateTime(2026, 3, 10),
+                DateFullStatus = new DateTime(2026, 3, 12),
+                ApprovedAt = new DateTime(2026, 3, 15, 14, 0, 0),
+                ApprovedBy = "HTC_SALES_MANAGER",
+                CreatedAt = new DateTime(2026, 3, 12, 10, 0, 0),
+                CreatedBy = "DEALER_STAFF"
+            };
+
+            var sup2 = new SupportRetail
+            {
+                OrgId = orgId,
+                SupportCode = "2603SPR00002",
+                SPSRCode = "SPSR26030001",
+                SPNo = "15/2026/QĐ-HTV-CSP",
+                DealerCode = "VS058",
+                DealerName = "Hyundai Bình Dương",
+                Vin = "KMHE281BBSA129841",
+                CarId = "CAR2026-CR0122",
+                ModelCode = "CRETA",
+                ModelName = "Creta 1.5 Smart",
+                AmountSupport = 15000000m,
+                AmountHTCAppr = 15000000m,
+                DateSupport = new DateTime(2026, 3, 1),
+                Status = SupportRetailStatus.Approved,
+                Remark = "Hồ sơ đạt chuẩn đối soát hoàn tất nghĩa vụ bán lẻ, chờ kế toán chuyển tiền",
+                OSODSOCode = "SO2603010002",
+                OSODApprovedDate = new DateTime(2026, 2, 28),
+                HTCInvoiceNo = "0001248",
+                HTCInvoiceDate = new DateTime(2026, 3, 8),
+                CDODDeliveryOutDate = new DateTime(2026, 3, 14),
+                DateFullStatus = new DateTime(2026, 3, 15),
+                ApprovedAt = new DateTime(2026, 3, 18, 16, 30, 0),
+                ApprovedBy = "HTC_SALES_MANAGER",
+                CreatedAt = new DateTime(2026, 3, 15, 9, 30, 0),
+                CreatedBy = "DEALER_STAFF"
+            };
+
+            var sup3 = new SupportRetail
+            {
+                OrgId = orgId,
+                SupportCode = "2603SPR00003",
+                SPSRCode = "SPSR26030001",
+                SPNo = "15/2026/QĐ-HTV-CSP",
+                DealerCode = "VN012",
+                DealerName = "Hyundai Hà Đông",
+                Vin = "KMHCT81CBDU048215",
+                CarId = "CAR2026-TU0056",
+                ModelCode = "TUCSON",
+                ModelName = "Tucson 2.0 AT Dầu",
+                AmountSupport = 20000000m,
+                AmountHTCAppr = 0,
+                DateSupport = new DateTime(2026, 3, 1),
+                Status = SupportRetailStatus.Pending,
+                Remark = "Đại lý nộp hồ sơ đối soát bán lẻ trong tháng",
+                OSODSOCode = "SO2603010003",
+                OSODApprovedDate = new DateTime(2026, 3, 2),
+                HTCInvoiceNo = "0001252",
+                HTCInvoiceDate = new DateTime(2026, 3, 10),
+                CDODDeliveryOutDate = new DateTime(2026, 3, 18),
+                DateFullStatus = new DateTime(2026, 3, 20),
+                CreatedAt = new DateTime(2026, 3, 21, 11, 0, 0),
+                CreatedBy = "DEALER_STAFF"
+            };
+
+            var sup4 = new SupportRetail
+            {
+                OrgId = orgId,
+                SupportCode = "2603SPR00004",
+                SPSRCode = "SPSR26030001",
+                SPNo = "15/2026/QĐ-HTV-CSP",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Ngọc An",
+                Vin = "KMHD351ABLU837201",
+                CarId = "CAR2026-AC0341",
+                ModelCode = "ACCENT",
+                ModelName = "Accent 1.5 AT",
+                AmountSupport = 10000000m,
+                AmountHTCAppr = 0,
+                DateSupport = new DateTime(2026, 3, 1),
+                Status = SupportRetailStatus.Rejected,
+                Remark = "Đề nghị hỗ trợ bán lẻ bị từ chối",
+                RejectReason = "Hợp đồng bán lẻ bị hủy do khách hàng không được duyệt vay tín dụng",
+                RejectedAt = new DateTime(2026, 3, 22, 10, 15, 0),
+                RejectedBy = "HTC_SALES_MANAGER",
+                CreatedAt = new DateTime(2026, 3, 20, 15, 45, 0),
+                CreatedBy = "DEALER_STAFF"
+            };
+
+            db.SupportRetails.AddRange(sup1, sup2, sup3, sup4);
             await db.SaveChangesAsync();
         }
     }

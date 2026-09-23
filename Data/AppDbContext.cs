@@ -77,6 +77,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<BusinessPlanDetail> BusinessPlanDetails => Set<BusinessPlanDetail>();
     public DbSet<FnExpCalcSheet> FnExpCalcSheets => Set<FnExpCalcSheet>();
     public DbSet<FnExpCalcSheetDetail> FnExpCalcSheetDetails => Set<FnExpCalcSheetDetail>();
+    public DbSet<SalesPolicyMaster> SalesPolicies => Set<SalesPolicyMaster>();
+    public DbSet<SalesPolicyDetail> SalesPolicyDetails => Set<SalesPolicyDetail>();
+    public DbSet<SupportRetail> SupportRetails => Set<SupportRetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -262,5 +265,22 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<FnExpCalcSheetDetail>().HasIndex(x => x.Vin);
         b.Entity<FnExpCalcSheetDetail>().HasIndex(x => x.CarId);
         b.Entity<FnExpCalcSheetDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<SalesPolicyMaster>().ToTable("SalesPolicies");
+        b.Entity<SalesPolicyMaster>().HasIndex(x => new { x.OrgId, x.SPSRCode }).IsUnique();
+        b.Entity<SalesPolicyMaster>().HasIndex(x => new { x.OrgId, x.SPNo });
+        b.Entity<SalesPolicyMaster>().Property(x => x.SPSRType).HasConversion<int>();
+        b.Entity<SalesPolicyMaster>().Property(x => x.FormBusinessSupportCode).HasConversion<int>();
+        b.Entity<SalesPolicyMaster>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<SalesPolicyMaster>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.SalesPolicyId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<SalesPolicyDetail>().ToTable("SalesPolicyDetails");
+        b.Entity<SalesPolicyDetail>().HasIndex(x => x.SPSRCode);
+        b.Entity<SalesPolicyDetail>().HasIndex(x => x.DealerCode);
+        b.Entity<SalesPolicyDetail>().HasIndex(x => x.ModelCode);
+        b.Entity<SupportRetail>().ToTable("SupportRetails");
+        b.Entity<SupportRetail>().HasIndex(x => new { x.OrgId, x.SupportCode }).IsUnique();
+        b.Entity<SupportRetail>().HasIndex(x => new { x.OrgId, x.SPSRCode, x.Vin });
+        b.Entity<SupportRetail>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<SupportRetail>().HasIndex(x => new { x.OrgId, x.Vin });
+        b.Entity<SupportRetail>().Property(x => x.Status).HasConversion<int>();
     }
 }

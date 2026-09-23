@@ -2358,5 +2358,131 @@ public sealed class FnExpCalcSheetDetail
     public string? LogLUBy { get; set; }
 }
 
+/// <summary>Trạng thái hiệu lực chính sách bán hàng (DMS.Sales SPL_SalesPolicyMst FlagMstValid & Status: Draft = '0' [Nháp], Valid = '1' [Hiệu lực/Đã duyệt], Expired = '2' [Hết hạn], Cancelled = '3' [Hủy/Dừng áp dụng]).</summary>
+public enum SalesPolicyStatus
+{
+    Draft = 0,
+    Valid = 1,
+    Expired = 2,
+    Cancelled = 3
+}
+
+/// <summary>Loại chính sách bán hàng / hỗ trợ (DMS.Sales SPL_SalesPolicyMst SPSRType: Wholesale = 'WHOLESALE' [Bán buôn], Retail = 'RETAIL' [Hỗ trợ bán lẻ], Campaign = 'CAMPAIGN' [Chiến dịch khuyến mại], Special = 'SPECIAL' [Chính sách đặc thù theo vùng/dự án]).</summary>
+public enum SalesPolicyType
+{
+    Wholesale = 0,
+    Retail = 1,
+    Campaign = 2,
+    Special = 3
+}
+
+/// <summary>Hình thức hỗ trợ kinh doanh chính sách (DMS.Sales SPL_SalesPolicyMst FormBusinessSupportCode: Cash = 'CASH' [Hỗ trợ tiền mặt], InterestRate = 'INTEREST' [Hỗ trợ lãi suất vay ngân hàng], Accessory = 'ACCESSORY' [Gói phụ kiện chính hãng], Insurance = 'INSURANCE' [Tặng bảo hiểm vật chất xe], RegistrationFee = 'REGISFEE' [Hỗ trợ 50-100% lệ phí trước bạ]).</summary>
+public enum BusinessSupportForm
+{
+    Cash = 0,
+    InterestRate = 1,
+    Accessory = 2,
+    Insurance = 3,
+    RegistrationFee = 4
+}
+
+/// <summary>Quản lý Chính sách Bán hàng & Hỗ trợ Kinh doanh Xe Ô tô Đại lý - NPP (DMS.Sales SPL_SalesPolicyMst + SPL_SalesPolicyMstDetail / SPLSalesPolicyMstController / SalesPolicy.cs / SPLSalesPolicyMst.txt / Mst.ChinhSachHoTroKinhDoanh.xlsx): NPP ban hành chính sách hỗ trợ bán lẻ/bán buôn xe theo văn bản quyết định (SPNo), thời hạn áp dụng (StartDate -> EndDate), hình thức hỗ trợ (tiền mặt, lãi suất, phụ kiện, trước bạ), phân bổ chi tiết mức hỗ trợ cho từng dòng xe (ModelCode, SpecCode) và danh sách đại lý (DealerCode).</summary>
+public sealed class SalesPolicyMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SPSRCode { get; set; } = ""; // Mã chính sách (SPSR{yyMM}{seq:D4}, vd: SPSR26030001)
+    public string SPNo { get; set; } = ""; // Số hiệu văn bản quyết định (vd: 15/2026/QĐ-HTV-CSP)
+    public DateTime StartDate { get; set; } // Ngày bắt đầu hiệu lực chính sách
+    public DateTime EndDate { get; set; } // Ngày kết thúc hiệu lực chính sách
+    public SalesPolicyType SPSRType { get; set; } = SalesPolicyType.Retail; // Loại chính sách
+    public BusinessSupportForm FormBusinessSupportCode { get; set; } = BusinessSupportForm.Cash; // Hình thức hỗ trợ kinh doanh
+    public string? SPSRRoot { get; set; } // Mã chính sách gốc (nếu là chính sách điều chỉnh/bổ sung)
+    public string? FilePath { get; set; } // Đường dẫn lưu file văn bản quyết định đã ký
+    public string? FileName { get; set; } // Tên file văn bản
+    public string FlagMstValid { get; set; } = "1"; // '1' = Hiệu lực, '0' = Không hiệu lực/Dừng
+    public SalesPolicyStatus Status { get; set; } = SalesPolicyStatus.Valid; // Trạng thái chính sách
+    public string? Remark { get; set; } // Nội dung / mô tả về việc ban hành chính sách
+    public DateTime? ApprovedAt { get; set; } // Ngày giờ phê duyệt ban hành
+    public string? ApprovedBy { get; set; } // Lãnh đạo Khối Kinh doanh / NPP phê duyệt
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<SalesPolicyDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết phạm vi áp dụng Chính sách Bán hàng (DMS.Sales SPL_SalesPolicyMstDetail): quy định mức hỗ trợ (AmountSupport / SupportPercent) cho từng Model xe, phiên bản Spec, năm sản xuất và mã đại lý được hưởng.</summary>
+public sealed class SalesPolicyDetail
+{
+    public long Id { get; set; }
+    public long SalesPolicyId { get; set; }
+    public string SPSRCode { get; set; } = ""; // Tham chiếu mã chính sách
+    public string DealerCode { get; set; } = ""; // Mã đại lý (VS058, VN012 hoặc 'ALL' cho toàn hệ thống)
+    public string ModelCode { get; set; } = ""; // Mã model xe (CRETA, SANTAFE, TUCSON, ACCENT, BN7I-CKD...)
+    public string? ModelName { get; set; } // Tên model xe
+    public string? SpecCode { get; set; } // Mã phiên bản xe
+    public string? SpecDescription { get; set; } // Mô tả chi tiết bản xe
+    public string? YearOfManufacture { get; set; } // Năm sản xuất xe (2025, 2026...)
+    public decimal AmountSupport { get; set; } // Mức tiền hỗ trợ trên mỗi xe (VNĐ)
+    public decimal SupportPercent { get; set; } // Tỷ lệ % hỗ trợ trên giá trị xe (nếu có)
+    public int MinQty { get; set; } = 1; // Số lượng bán tối thiểu để kích hoạt mức hỗ trợ
+    public string? Remark { get; set; } // Ghi chú chi tiết dòng xe
+}
+
+/// <summary>Trạng thái Hồ sơ đề nghị Quyết toán Hỗ trợ Bán lẻ theo chính sách (DMS.Sales SPL_SPSupportRetail Status: Pending = 'P' [Chờ NPP thẩm tra], Approved = 'A' [NPP duyệt hỗ trợ], Paid = 'F' [Đã thanh toán/giải ngân chi trả cho Đại lý], Rejected = 'R' [Từ chối], Cancelled = 'C' [Hủy]).</summary>
+public enum SupportRetailStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Paid = 2,
+    Rejected = 3,
+    Cancelled = 4
+}
+
+/// <summary>Hồ sơ Đề nghị Quyết toán Hỗ trợ Bán lẻ theo Chính sách Xe Ô tô (DMS.Sales SPL_SPSupportRetail / SPLSPSupportRetailController / SalesPolicy.cs / SPLSPSupportRetail.txt / RptSPLSPSupportRetailController): Đại lý lập đề nghị quyết toán hỗ trợ cho từng xe bán lẻ đã giao khách theo chính sách (SPSRCode/SPNo), hệ thống tự động đối soát liên kết số đơn hàng bán buôn (OSODSOCode), ngày xác nhận ĐH (OSODApprovedDate), số hóa đơn bán buôn HTC (HTCInvoiceNo), ngày hóa đơn (HTCInvoiceDate), ngày xuất xe thực tế (CDODDeliveryOutDate), ngày hoàn tất toàn bộ nghĩa vụ tài chính và bảo lãnh (DateFullStatus), NPP thẩm tra duyệt số tiền (AmountHTCAppr) và kế toán thanh toán chi trả cho đại lý.</summary>
+public sealed class SupportRetail
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SupportCode { get; set; } = ""; // Mã hồ sơ đề nghị ({yyMM}SPR{seq:D5}, vd: 2603SPR00001)
+    public string SPSRCode { get; set; } = ""; // Mã chính sách bán hàng liên kết (SPSRCode)
+    public string SPNo { get; set; } = ""; // Số hiệu văn bản chính sách
+    public string DealerCode { get; set; } = ""; // Mã đại lý đề nghị quyết toán
+    public string? DealerName { get; set; } // Tên đại lý
+    public string Vin { get; set; } = ""; // Số khung VIN xe bán lẻ (17 ký tự)
+    public string? CarId { get; set; } // Mã định danh xe trong hệ thống Car_Car
+    public string? ModelCode { get; set; } // Model xe (CRETA, ACCENT, SANTAFE...)
+    public string? ModelName { get; set; } // Tên model xe
+    public decimal AmountSupport { get; set; } // Số tiền đại lý đề nghị được hỗ trợ (VNĐ)
+    public decimal AmountHTCAppr { get; set; } // Số tiền NPP thẩm tra và phê duyệt hỗ trợ (VNĐ)
+    public DateTime DateSupport { get; set; } // Tháng / kỳ hỗ trợ (đầu tháng)
+    public DateTime? HTCDatePayment { get; set; } // Ngày NPP thực tế thanh toán giải ngân hỗ trợ
+    public SupportRetailStatus Status { get; set; } = SupportRetailStatus.Pending; // Trạng thái hồ sơ
+    public string? Remark { get; set; } // Ghi chú đề nghị hỗ trợ
+
+    // Các trường đối soát liên kết chuỗi nghiệp vụ bán hàng:
+    public DateTime? OSODApprovedDate { get; set; } // Ngày NPP phê duyệt đơn đặt hàng buôn
+    public string? OSODSOCode { get; set; } // Số đơn hàng buôn xe (Ord_SalesOrder)
+    public string? HTCInvoiceNo { get; set; } // Số hóa đơn VAT bán buôn NPP xuất (VAT_HTCInvoice)
+    public DateTime? HTCInvoiceDate { get; set; } // Ngày hóa đơn bán buôn
+    public DateTime? CDODDeliveryOutDate { get; set; } // Ngày xe xuất kho thực tế theo Lệnh giao xe (Car_DeliveryOrder)
+    public DateTime? DateFullStatus { get; set; } // Ngày hoàn thành toàn bộ nghĩa vụ tài chính và bảo lãnh xe
+    public string? PRDiscountNo { get; set; } // Số đề nghị chiết khấu thanh toán liên quan (nếu có)
+
+    public DateTime? ApprovedAt { get; set; } // Ngày NPP duyệt hỗ trợ
+    public string? ApprovedBy { get; set; }
+    public DateTime? RejectedAt { get; set; } // Ngày từ chối
+    public string? RejectedBy { get; set; }
+    public string? RejectReason { get; set; } // Lý do từ chối hỗ trợ
+    public DateTime? CancelledAt { get; set; } // Ngày hủy hồ sơ
+    public string? CancelledBy { get; set; }
+    public string? CancelReason { get; set; } // Lý do hủy hồ sơ
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+}
+
+
 
 
