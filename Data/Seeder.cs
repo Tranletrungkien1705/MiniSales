@@ -2626,6 +2626,62 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_ContractNo ON PerformanceInvoiceDetails(ContractNo);
                 CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_ModelCode ON PerformanceInvoiceDetails(ModelCode);
                 CREATE INDEX IF NOT EXISTS IX_PerformanceInvoiceDetails_PortCode ON PerformanceInvoiceDetails(PortCode);
+
+                CREATE TABLE IF NOT EXISTS ContractOverseas (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    ContractDate TEXT NOT NULL,
+                    SupplierCode TEXT NOT NULL,
+                    SupplierName TEXT NOT NULL,
+                    LCNo TEXT,
+                    BankName TEXT,
+                    Incoterms TEXT NOT NULL,
+                    DestinationPort TEXT NOT NULL,
+                    Currency TEXT NOT NULL DEFAULT 'USD',
+                    ExpectedDeliveryDate TEXT,
+                    TotalQuantity INTEGER NOT NULL DEFAULT 0,
+                    TotalAmount REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 1,
+                    Remark TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedBy TEXT,
+                    UpdatedAt TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_ContractOverseas_OrgId_ContractNo ON ContractOverseas(OrgId, ContractNo);
+                CREATE INDEX IF NOT EXISTS IX_ContractOverseas_OrgId_LCNo ON ContractOverseas(OrgId, LCNo);
+                CREATE INDEX IF NOT EXISTS IX_ContractOverseas_OrgId_Status ON ContractOverseas(OrgId, Status);
+                CREATE INDEX IF NOT EXISTS IX_ContractOverseas_OrgId_SupplierCode ON ContractOverseas(OrgId, SupplierCode);
+
+                CREATE TABLE IF NOT EXISTS LettersOfCredit (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    LCNo TEXT NOT NULL,
+                    ContractNo TEXT NOT NULL,
+                    BankCode TEXT NOT NULL,
+                    BankName TEXT NOT NULL,
+                    BankBranch TEXT,
+                    LCType INTEGER NOT NULL DEFAULT 0,
+                    Amount REAL NOT NULL DEFAULT 0,
+                    Currency TEXT NOT NULL DEFAULT 'USD',
+                    IssueDate TEXT NOT NULL,
+                    ExpireDate TEXT NOT NULL,
+                    LatestShipmentDate TEXT,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedBy TEXT,
+                    UpdatedAt TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_LettersOfCredit_OrgId_LCNo ON LettersOfCredit(OrgId, LCNo);
+                CREATE INDEX IF NOT EXISTS IX_LettersOfCredit_OrgId_ContractNo ON LettersOfCredit(OrgId, ContractNo);
+                CREATE INDEX IF NOT EXISTS IX_LettersOfCredit_OrgId_BankCode ON LettersOfCredit(OrgId, BankCode);
+                CREATE INDEX IF NOT EXISTS IX_LettersOfCredit_OrgId_Status ON LettersOfCredit(OrgId, Status);
             ");
         }
         catch
@@ -12344,6 +12400,143 @@ public static class Seeder
                 };
 
                 db.PerformanceInvoices.AddRange(pi1, pi2, pi3, pi4);
+            }
+
+            if (!await db.ContractOverseas.AnyAsync(o => o.OrgId == orgId))
+            {
+                var co1 = new ContractOversea
+                {
+                    OrgId = orgId,
+                    ContractNo = "CT-HMC-2026-001",
+                    ContractDate = DateTime.Today.AddDays(-28),
+                    SupplierCode = "HMC",
+                    SupplierName = "Hyundai Motor Company Korea",
+                    LCNo = "LC26020001",
+                    BankName = "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank - CN Thăng Long)",
+                    Incoterms = "CIF Sai Gon Port",
+                    DestinationPort = "SGN",
+                    Currency = "USD",
+                    ExpectedDeliveryDate = DateTime.Today.AddDays(15),
+                    TotalQuantity = 40,
+                    TotalAmount = 1312000m,
+                    Status = ContractOverseaStatus.LinkedLC,
+                    Remark = "Hợp đồng ngoại thương nhập khẩu lô 40 xe Creta và Stargazer X sản xuất tại Nhà máy Ulsan Hàn Quốc về cảng Sài Gòn",
+                    CreatedBy = "HQ_IMPORT_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-28)
+                };
+
+                var co2 = new ContractOversea
+                {
+                    OrgId = orgId,
+                    ContractNo = "2603HMC0002",
+                    ContractDate = DateTime.Today.AddDays(-10),
+                    SupplierCode = "HMC",
+                    SupplierName = "Hyundai Motor Company Korea",
+                    LCNo = null,
+                    BankName = null,
+                    Incoterms = "CIF Hai Phong Port",
+                    DestinationPort = "HPH",
+                    Currency = "USD",
+                    ExpectedDeliveryDate = DateTime.Today.AddDays(45),
+                    TotalQuantity = 50,
+                    TotalAmount = 2080000m,
+                    Status = ContractOverseaStatus.Active,
+                    Remark = "Hợp đồng ngoại thương ký kết lô xe Santa Fe và Tucson Asan tháng 3/2026 đang hoàn tất hồ sơ mở L/C tại VietinBank",
+                    CreatedBy = "HQ_IMPORT_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-10)
+                };
+
+                var co3 = new ContractOversea
+                {
+                    OrgId = orgId,
+                    ContractNo = "2601HMC0003",
+                    ContractDate = DateTime.Today.AddDays(-60),
+                    SupplierCode = "HMC",
+                    SupplierName = "Hyundai Motor Company Korea",
+                    LCNo = "LC26010003",
+                    BankName = "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV - CN Hà Nội)",
+                    Incoterms = "CIF Hai Phong Port",
+                    DestinationPort = "HPH",
+                    Currency = "USD",
+                    ExpectedDeliveryDate = DateTime.Today.AddDays(-10),
+                    TotalQuantity = 20,
+                    TotalAmount = 780000m,
+                    Status = ContractOverseaStatus.Completed,
+                    Remark = "Lô xe CBU Palisade nhập khẩu cảng Hải Phòng đã thông quan và bàn giao kho bãi thành công",
+                    CreatedBy = "HQ_IMPORT_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-60)
+                };
+
+                var co4 = new ContractOversea
+                {
+                    OrgId = orgId,
+                    ContractNo = "2601HMC0004",
+                    ContractDate = DateTime.Today.AddDays(-55),
+                    SupplierCode = "HMC",
+                    SupplierName = "Hyundai Motor Company Korea",
+                    LCNo = null,
+                    BankName = null,
+                    Incoterms = "CIF Da Nang Port",
+                    DestinationPort = "DAN",
+                    Currency = "USD",
+                    ExpectedDeliveryDate = null,
+                    TotalQuantity = 10,
+                    TotalAmount = 220000m,
+                    Status = ContractOverseaStatus.Cancelled,
+                    Remark = "Hợp đồng thử nghiệm dự kiến nhập cảng Đà Nẵng",
+                    CancelReason = "Thay đổi phương án logistics gom toàn bộ về cảng Đình Vũ Hải Phòng",
+                    CreatedBy = "HQ_IMPORT_MANAGER",
+                    CreatedAt = DateTime.Now.AddDays(-55),
+                    CancelledBy = "HQ_IMPORT_LEADER",
+                    CancelledAt = DateTime.Now.AddDays(-50)
+                };
+
+                db.ContractOverseas.AddRange(co1, co2, co3, co4);
+            }
+
+            if (!await db.LettersOfCredit.AnyAsync(o => o.OrgId == orgId))
+            {
+                var lc1 = new LetterOfCredit
+                {
+                    OrgId = orgId,
+                    LCNo = "LC26020001",
+                    ContractNo = "CT-HMC-2026-001",
+                    BankCode = "VCB",
+                    BankName = "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank - CN Thăng Long)",
+                    BankBranch = "Sở Giao Dịch Hà Nội",
+                    LCType = LCType.AtSight,
+                    Amount = 1312000m,
+                    Currency = "USD",
+                    IssueDate = DateTime.Today.AddDays(-25),
+                    ExpireDate = DateTime.Today.AddDays(65),
+                    LatestShipmentDate = DateTime.Today.AddDays(30),
+                    Status = LCStatus.Active,
+                    Remark = "Thư tín dụng không hủy ngang L/C At Sight phát hành thanh toán HĐ ngoại CT-HMC-2026-001 qua VCB",
+                    CreatedBy = "FINANCE_OFFICER",
+                    CreatedAt = DateTime.Now.AddDays(-25)
+                };
+
+                var lc2 = new LetterOfCredit
+                {
+                    OrgId = orgId,
+                    LCNo = "LC26010003",
+                    ContractNo = "2601HMC0003",
+                    BankCode = "BIDV",
+                    BankName = "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV - CN Hà Nội)",
+                    BankBranch = "Chi nhánh Hà Nội",
+                    LCType = LCType.Usance,
+                    Amount = 780000m,
+                    Currency = "USD",
+                    IssueDate = DateTime.Today.AddDays(-55),
+                    ExpireDate = DateTime.Today.AddDays(35),
+                    LatestShipmentDate = DateTime.Today.AddDays(-15),
+                    Status = LCStatus.Settled,
+                    Remark = "L/C trả chậm Usance 90 ngày đã quyết toán và giải tỏa nghĩa vụ ngân hàng sau khi hoàn tất thông quan",
+                    CreatedBy = "FINANCE_OFFICER",
+                    CreatedAt = DateTime.Now.AddDays(-55)
+                };
+
+                db.LettersOfCredit.AddRange(lc1, lc2);
             }
 
             await db.SaveChangesAsync();

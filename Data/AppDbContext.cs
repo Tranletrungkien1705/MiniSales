@@ -98,6 +98,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarVinProfile> CarVinProfiles => Set<CarVinProfile>();
     public DbSet<PerformanceInvoice> PerformanceInvoices => Set<PerformanceInvoice>();
     public DbSet<PerformanceInvoiceDetail> PerformanceInvoiceDetails => Set<PerformanceInvoiceDetail>();
+    public DbSet<ContractOversea> ContractOverseas => Set<ContractOversea>();
+    public DbSet<LetterOfCredit> LettersOfCredit => Set<LetterOfCredit>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -398,5 +400,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.ContractNo);
         b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.ModelCode);
         b.Entity<PerformanceInvoiceDetail>().HasIndex(x => x.PortCode);
+
+        b.Entity<ContractOversea>().ToTable("ContractOverseas");
+        b.Entity<ContractOversea>().HasIndex(x => new { x.OrgId, x.ContractNo }).IsUnique();
+        b.Entity<ContractOversea>().HasIndex(x => new { x.OrgId, x.LCNo });
+        b.Entity<ContractOversea>().HasIndex(x => new { x.OrgId, x.Status });
+        b.Entity<ContractOversea>().HasIndex(x => new { x.OrgId, x.SupplierCode });
+        b.Entity<ContractOversea>().Property(x => x.Status).HasConversion<int>();
+
+        b.Entity<LetterOfCredit>().ToTable("LettersOfCredit");
+        b.Entity<LetterOfCredit>().HasIndex(x => new { x.OrgId, x.LCNo }).IsUnique();
+        b.Entity<LetterOfCredit>().HasIndex(x => new { x.OrgId, x.ContractNo });
+        b.Entity<LetterOfCredit>().HasIndex(x => new { x.OrgId, x.BankCode });
+        b.Entity<LetterOfCredit>().HasIndex(x => new { x.OrgId, x.Status });
+        b.Entity<LetterOfCredit>().Property(x => x.LCType).HasConversion<int>();
+        b.Entity<LetterOfCredit>().Property(x => x.Status).HasConversion<int>();
     }
 }

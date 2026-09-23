@@ -3298,6 +3298,85 @@ public sealed class PerformanceInvoiceDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái Hợp đồng Ngoại thương mua bán xe ô tô nhập khẩu (DMS.Sales CT_ContractOversea: Draft = 0 [Mới lập], Active = 1 [Đã ký kết/Hiệu lực], LinkedLC = 2 [Đã mở L/C ngân hàng], Completed = 3 [Hoàn tất nhận hàng & thanh toán], Cancelled = 4 [Đã hủy hợp đồng]).</summary>
+public enum ContractOverseaStatus
+{
+    Draft = 0,
+    Active = 1,
+    LinkedLC = 2,
+    Completed = 3,
+    Cancelled = 4
+}
+
+/// <summary>Loại hình Thư tín dụng ngoại thương (DMS.Sales CT_LC LCType: AtSight = 0 [Trả ngay], Usance = 1 [Trả chậm], UPAS = 2 [UPAS L/C]).</summary>
+public enum LCType
+{
+    AtSight = 0,
+    Usance = 1,
+    UPAS = 2
+}
+
+/// <summary>Trạng thái Thư tín dụng ngoại thương (DMS.Sales CT_LC LCStatus: Active = 0 [Đang hiệu lực], Settled = 1 [Đã quyết toán/giải tỏa], Cancelled = 2 [Đã hủy/hết hiệu lực]).</summary>
+public enum LCStatus
+{
+    Active = 0,
+    Settled = 1,
+    Cancelled = 2
+}
+
+/// <summary>Quản lý Hợp đồng Ngoại thương mua bán xe ô tô nhập khẩu giữa NPP và Tập đoàn sản xuất nước ngoài HMC (DMS.Sales CT_ContractOversea / CTContractOverseaController / CTContractOversea.txt / Contract.cs): Quản lý số hợp đồng ngoại ContractNo, liên kết các dòng PI (Ord_PerformanceInvoiceDetail), liên kết thư tín dụng L/C (CT_LC), điều kiện giao hàng Incoterms, cảng đích, theo dõi số lượng và giá trị USD lô xe nhập khẩu.</summary>
+public sealed class ContractOversea
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ContractNo { get; set; } = ""; // Số hợp đồng ngoại thương (PK / Mã HĐ, format {yyMM}HMC{seq:D4} hoặc {yyMM}DRC{seq:D5})
+    public DateTime ContractDate { get; set; } = DateTime.Today; // Ngày ký kết HĐ ngoại
+    public string SupplierCode { get; set; } = "HMC"; // Mã đối tác ngoại thương (HMC)
+    public string SupplierName { get; set; } = "Hyundai Motor Company Korea"; // Tên đối tác ngoại thương
+    public string? LCNo { get; set; } // Số thư tín dụng L/C liên kết (CT_LC.LCNo)
+    public string? BankName { get; set; } // Ngân hàng mở L/C
+    public string Incoterms { get; set; } = "CIF Hai Phong"; // Điều kiện giao nhận ngoại thương (CIF, FOB, CFR...)
+    public string DestinationPort { get; set; } = "HPH"; // Cảng đích nhận hàng (HPH, SGN, CM...)
+    public string Currency { get; set; } = "USD"; // Tiền tệ thanh toán ngoại thương
+    public DateTime? ExpectedDeliveryDate { get; set; } // Ngày dự kiến giao hàng cảng
+    public int TotalQuantity { get; set; } // Tổng số lượng xe theo HĐ
+    public decimal TotalAmount { get; set; } // Tổng trị giá HĐ (USD)
+    public ContractOverseaStatus Status { get; set; } = ContractOverseaStatus.Active; // Trạng thái HĐ ngoại
+    public string? Remark { get; set; } // Ghi chú hợp đồng
+    public string? CancelReason { get; set; } // Lý do hủy HĐ
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? UpdatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+}
+
+/// <summary>Quản lý Thư tín dụng / Letter of Credit (L/C) Ngoại thương thanh toán lô xe nhập khẩu (DMS.Sales CT_LC / CTLCController / CTLC.txt / Contract.cs): Quản lý số hiệu L/C mở tại ngân hàng tài trợ thương mại (VCB, BIDV, CTG...), liên kết hợp đồng ngoại thương ContractNo, theo dõi loại L/C (AtSight, Usance, UPAS), số tiền USD bảo lãnh thanh toán, thời hạn hiệu lực và ngày giao hàng muộn nhất.</summary>
+public sealed class LetterOfCredit
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string LCNo { get; set; } = ""; // Số hiệu L/C (PK / Mã LC, format LC{yyMM}{seq:D4})
+    public string ContractNo { get; set; } = ""; // Số hợp đồng ngoại thương liên kết (CT_ContractOversea.ContractNo)
+    public string BankCode { get; set; } = "VCB"; // Mã ngân hàng phát hành (VCB, BIDV, CTG, TCB, MB...)
+    public string BankName { get; set; } = "Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)"; // Tên ngân hàng phát hành
+    public string? BankBranch { get; set; } = "Sở Giao Dịch Hà Nội"; // Chi nhánh ngân hàng phát hành
+    public LCType LCType { get; set; } = LCType.AtSight; // Loại hình thư tín dụng
+    public decimal Amount { get; set; } // Giá trị L/C (USD)
+    public string Currency { get; set; } = "USD"; // Đồng tiền L/C (USD)
+    public DateTime IssueDate { get; set; } = DateTime.Today; // Ngày phát hành L/C
+    public DateTime ExpireDate { get; set; } = DateTime.Today.AddDays(90); // Ngày hết hạn hiệu lực L/C
+    public DateTime? LatestShipmentDate { get; set; } // Ngày giao hàng lên tàu muộn nhất (Latest Shipment Date)
+    public LCStatus Status { get; set; } = LCStatus.Active; // Trạng thái L/C
+    public string? Remark { get; set; } // Ghi chú thư tín dụng
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? UpdatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+}
+
+
 
 
 

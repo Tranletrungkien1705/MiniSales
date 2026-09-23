@@ -68,6 +68,7 @@ builder.Services.AddScoped<IPaymentGPSService, PaymentGPSService>();
 builder.Services.AddScoped<IPaymentStorageService, PaymentStorageService>();
 builder.Services.AddScoped<ICarVinProfileService, CarVinProfileService>();
 builder.Services.AddScoped<IPerformanceInvoiceService, PerformanceInvoiceService>();
+builder.Services.AddScoped<IContractOverseaService, ContractOverseaService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -4508,6 +4509,137 @@ app.MapDelete("/api/performance-invoices/{refNo}/details/{detailId:long}", async
     {
         var r = await svc.DeleteDetailAsync(refNo, detailId);
         return r is null ? Results.NotFound(new { error = $"Không tìm thấy phiếu PI {refNo} hoặc dòng chi tiết {detailId}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Hợp đồng Ngoại thương (CT_ContractOversea) & Thư tín dụng L/C (CT_LC) Nhập khẩu Xe Ô tô (DMS.Sales CT_ContractOversea + CT_LC · CTContractOverseaController / CTLCController / CTContractOversea.txt / CTLC.txt / Contract.cs) =====
+app.MapGet("/api/contract-overseas/seq", async (IContractOverseaService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextContractNoAsync() })).RequireAuthorization();
+
+app.MapGet("/api/contract-overseas/lc-seq", async (IContractOverseaService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextLCNoAsync() })).RequireAuthorization();
+
+app.MapGet("/api/contract-overseas/stats", async (IContractOverseaService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/contract-overseas/without-lc", async (IContractOverseaService svc) =>
+    Results.Ok(await svc.SearchAllWithoutLCAsync())).RequireAuthorization();
+
+app.MapGet("/api/contract-overseas/eligible-pi-details", async (string? refNo, string? modelCode, string? portCode, IContractOverseaService svc) =>
+    Results.Ok(await svc.GetEligiblePIDetailsAsync(refNo, modelCode, portCode))).RequireAuthorization();
+
+app.MapGet("/api/contract-overseas", async (
+    string? contractNo,
+    string? refNo,
+    string? lcNo,
+    string? supplierCode,
+    string? destinationPort,
+    ContractOverseaStatus? status,
+    DateTime? createdFrom,
+    DateTime? createdTo,
+    int pageIndex = 0,
+    int pageSize = 50,
+    IContractOverseaService svc = default!) =>
+    Results.Ok(await svc.SearchAsync(contractNo, refNo, lcNo, supplierCode, destinationPort, status, createdFrom, createdTo, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/contract-overseas/{contractNo}", async (string contractNo, IContractOverseaService svc) =>
+{
+    var r = await svc.DetailAsync(contractNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy hợp đồng ngoại '{contractNo}'." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/contract-overseas", async (CreateContractOverseaDto dto, IContractOverseaService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/contract-overseas/{contractNo}", async (string contractNo, UpdateContractOverseaDto dto, IContractOverseaService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hợp đồng ngoại '{contractNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/contract-overseas/{contractNo}", async (string contractNo, IContractOverseaService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteAsync(contractNo);
+        return ok ? Results.Ok(new { success = true, contractNo }) : Results.NotFound(new { error = $"Không tìm thấy hợp đồng ngoại '{contractNo}'." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/contract-overseas/{contractNo}/cancel", async (string contractNo, CancelContractOverseaDto dto, IContractOverseaService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hợp đồng ngoại '{contractNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/contract-overseas/{contractNo}/pi-details", async (string contractNo, AddContractOverseaPiDetailsDto dto, IContractOverseaService svc) =>
+{
+    try
+    {
+        var r = await svc.AddPIDetailsAsync(contractNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hợp đồng ngoại '{contractNo}'." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/contract-overseas/{contractNo}/pi-details/{detailId:long}", async (string contractNo, long detailId, IContractOverseaService svc) =>
+{
+    try
+    {
+        var r = await svc.RemovePIDetailAsync(contractNo, detailId);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hợp đồng ngoại '{contractNo}' hoặc dòng xe {detailId}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/contract-overseas/export", async (ExportContractOverseaDto? dto, IContractOverseaService svc) =>
+    Results.Ok(await svc.ExportAsync(dto))).RequireAuthorization();
+
+// --- L/C APIs ---
+app.MapGet("/api/contract-overseas/lcs", async (
+    string? lcNo,
+    string? contractNo,
+    string? bankCode,
+    string? bankName,
+    LCStatus? status,
+    DateTime? createdFrom,
+    DateTime? createdTo,
+    int pageIndex = 0,
+    int pageSize = 50,
+    IContractOverseaService svc = default!) =>
+    Results.Ok(await svc.ListLCAsync(lcNo, contractNo, bankCode, bankName, status, createdFrom, createdTo, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/contract-overseas/lcs/{lcNo}", async (string lcNo, IContractOverseaService svc) =>
+{
+    var r = await svc.DetailLCAsync(lcNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy thư tín dụng L/C '{lcNo}'." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/contract-overseas/lcs", async (CreateLetterOfCreditDto dto, IContractOverseaService svc) =>
+{
+    try { return Results.Ok(await svc.CreateLCAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/contract-overseas/lcs/{lcNo}", async (string lcNo, IContractOverseaService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteLCAsync(lcNo);
+        return ok ? Results.Ok(new { success = true, lcNo }) : Results.NotFound(new { error = $"Không tìm thấy thư tín dụng L/C '{lcNo}'." });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
