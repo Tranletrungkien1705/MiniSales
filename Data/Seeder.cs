@@ -9801,5 +9801,405 @@ public static class Seeder
             db.PackingLists.AddRange(pl1, pl2, pl3, pl4);
             await db.SaveChangesAsync();
         }
+
+        if (!await db.BankingTransactions.AnyAsync(o => o.OrgId == orgId))
+        {
+            var bkt1 = new BankingTransaction
+            {
+                OrgId = orgId,
+                RQ_BankingTransNo = "2603BKT0001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                BankCode = "VPB",
+                BankName = "Ngân hàng TMCP Việt Nam Thịnh Vượng (VPBank)",
+                TaxCode = "0102030405",
+                TransType = BankingTransType.PMT,
+                Status = BankingTransStatus.Disbursed,
+                BankStatus = BankingTransBankStatus.Disbursed,
+                RefBankCode = "VPB-2603180930-5821",
+                BankRemark = "VPBank phê duyệt và hoàn tất giải ngân tiền mua xe vào tài khoản NPP theo hợp đồng hạn mức tín dụng 2026/VPB-DONGDO.",
+                Remark = "Đề nghị giải ngân vốn vay thương mại lô 02 xe Santa Fe & Tucson theo HĐ bán buôn 2603DRC00001",
+                TotalAmount = 1500000000m,
+                TotalCars = 2,
+
+                // PMT:
+                PaymentNo = "PMT260318-001",
+                PaymentType = "Payment",
+                DisbursementType = BankingTransDisbursementType.LoanDisbursement,
+                TransferAmount = 1500000000m,
+                LoanPeriod = 3,
+                LoanPeriodDate = DateTime.Today.AddMonths(3),
+                InterestRate = 7.2m,
+                ReceivingUnit = "CÔNG TY CỔ PHẦN LIÊN DOANH Ô TÔ HYUNDAI THÀNH CÔNG VIỆT NAM",
+                BankAccountReceive = "111000123456",
+                BankNameReceive = "VietinBank - Chi nhánh Hà Nội",
+                CreditContractNo = "HDTD-VPB-2026-0088",
+                DisbursementRequestDate = DateTime.Today.AddDays(-6),
+                LDNo = "LD2603-VPB-0081",
+                DisbursementAmount = 1500000000m,
+                DisbursementDate = DateTime.Today.AddDays(-4),
+
+                CreatedAt = DateTime.Today.AddDays(-7),
+                CreatedBy = "DEALER_FINANCE_VN001",
+                PushedToBankAt = DateTime.Today.AddDays(-6),
+                PushedToBankBy = "DEALER_FINANCE_VN001",
+                BankApprovedAt = DateTime.Today.AddDays(-5),
+                BankApprovedBy = "Nguyễn Thu Hà (Chuyên viên Tín dụng KHDN VPBank)",
+                DisbursedAt = DateTime.Today.AddDays(-4),
+                DisbursedBy = "Trần Đình Trọng (Kiểm soát viên Giao dịch VPBank)",
+
+                Details = new List<BankingTransactionDetail>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0001",
+                        CarId = "CAR2026-SF0101",
+                        Vin = "KMHE281BBSA100101",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 Xăng Cao Cấp AWD",
+                        ColorCode = "WW2",
+                        DlrCtrNo = "2603DRC00001",
+                        SOCode = "ORD2603010001",
+                        HTCInvoiceNo = "0001201",
+                        AmountActual = 1050000000m,
+                        AllocPercent = 100m,
+                        AllocAmount = 1050000000m,
+                        Remark = "Giải ngân 100% giá trị xe Santa Fe"
+                    },
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0001",
+                        CarId = "CAR2026-TU0201",
+                        Vin = "KMHE281BBSA200201",
+                        ModelCode = "TUCSON",
+                        ModelName = "Hyundai Tucson 2.0 AT",
+                        SpecCode = "TU20-PRE-01",
+                        SpecDescription = "Tucson 2.0 Xăng Đặc Biệt",
+                        ColorCode = "NKA",
+                        DlrCtrNo = "2603DRC00001",
+                        SOCode = "ORD2603010001",
+                        HTCInvoiceNo = "0001202",
+                        AmountActual = 900000000m,
+                        AllocPercent = 50m,
+                        AllocAmount = 450000000m,
+                        Remark = "Giải ngân 50% vốn vay ngân hàng (50% còn lại đối ứng vốn tự có)"
+                    }
+                },
+                Attachments = new List<BankingTransactionAttachFile>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0001",
+                        FileIndex = 1,
+                        FileType = BankingTransFileType.Contract,
+                        FileName = "HopDong_BanBuon_2603DRC00001.pdf",
+                        FilePath = "/storage/contracts/2603DRC00001.pdf",
+                        FlagSigned = true,
+                        SerialNumber = "5404123899ABCDEF",
+                        CaSubject = "CÔNG TY CỔ PHẦN HYUNDAI ĐÔNG ĐÔ",
+                        SignedAt = DateTime.Today.AddDays(-6),
+                        SignedBy = "Nguyễn Văn Hưng (Giám đốc Đại lý)",
+                        UploadedAt = DateTime.Today.AddDays(-7),
+                        UploadedBy = "DEALER_FINANCE_VN001"
+                    },
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0001",
+                        FileIndex = 2,
+                        FileType = BankingTransFileType.Authorization,
+                        FileName = "GiayDeNghiGiaiNgan_VPBank_Signed.pdf",
+                        FilePath = "/storage/banking/VPB_DeNghiGiaiNgan_2603BKT0001.pdf",
+                        FlagSigned = true,
+                        SerialNumber = "5404123899ABCDEF",
+                        CaSubject = "CÔNG TY CỔ PHẦN HYUNDAI ĐÔNG ĐÔ",
+                        SignedAt = DateTime.Today.AddDays(-6),
+                        SignedBy = "Nguyễn Văn Hưng (Giám đốc Đại lý)",
+                        UploadedAt = DateTime.Today.AddDays(-6),
+                        UploadedBy = "DEALER_FINANCE_VN001"
+                    }
+                }
+            };
+
+            var bkt2 = new BankingTransaction
+            {
+                OrgId = orgId,
+                RQ_BankingTransNo = "2603BKT0002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                BankCode = "CTG",
+                BankName = "Ngân hàng TMCP Công Thương Việt Nam (VietinBank)",
+                TaxCode = "0103040506",
+                TransType = BankingTransType.GRT,
+                Status = BankingTransStatus.Approved,
+                BankStatus = BankingTransBankStatus.BankApproved,
+                RefBankCode = "CTG-2603201415-9923",
+                BankRemark = "VietinBank chi nhánh Đống Đa đồng ý phát hành cam kết bảo lãnh thanh toán vô điều kiện cho NPP Hyundai Thành Công.",
+                Remark = "Đề nghị phát hành thư bảo lãnh thanh toán bán buôn lô xe Creta và Accent theo HĐ 2603DRC00002",
+                TotalAmount = 1200000000m,
+                TotalCars = 2,
+
+                // GRT:
+                GuaranteeType = "Bảo lãnh thanh toán mua buôn xe ô tô",
+                DateExpiredValue = 90,
+                GrtForm = "Thư bảo lãnh điện tử ký số CA",
+                GrtReceive = "HYUNDAI THANH CONG VIETNAM",
+                MDNo = "MD2603-CTG-0012",
+                GrtAmount = 1200000000m,
+                GrtDateStart = DateTime.Today.AddDays(-2),
+                GrtDateEnd = DateTime.Today.AddDays(88),
+
+                CreatedAt = DateTime.Today.AddDays(-4),
+                CreatedBy = "DEALER_FINANCE_VN002",
+                PushedToBankAt = DateTime.Today.AddDays(-3),
+                PushedToBankBy = "DEALER_FINANCE_VN002",
+                BankApprovedAt = DateTime.Today.AddDays(-2),
+                BankApprovedBy = "Lê Hồng Phong (Trưởng phòng KHDN VietinBank Đống Đa)",
+
+                Details = new List<BankingTransactionDetail>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0002",
+                        CarId = "CAR2026-CR0301",
+                        Vin = "KMHE281BBSA300301",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta 1.5 Smart",
+                        SpecCode = "CR15-SMT-01",
+                        SpecDescription = "Creta 1.5 Smart CVT",
+                        ColorCode = "WH1",
+                        DlrCtrNo = "2603DRC00002",
+                        SOCode = "ORD2603010002",
+                        AmountActual = 600000000m,
+                        AllocPercent = 100m,
+                        AllocAmount = 600000000m,
+                        Remark = "Bảo lãnh thanh toán mua xe Creta"
+                    },
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0002",
+                        CarId = "CAR2026-AC0401",
+                        Vin = "KMHE281BBSA400401",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent 1.5 AT",
+                        SpecCode = "AC15-AT-01",
+                        SpecDescription = "Accent 1.5 AT Đặc biệt",
+                        ColorCode = "MB1",
+                        DlrCtrNo = "2603DRC00002",
+                        SOCode = "ORD2603010002",
+                        AmountActual = 600000000m,
+                        AllocPercent = 100m,
+                        AllocAmount = 600000000m,
+                        Remark = "Bảo lãnh thanh toán mua xe Accent"
+                    }
+                },
+                Attachments = new List<BankingTransactionAttachFile>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0002",
+                        FileIndex = 1,
+                        FileType = BankingTransFileType.GuaranteeLetter,
+                        FileName = "DeNghiCapBaoLanh_VietinBank.pdf",
+                        FilePath = "/storage/banking/CTG_DeNghiBL_2603BKT0002.pdf",
+                        FlagSigned = true,
+                        SerialNumber = "6899443322AABBCC",
+                        CaSubject = "CÔNG TY CỔ PHẦN HYUNDAI NAM TRUNG",
+                        SignedAt = DateTime.Today.AddDays(-3),
+                        SignedBy = "Trần Mạnh Cường (Tổng Giám đốc)",
+                        UploadedAt = DateTime.Today.AddDays(-4),
+                        UploadedBy = "DEALER_FINANCE_VN002"
+                    }
+                }
+            };
+
+            var bkt3 = new BankingTransaction
+            {
+                OrgId = orgId,
+                RQ_BankingTransNo = "2603BKT0003",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                BankCode = "VIB",
+                BankName = "Ngân hàng TMCP Quốc tế Việt Nam (VIB)",
+                TaxCode = "0104050607",
+                TransType = BankingTransType.PMT,
+                Status = BankingTransStatus.Pending,
+                BankStatus = BankingTransBankStatus.BankReceived,
+                RefBankCode = "VIB-2603221015-7712",
+                BankRemark = "Ngân hàng VIB đã tiếp nhận hồ sơ đề nghị giải ngân qua Open Banking API, đang chờ cán bộ tín dụng thẩm định danh mục xe.",
+                Remark = "Đề nghị giải ngân thanh toán mua xe Stargazer X thế chấp bằng quyền đòi nợ HĐ mua xe",
+                TotalAmount = 850000000m,
+                TotalCars = 1,
+
+                // PMT:
+                PaymentType = "Payment",
+                DisbursementType = BankingTransDisbursementType.LoanDisbursement,
+                TransferAmount = 850000000m,
+                LoanPeriod = 3,
+                LoanPeriodDate = DateTime.Today.AddMonths(3),
+                InterestRate = 7.8m,
+                ReceivingUnit = "CÔNG TY CỔ PHẦN LIÊN DOANH Ô TÔ HYUNDAI THÀNH CÔNG VIỆT NAM",
+                BankAccountReceive = "111000123456",
+                BankNameReceive = "VietinBank - Chi nhánh Hà Nội",
+                CreditContractNo = "HDTD-VIB-2026-031",
+                DisbursementRequestDate = DateTime.Today.AddDays(1),
+
+                CreatedAt = DateTime.Today.AddDays(-1),
+                CreatedBy = "DEALER_FINANCE_VN003",
+                PushedToBankAt = DateTime.Today.AddDays(-1).AddHours(2),
+                PushedToBankBy = "DEALER_FINANCE_VN003",
+
+                Details = new List<BankingTransactionDetail>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0003",
+                        CarId = "CAR2026-SG0501",
+                        Vin = "KMHE281BBSA500501",
+                        ModelCode = "STARGAZER",
+                        ModelName = "Hyundai Stargazer X",
+                        SpecCode = "SG15-PRE-01",
+                        SpecDescription = "Stargazer X 1.5 Cao Cấp",
+                        ColorCode = "BK1",
+                        DlrCtrNo = "2603DRC00003",
+                        AmountActual = 850000000m,
+                        AllocPercent = 100m,
+                        AllocAmount = 850000000m,
+                        Remark = "Giải ngân tiền xe Stargazer X"
+                    }
+                },
+                Attachments = new List<BankingTransactionAttachFile>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0003",
+                        FileIndex = 1,
+                        FileType = BankingTransFileType.Contract,
+                        FileName = "HopDongMuaBan_Stargazer_Signed.pdf",
+                        FilePath = "/storage/contracts/HD_Stargazer_VN003.pdf",
+                        FlagSigned = true,
+                        SerialNumber = "9988776655CCDDEE",
+                        CaSubject = "CÔNG TY CỔ PHẦN HYUNDAI TÂY HỒ",
+                        SignedAt = DateTime.Today.AddDays(-1),
+                        SignedBy = "Vũ Quang Hải (Giám đốc)",
+                        UploadedAt = DateTime.Today.AddDays(-1),
+                        UploadedBy = "DEALER_FINANCE_VN003"
+                    }
+                }
+            };
+
+            var bkt4 = new BankingTransaction
+            {
+                OrgId = orgId,
+                RQ_BankingTransNo = "2603BKT0004",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                BankCode = "BIDV",
+                BankName = "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)",
+                TaxCode = "0102030405",
+                TransType = BankingTransType.GRT_LC,
+                Status = BankingTransStatus.Rejected,
+                BankStatus = BankingTransBankStatus.BankRejected,
+                RefBankCode = "BIDV-2603191100-3341",
+                BankRemark = "Vượt hạn mức tín dụng dự phòng khả dụng của đại lý tại BIDV chi nhánh Cầu Giấy trong quý 1/2026.",
+                RejectReason = "Vượt hạn mức bảo lãnh khả dụng. Đề nghị đại lý bổ sung thêm tài sản bảo đảm hoặc thanh toán giảm nợ gốc trước khi xin mở L/C mới.",
+                Remark = "Đề nghị mở Thư tín dụng chứng từ L/C mua lô xe Custin",
+                TotalAmount = 900000000m,
+                TotalCars = 1,
+
+                // GRT:
+                GuaranteeType = "Bảo lãnh mở thư tín dụng L/C mua buôn xe",
+                DateExpiredValue = 60,
+                GrtForm = "Thư tín dụng L/C điện tử MT700 Swift",
+                GrtReceive = "HYUNDAI THANH CONG VIETNAM",
+                GrtAmount = 900000000m,
+                GrtDateStart = DateTime.Today.AddDays(-3),
+                GrtDateEnd = DateTime.Today.AddDays(57),
+
+                CreatedAt = DateTime.Today.AddDays(-4),
+                CreatedBy = "DEALER_FINANCE_VN001",
+                PushedToBankAt = DateTime.Today.AddDays(-3),
+                PushedToBankBy = "DEALER_FINANCE_VN001",
+                RejectedAt = DateTime.Today.AddDays(-2),
+                RejectedBy = "Hoàng Tuấn Anh (Trưởng phòng Tín dụng Doanh nghiệp BIDV Cầu Giấy)",
+
+                Details = new List<BankingTransactionDetail>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0004",
+                        CarId = "CAR2026-CS0601",
+                        Vin = "KMHE281BBSA600601",
+                        ModelCode = "CUSTIN",
+                        ModelName = "Hyundai Custin 2.0T",
+                        SpecCode = "CS20-PRE-01",
+                        SpecDescription = "Custin 2.0T Cao Cấp",
+                        ColorCode = "WW1",
+                        DlrCtrNo = "2603DRC00004",
+                        AmountActual = 900000000m,
+                        AllocPercent = 100m,
+                        AllocAmount = 900000000m,
+                        Remark = "Đề nghị mở L/C cho xe Custin"
+                    }
+                }
+            };
+
+            var bkt5 = new BankingTransaction
+            {
+                OrgId = orgId,
+                RQ_BankingTransNo = "2603BKT0005",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                BankCode = "TCB",
+                BankName = "Ngân hàng TMCP Kỹ Thương Việt Nam (Techcombank)",
+                TaxCode = "0103040506",
+                TransType = BankingTransType.PMT,
+                Status = BankingTransStatus.Draft,
+                BankStatus = BankingTransBankStatus.Draft,
+                Remark = "Bản nháp hồ sơ đề nghị vay giải ngân mua xe Elantra thế chấp bằng hợp đồng mua bán buôn",
+                TotalAmount = 760000000m,
+                TotalCars = 1,
+
+                // PMT:
+                PaymentType = "Payment",
+                DisbursementType = BankingTransDisbursementType.LoanDisbursement,
+                TransferAmount = 760000000m,
+                LoanPeriod = 3,
+                LoanPeriodDate = DateTime.Today.AddMonths(3),
+                InterestRate = 7.0m,
+                ReceivingUnit = "CÔNG TY CỔ PHẦN LIÊN DOANH Ô TÔ HYUNDAI THÀNH CÔNG VIỆT NAM",
+                BankAccountReceive = "111000123456",
+                BankNameReceive = "VietinBank - Chi nhánh Hà Nội",
+                CreditContractNo = "HDTD-TCB-2026-055",
+                DisbursementRequestDate = DateTime.Today.AddDays(3),
+
+                CreatedAt = DateTime.Today,
+                CreatedBy = "DEALER_FINANCE_VN002",
+
+                Details = new List<BankingTransactionDetail>
+                {
+                    new()
+                    {
+                        RQ_BankingTransNo = "2603BKT0005",
+                        CarId = "CAR2026-EL0701",
+                        Vin = "KMHE281BBSA700701",
+                        ModelCode = "ELANTRA",
+                        ModelName = "Hyundai Elantra 2.0 AT",
+                        SpecCode = "EL20-PRE-01",
+                        SpecDescription = "Elantra 2.0 AT Cao Cấp",
+                        ColorCode = "BK1",
+                        DlrCtrNo = "2603DRC00002",
+                        AmountActual = 760000000m,
+                        AllocPercent = 100m,
+                        AllocAmount = 760000000m,
+                        Remark = "Phân bổ 100% giá trị xe Elantra"
+                    }
+                }
+            };
+
+            db.BankingTransactions.AddRange(bkt1, bkt2, bkt3, bkt4, bkt5);
+            await db.SaveChangesAsync();
+        }
     }
 }

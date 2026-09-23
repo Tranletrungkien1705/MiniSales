@@ -62,6 +62,7 @@ builder.Services.AddScoped<ICalcFnExpPmDcService, CalcFnExpPmDcService>();
 builder.Services.AddScoped<ISalesPolicyService, SalesPolicyService>();
 builder.Services.AddScoped<IPlanEstimateOrderService, PlanEstimateOrderService>();
 builder.Services.AddScoped<IPackingListService, PackingListService>();
+builder.Services.AddScoped<IBankingTransactionService, BankingTransactionService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -3658,6 +3659,148 @@ app.MapDelete("/api/packing-lists/{packingListNo}/cars/{vin}", async (string pac
     {
         var item = await svc.RemoveCarAsync(packingListNo, vin);
         return item is null ? Results.NotFound(new { error = $"Không tìm thấy Packing List {packingListNo} hoặc xe {vin}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Đề nghị Giao dịch Ngân hàng Điện tử / Kết nối Ngân hàng Tài trợ Xe Ô tô Đại lý - NPP (Online Banking Transaction Request Management - RQ_BankingTransactions + RQ_BankingTransPmt + RQ_BankingTransGrt · RQBankingTransactionsController / ConnectBanking.cs / KetNoiSoPhuOnline) =====
+app.MapGet("/api/banking-transactions/seq", async (IBankingTransactionService svc) =>
+    Results.Ok(new { success = true, transNo = await svc.GetNextSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/banking-transactions", async (
+    IBankingTransactionService svc,
+    string? status,
+    string? bankStatus,
+    string? bankCode,
+    string? dealerCode,
+    string? transType,
+    string? transNo) =>
+    Results.Ok(await svc.ListAsync(status, bankStatus, bankCode, dealerCode, transType, transNo))).RequireAuthorization();
+
+app.MapGet("/api/banking-transactions/stats", async (IBankingTransactionService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/banking-transactions/eligible-cars", async (IBankingTransactionService svc, string? dealerCode, string? contractNo) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealerCode, contractNo))).RequireAuthorization();
+
+app.MapGet("/api/banking-transactions/{transNo}", async (string transNo, IBankingTransactionService svc) =>
+{
+    var r = await svc.DetailAsync(transNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions", async (CreateBankingTransactionDto dto, IBankingTransactionService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/banking-transactions/{transNo}", async (string transNo, UpdateBankingTransactionDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/push-bank", async (string transNo, PushBankDto? dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.PushBankAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/bank-approve", async (string transNo, BankApproveDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.BankApproveAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/disburse", async (string transNo, DisburseBankingTransDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.DisburseAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/bank-reject", async (string transNo, BankRejectDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.BankRejectAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/cancel", async (string transNo, CancelBankingTransDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/banking-transactions/{transNo}", async (string transNo, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteDraftAsync(transNo);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/cars", async (string transNo, AddBankingTransCarDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/banking-transactions/{transNo}/cars/{detailId:long}", async (string transNo, long detailId, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(transNo, detailId);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo} hoặc dòng xe {detailId}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/attachments", async (string transNo, AddBankingTransAttachmentDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.AddAttachmentAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/banking-transactions/{transNo}/sign-file", async (string transNo, SignBankingTransFileDto dto, IBankingTransactionService svc) =>
+{
+    try
+    {
+        var r = await svc.SignBankFileAsync(transNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị giao dịch {transNo}" }) : Results.Ok(r);
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

@@ -84,6 +84,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PlanEstimateOrderDetail> PlanEstimateOrderDetails => Set<PlanEstimateOrderDetail>();
     public DbSet<PackingList> PackingLists => Set<PackingList>();
     public DbSet<PackingListDetail> PackingListDetails => Set<PackingListDetail>();
+    public DbSet<BankingTransaction> BankingTransactions => Set<BankingTransaction>();
+    public DbSet<BankingTransactionDetail> BankingTransactionDetails => Set<BankingTransactionDetail>();
+    public DbSet<BankingTransactionAttachFile> BankingTransactionAttachFiles => Set<BankingTransactionAttachFile>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -307,5 +310,22 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PackingListDetail>().HasIndex(x => x.Vin);
         b.Entity<PackingListDetail>().HasIndex(x => x.ModelCode);
         b.Entity<PackingListDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<BankingTransaction>().ToTable("BankingTransactions");
+        b.Entity<BankingTransaction>().HasIndex(x => new { x.OrgId, x.RQ_BankingTransNo }).IsUnique();
+        b.Entity<BankingTransaction>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<BankingTransaction>().HasIndex(x => new { x.OrgId, x.BankCode });
+        b.Entity<BankingTransaction>().Property(x => x.TransType).HasConversion<int>();
+        b.Entity<BankingTransaction>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<BankingTransaction>().Property(x => x.BankStatus).HasConversion<int>();
+        b.Entity<BankingTransaction>().Property(x => x.DisbursementType).HasConversion<int>();
+        b.Entity<BankingTransaction>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.BankingTransactionId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<BankingTransaction>().HasMany(x => x.Attachments).WithOne().HasForeignKey(x => x.BankingTransactionId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<BankingTransactionDetail>().ToTable("BankingTransactionDetails");
+        b.Entity<BankingTransactionDetail>().HasIndex(x => x.RQ_BankingTransNo);
+        b.Entity<BankingTransactionDetail>().HasIndex(x => x.CarId);
+        b.Entity<BankingTransactionDetail>().HasIndex(x => x.Vin);
+        b.Entity<BankingTransactionAttachFile>().ToTable("BankingTransactionAttachFiles");
+        b.Entity<BankingTransactionAttachFile>().HasIndex(x => x.RQ_BankingTransNo);
+        b.Entity<BankingTransactionAttachFile>().Property(x => x.FileType).HasConversion<int>();
     }
 }

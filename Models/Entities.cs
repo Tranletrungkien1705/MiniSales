@@ -2653,6 +2653,167 @@ public sealed class PackingListDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Loại giao dịch ngân hàng điện tử (DMS.Sales RQ_BankingTransactions BkTransType: PMT = Giải ngân thanh toán xe buôn, GRT = Đề nghị bảo lãnh thanh toán xe, GRT_LC = Đề nghị mở L/C tín dụng chứng từ mua buôn xe).</summary>
+public enum BankingTransType
+{
+    PMT = 0,
+    GRT = 1,
+    GRT_LC = 2
+}
+
+/// <summary>Trạng thái xử lý nội bộ Đề nghị giao dịch ngân hàng (DMS.Sales RQ_BankingTransactions BkTransStatus: Draft = '0' [Nháp], Pending = '1' [Chờ ngân hàng xử lý], Approved = '2' [Đã duyệt / Phát hành bảo lãnh], Disbursed = '3' [Đã giải ngân thanh toán], Rejected = '4' [Ngân hàng từ chối], Cancelled = '5' [Đại lý đã hủy]).</summary>
+public enum BankingTransStatus
+{
+    Draft = 0,
+    Pending = 1,
+    Approved = 2,
+    Disbursed = 3,
+    Rejected = 4,
+    Cancelled = 5
+}
+
+/// <summary>Trạng thái kết nối phía Ngân hàng đối tác (DMS.Sales RQ_BankingTransactions BkTransBankStatus: Draft = 0, Pending = 1, BankReceived = 2, BankApproved = 3, Disbursed = 4, BankRejected = 5).</summary>
+public enum BankingTransBankStatus
+{
+    Draft = 0,
+    Pending = 1,
+    BankReceived = 2,
+    BankApproved = 3,
+    Disbursed = 4,
+    BankRejected = 5
+}
+
+/// <summary>Phương thức giải ngân ngân hàng (DirectTransfer = Chuyển khoản trực tiếp sang tài khoản NPP, LoanDisbursement = Giải ngân theo hợp đồng hạn mức vay tín dụng).</summary>
+public enum BankingTransDisbursementType
+{
+    DirectTransfer = 0,
+    LoanDisbursement = 1
+}
+
+/// <summary>Loại chứng từ hồ sơ đính kèm giao dịch ngân hàng (Contract = Hợp đồng mua xe, BankStatement = Sao kê tài khoản, GuaranteeLetter = Thư cam kết cấp tín dụng, Invoice = Hóa đơn VAT, Authorization = Giấy ủy quyền, Other = Khác).</summary>
+public enum BankingTransFileType
+{
+    Contract = 0,
+    BankStatement = 1,
+    GuaranteeLetter = 2,
+    Invoice = 3,
+    Authorization = 4,
+    Other = 5
+}
+
+/// <summary>Đề nghị Giao dịch Ngân hàng Điện tử / Kết nối Ngân hàng Tài trợ Xe Ô tô Đại lý - NPP (DMS.Sales RQ_BankingTransactions + RQ_BankingTransPmt + RQ_BankingTransGrt / RQBankingTransactionsController / ConnectBanking.cs / KetNoiSoPhuOnline): Đại lý lập đề nghị giao dịch gửi sang ngân hàng tài trợ (VPBank, VietinBank, VIB, BIDV, Techcombank...) để xin Giải ngân thanh toán (PMT), Phát hành bảo lãnh (GRT) hoặc Mở thư tín dụng (GRT_LC) cho các xe thuộc Hợp đồng mua bán buôn xe (DealerContract), đẩy điện giao dịch sang Open Banking (PushBankDL), ngân hàng thẩm duyệt (BankApprove cấp LDNo/MDNo) và thực hiện giải ngân chi trả vào tài khoản NPP (Disburse).</summary>
+public sealed class BankingTransaction
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string RQ_BankingTransNo { get; set; } = ""; // Mã đề nghị giao dịch ({yyMM}BKT{seq:D4}, vd: 2603BKT0001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string BankCode { get; set; } = ""; // Mã ngân hàng liên kết (VPB, CTG, VIB, BIDV, TCB...)
+    public string BankName { get; set; } = ""; // Tên ngân hàng liên kết
+    public string? TaxCode { get; set; } // Mã số thuế / ĐKKD đại lý
+    public BankingTransType TransType { get; set; } = BankingTransType.PMT; // Loại giao dịch: PMT, GRT, GRT_LC
+    public BankingTransStatus Status { get; set; } = BankingTransStatus.Draft; // Trạng thái đề nghị
+    public BankingTransBankStatus BankStatus { get; set; } = BankingTransBankStatus.Draft; // Trạng thái phản hồi phía ngân hàng
+    public string? RefBankCode { get; set; } // Mã tham chiếu điện tử sinh từ cổng Open Banking
+    public string? BankRemark { get; set; } // Ý kiến / thông báo phản hồi từ ngân hàng
+    public string? Remark { get; set; } // Ghi chú của đại lý
+    public decimal TotalAmount { get; set; } // Tổng số tiền đề nghị giao dịch (VNĐ)
+    public int TotalCars { get; set; } // Tổng số lượng xe phân bổ
+
+    // Thông tin nghiệp vụ Giải ngân thanh toán (PMT):
+    public string? PaymentNo { get; set; } // Mã phiếu thanh toán liên kết nếu có (PMT...)
+    public string? PaymentType { get; set; } = "Payment"; // Loại thanh toán: Deposit, Payment, Settlement
+    public BankingTransDisbursementType DisbursementType { get; set; } = BankingTransDisbursementType.LoanDisbursement; // Loại giải ngân
+    public decimal TransferAmount { get; set; } // Số tiền đề nghị giải ngân (VNĐ)
+    public int? LoanPeriod { get; set; } = 3; // Kỳ hạn vay (tháng)
+    public DateTime? LoanPeriodDate { get; set; } // Ngày đáo hạn khoản vay
+    public decimal? InterestRate { get; set; } = 7.5m; // Lãi suất vay (%/năm)
+    public string? ReceivingUnit { get; set; } = "CÔNG TY CỔ PHẦN LIÊN DOANH Ô TÔ HYUNDAI THÀNH CÔNG VIỆT NAM"; // Đơn vị thụ hưởng
+    public string? BankAccountReceive { get; set; } = "111000123456"; // Tài khoản thụ hưởng
+    public string? BankNameReceive { get; set; } = "VietinBank - Chi nhánh Hà Nội"; // Ngân hàng thụ hưởng
+    public string? CreditContractNo { get; set; } // Số hợp đồng cấp hạn mức tín dụng với ngân hàng
+    public DateTime? DisbursementRequestDate { get; set; } // Ngày đề nghị giải ngân
+    public string? LDNo { get; set; } // Số khế ước nhận nợ do ngân hàng cấp sau duyệt
+    public decimal DisbursementAmount { get; set; } // Số tiền thực tế ngân hàng đã giải ngân
+    public DateTime? DisbursementDate { get; set; } // Ngày thực tế giải ngân thành công
+
+    // Thông tin nghiệp vụ Bảo lãnh ngân hàng (GRT / GRT_LC):
+    public string? GuaranteeType { get; set; } = "Bảo lãnh thanh toán mua buôn xe ô tô"; // Loại bảo lãnh
+    public int? DateExpiredValue { get; set; } = 90; // Thời hạn hiệu lực bảo lãnh (ngày)
+    public string? GrtForm { get; set; } = "Thư bảo lãnh điện tử có chữ ký số CA"; // Hình thức phát hành bảo lãnh
+    public string? GrtReceive { get; set; } = "HYUNDAI THANH CONG VIETNAM"; // Bên nhận bảo lãnh
+    public string? MDNo { get; set; } // Số chứng thư bảo lãnh do ngân hàng phát hành sau duyệt
+    public decimal GrtAmount { get; set; } // Số tiền bảo lãnh được cấp
+    public DateTime? GrtDateStart { get; set; } // Ngày bắt đầu hiệu lực bảo lãnh
+    public DateTime? GrtDateEnd { get; set; } // Ngày kết thúc hiệu lực bảo lãnh
+
+    // Thời gian và người thao tác:
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? PushedToBankAt { get; set; }
+    public string? PushedToBankBy { get; set; }
+    public DateTime? BankApprovedAt { get; set; }
+    public string? BankApprovedBy { get; set; }
+    public DateTime? DisbursedAt { get; set; }
+    public string? DisbursedBy { get; set; }
+    public DateTime? RejectedAt { get; set; }
+    public string? RejectedBy { get; set; }
+    public string? RejectReason { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public string? CancelReason { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<BankingTransactionDetail> Details { get; set; } = new();
+    public List<BankingTransactionAttachFile> Attachments { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe phân bổ trong Đề nghị giao dịch ngân hàng (DMS.Sales RQ_BankingTransPmtDtl + RQ_BankingTransGrtDtl): gắn với số khung VIN, model xe, mã phụ lục hợp đồng bán buôn DlrCtrNo, đơn đặt hàng SOCode, tỷ lệ phân bổ vay/bảo lãnh và số tiền phân bổ tương ứng.</summary>
+public sealed class BankingTransactionDetail
+{
+    public long Id { get; set; }
+    public long BankingTransactionId { get; set; }
+    public string RQ_BankingTransNo { get; set; } = ""; // Tham chiếu mã đề nghị
+    public string CarId { get; set; } = ""; // Mã định danh xe trong hệ thống Car_Car
+    public string Vin { get; set; } = ""; // Số khung VIN xe (17 ký tự)
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT...)
+    public string ModelName { get; set; } = ""; // Tên model xe
+    public string? SpecCode { get; set; } // Mã cấu hình / spec
+    public string? SpecDescription { get; set; } // Mô tả bản xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? DlrCtrNo { get; set; } // Số phụ lục hợp đồng mua bán buôn xe (DealerContract)
+    public string? SOCode { get; set; } // Số đơn đặt buôn xe (Ord_SalesOrderRoot)
+    public string? HTCInvoiceNo { get; set; } // Số hóa đơn VAT bán buôn nếu đã xuất
+    public decimal AmountActual { get; set; } // Giá trị thực tế của xe (VNĐ)
+    public decimal AllocPercent { get; set; } = 100m; // Tỷ lệ phân bổ vốn vay / bảo lãnh (%: ví dụ 70%, 80%, 100%)
+    public decimal AllocAmount { get; set; } // Số tiền phân bổ = AmountActual * AllocPercent / 100 (VNĐ)
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
+/// <summary>Hồ sơ chứng từ đính kèm Đề nghị giao dịch ngân hàng điện tử (DMS.Sales RQ_BankingTransAttachFile + RQ_BankingTransBankFile): lưu hợp đồng mua bán buôn, ủy nhiệm chi, cam kết bảo lãnh ba bên, chứng thư số điện tử và trạng thái ký số hồ sơ gửi ngân hàng.</summary>
+public sealed class BankingTransactionAttachFile
+{
+    public long Id { get; set; }
+    public long BankingTransactionId { get; set; }
+    public string RQ_BankingTransNo { get; set; } = "";
+    public int FileIndex { get; set; } = 1;
+    public BankingTransFileType FileType { get; set; } = BankingTransFileType.Contract;
+    public string FileName { get; set; } = "";
+    public string FilePath { get; set; } = "";
+    public string? FileUrl { get; set; }
+    public long? FileSize { get; set; }
+    public string? SerialNumber { get; set; } // Serial chữ ký số Token USB / HSM
+    public string? CaSubject { get; set; } // Chủ thể chứng thư số CA
+    public bool FlagSigned { get; set; } = false; // Cờ đã ký số điện tử
+    public DateTime? SignedAt { get; set; } // Thời gian ký số
+    public string? SignedBy { get; set; } // Người ký số
+    public string? Remark { get; set; } // Ghi chú tài liệu
+    public DateTime UploadedAt { get; set; } = DateTime.Now;
+    public string? UploadedBy { get; set; }
+}
+
 
 
 
