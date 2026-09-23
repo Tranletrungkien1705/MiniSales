@@ -3905,4 +3905,50 @@ public sealed class CustomerVisit
     public DateTime CreatedAt { get; set; } = DateTime.Now; // Thời điểm tạo
     public string? LogLUBy { get; set; } // Người cập nhật gần nhất
     public DateTime LogLUDTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+}/// <summary>Nhà vận chuyển (DMS.Sales Mst_Transporter / Master.1.cs / Mst_Transporter_Get|Create|Update|Delete|Import): danh mục công ty vận tải xe từ kho NPP tới đại lý. TransporterCode là khóa nghiệp vụ duy nhất; bắt buộc có TransporterName và TransportContractNo (số hợp đồng vận chuyển). Lưu thông tin pháp nhân (địa chỉ, điện thoại, fax), người đại diện (giám đốc) và người liên hệ.</summary>
+public sealed class TransporterMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TransporterCode { get; set; } = ""; // Mã nhà vận chuyển (khóa nghiệp vụ duy nhất)
+    public string TransporterName { get; set; } = ""; // Tên nhà vận chuyển (bắt buộc)
+    public string TransportContractNo { get; set; } = ""; // Số hợp đồng vận chuyển (bắt buộc)
+    public string? Address { get; set; } // Địa chỉ
+    public string? PhoneNo { get; set; } // Số điện thoại
+    public string? FaxNo { get; set; } // Số fax
+    public string? DirectorFullName { get; set; } // Tên giám đốc
+    public string? DirectorPhoneNo { get; set; } // Điện thoại giám đốc
+    public string? ContactorFullName { get; set; } // Tên người liên hệ
+    public string? ContactorPhoneNo { get; set; } // Điện thoại người liên hệ
+    public string? Remark { get; set; } // Ghi chú
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
+/// <summary>Xe chuyên dùng của nhà vận chuyển (DMS.Sales Mst_TransporterCar / Master.1.cs / Mst_TransporterCar_Get|Create|Update|Delete|Import): danh mục biển số xe tải chở xe của từng nhà vận chuyển. Khóa nghiệp vụ = (TransporterCode, PlateNo). FK TransporterCode phải tồn tại và đang hoạt động.</summary>
+public sealed class TransporterCar
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TransporterCode { get; set; } = ""; // Mã nhà vận chuyển (tham chiếu Mst_Transporter.TransporterCode)
+    public string PlateNo { get; set; } = ""; // Biển số xe chuyên dùng (bắt buộc)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
+/// <summary>Tài xế của nhà vận chuyển (DMS.Sales Mst_TransporterDriver / Master.1.cs / Mst_TransporterDriver_Get|Create|Update|Delete|Import): danh mục tài xế lái xe chuyên dùng của từng nhà vận chuyển. Khóa nghiệp vụ = (TransporterCode, DriverId). Bắt buộc DriverFullName và DriverLicenseNo (số GPLX). FK TransporterCode phải tồn tại.</summary>
+public sealed class TransporterDriver
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string TransporterCode { get; set; } = ""; // Mã nhà vận chuyển (tham chiếu Mst_Transporter.TransporterCode)
+    public string DriverId { get; set; } = ""; // Mã tài xế (khóa nghiệp vụ trong phạm vi nhà vận chuyển)
+    public string DriverFullName { get; set; } = ""; // Tên tài xế (bắt buộc)
+    public string DriverLicenseNo { get; set; } = ""; // Số giấy phép lái xe (bắt buộc)
+    public string? DriverPhoneNo { get; set; } // Điện thoại tài xế
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
 }

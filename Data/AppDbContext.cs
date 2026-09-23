@@ -113,6 +113,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<ZoneMaster> Zones => Set<ZoneMaster>();
     public DbSet<DealerZone> DealerZones => Set<DealerZone>();
     public DbSet<CustomerVisit> CustomerVisits => Set<CustomerVisit>();
+    public DbSet<TransporterMaster> Transporters => Set<TransporterMaster>();
+    public DbSet<TransporterCar> TransporterCars => Set<TransporterCar>();
+    public DbSet<TransporterDriver> TransporterDrivers => Set<TransporterDriver>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -503,5 +506,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CustomerVisit>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<CustomerVisit>().HasIndex(x => new { x.OrgId, x.ModelCode });
         b.Entity<CustomerVisit>().Property(x => x.Gender).HasConversion<int>();
+
+        b.Entity<TransporterMaster>().ToTable("Transporters");
+        b.Entity<TransporterMaster>().HasIndex(x => new { x.OrgId, x.TransporterCode }).IsUnique();
+
+        b.Entity<TransporterCar>().ToTable("TransporterCars");
+        b.Entity<TransporterCar>().HasIndex(x => new { x.OrgId, x.TransporterCode, x.PlateNo }).IsUnique();
+        b.Entity<TransporterCar>().HasIndex(x => new { x.OrgId, x.TransporterCode });
+
+        b.Entity<TransporterDriver>().ToTable("TransporterDrivers");
+        b.Entity<TransporterDriver>().HasIndex(x => new { x.OrgId, x.TransporterCode, x.DriverId }).IsUnique();
+        b.Entity<TransporterDriver>().HasIndex(x => new { x.OrgId, x.TransporterCode });
     }
 }

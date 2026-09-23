@@ -77,6 +77,7 @@ builder.Services.AddScoped<ICarPriceUpdateService, CarPriceUpdateService>();
 builder.Services.AddScoped<IWarrantyExpiresService, WarrantyExpiresService>();
 builder.Services.AddScoped<IDealerZoneService, DealerZoneService>();
 builder.Services.AddScoped<ICustomerVisitService, CustomerVisitService>();
+builder.Services.AddScoped<ITransporterService, TransporterService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5215,6 +5216,123 @@ app.MapDelete("/api/customer-visits/{ctmVisitCode}/{dealerCode}", async (string 
     {
         var ok = await svc.DeleteAsync(ctmVisitCode, dealerCode);
         return ok ? Results.Ok(new { success = true, ctmVisitCode, dealerCode }) : Results.NotFound(new { ctmVisitCode, dealerCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Nhà vận chuyển (Transporter Master Data - DMS.Sales Mst_Transporter + Mst_TransporterCar + Mst_TransporterDriver / Master.1.cs) =====
+app.MapGet("/api/transporters", async (ITransporterService svc, string? transporterCode, string? transporterName, string? flagActive) =>
+    Results.Ok(await svc.SearchTransportersAsync(transporterCode, transporterName, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/transporters/stats", async (ITransporterService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/transporters/{transporterCode}", async (string transporterCode, ITransporterService svc) =>
+{
+    var r = await svc.GetTransporterAsync(transporterCode);
+    return r is null ? Results.NotFound(new { transporterCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/transporters", async (CreateTransporterDto dto, ITransporterService svc) =>
+{
+    try { return Results.Ok(await svc.CreateTransporterAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/transporters/{transporterCode}", async (string transporterCode, UpdateTransporterDto dto, ITransporterService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateTransporterAsync(transporterCode, dto);
+        return r is null ? Results.NotFound(new { transporterCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transporters/{transporterCode}", async (string transporterCode, ITransporterService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteTransporterAsync(transporterCode);
+        return ok ? Results.Ok(new { success = true, transporterCode }) : Results.NotFound(new { transporterCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/transporters/import", async (List<TransporterImportRowDto> rows, ITransporterService svc) =>
+{
+    try { return Results.Ok(await svc.ImportTransportersAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// --- Xe chuyên dùng của nhà vận chuyển (Mst_TransporterCar) ---
+app.MapGet("/api/transporter-cars", async (ITransporterService svc, string? transporterCode, string? plateNo, string? flagActive) =>
+    Results.Ok(await svc.SearchCarsAsync(transporterCode, plateNo, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/transporter-cars/{transporterCode}/{plateNo}", async (string transporterCode, string plateNo, ITransporterService svc) =>
+{
+    var r = await svc.GetCarAsync(transporterCode, plateNo);
+    return r is null ? Results.NotFound(new { transporterCode, plateNo }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/transporter-cars", async (CreateTransporterCarDto dto, ITransporterService svc) =>
+{
+    try { return Results.Ok(await svc.CreateCarAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/transporter-cars/{transporterCode}/{plateNo}", async (string transporterCode, string plateNo, UpdateTransporterCarDto dto, ITransporterService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateCarAsync(transporterCode, plateNo, dto);
+        return r is null ? Results.NotFound(new { transporterCode, plateNo }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transporter-cars/{transporterCode}/{plateNo}", async (string transporterCode, string plateNo, ITransporterService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteCarAsync(transporterCode, plateNo);
+        return ok ? Results.Ok(new { success = true, transporterCode, plateNo }) : Results.NotFound(new { transporterCode, plateNo });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// --- Tài xế của nhà vận chuyển (Mst_TransporterDriver) ---
+app.MapGet("/api/transporter-drivers", async (ITransporterService svc, string? transporterCode, string? driverId, string? flagActive) =>
+    Results.Ok(await svc.SearchDriversAsync(transporterCode, driverId, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/transporter-drivers/{transporterCode}/{driverId}", async (string transporterCode, string driverId, ITransporterService svc) =>
+{
+    var r = await svc.GetDriverAsync(transporterCode, driverId);
+    return r is null ? Results.NotFound(new { transporterCode, driverId }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/transporter-drivers", async (CreateTransporterDriverDto dto, ITransporterService svc) =>
+{
+    try { return Results.Ok(await svc.CreateDriverAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/transporter-drivers/{transporterCode}/{driverId}", async (string transporterCode, string driverId, UpdateTransporterDriverDto dto, ITransporterService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateDriverAsync(transporterCode, driverId, dto);
+        return r is null ? Results.NotFound(new { transporterCode, driverId }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/transporter-drivers/{transporterCode}/{driverId}", async (string transporterCode, string driverId, ITransporterService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDriverAsync(transporterCode, driverId);
+        return ok ? Results.Ok(new { success = true, transporterCode, driverId }) : Results.NotFound(new { transporterCode, driverId });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

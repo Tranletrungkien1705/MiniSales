@@ -2906,6 +2906,53 @@ public static class Seeder
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_CustomerVisits_OrgId_CtmVisitCode_DealerCode ON CustomerVisits(OrgId, CtmVisitCode, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_CustomerVisits_OrgId_DealerCode ON CustomerVisits(OrgId, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_CustomerVisits_OrgId_ModelCode ON CustomerVisits(OrgId, ModelCode);
+
+                CREATE TABLE IF NOT EXISTS Transporters (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TransporterCode TEXT NOT NULL,
+                    TransporterName TEXT NOT NULL,
+                    TransportContractNo TEXT NOT NULL,
+                    Address TEXT,
+                    PhoneNo TEXT,
+                    FaxNo TEXT,
+                    DirectorFullName TEXT,
+                    DirectorPhoneNo TEXT,
+                    ContactorFullName TEXT,
+                    ContactorPhoneNo TEXT,
+                    Remark TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_Transporters_OrgId_TransporterCode ON Transporters(OrgId, TransporterCode);
+
+                CREATE TABLE IF NOT EXISTS TransporterCars (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TransporterCode TEXT NOT NULL,
+                    PlateNo TEXT NOT NULL,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_TransporterCars_OrgId_TransporterCode_PlateNo ON TransporterCars(OrgId, TransporterCode, PlateNo);
+                CREATE INDEX IF NOT EXISTS IX_TransporterCars_OrgId_TransporterCode ON TransporterCars(OrgId, TransporterCode);
+
+                CREATE TABLE IF NOT EXISTS TransporterDrivers (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    TransporterCode TEXT NOT NULL,
+                    DriverId TEXT NOT NULL,
+                    DriverFullName TEXT NOT NULL,
+                    DriverLicenseNo TEXT NOT NULL,
+                    DriverPhoneNo TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_TransporterDrivers_OrgId_TransporterCode_DriverId ON TransporterDrivers(OrgId, TransporterCode, DriverId);
+                CREATE INDEX IF NOT EXISTS IX_TransporterDrivers_OrgId_TransporterCode ON TransporterDrivers(OrgId, TransporterCode);
             ");
         }
         catch
