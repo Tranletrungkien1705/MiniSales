@@ -3092,6 +3092,40 @@ public static class Seeder
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_Banks_OrgId_BankCode ON Banks(OrgId, BankCode);
                 CREATE INDEX IF NOT EXISTS IX_Banks_OrgId_BankCodeParent ON Banks(OrgId, BankCodeParent);
+
+                CREATE TABLE IF NOT EXISTS CarModels (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelProductionCode TEXT NOT NULL DEFAULT '',
+                    ModelName TEXT NOT NULL DEFAULT '',
+                    FlagBusinessPlan TEXT NOT NULL DEFAULT '1',
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarModels_OrgId_ModelCode ON CarModels(OrgId, ModelCode);
+
+                CREATE TABLE IF NOT EXISTS CarColors (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ColorCode TEXT NOT NULL,
+                    ColorExtType TEXT NOT NULL DEFAULT '',
+                    ColorExtCode TEXT NOT NULL DEFAULT '',
+                    ColorExtName TEXT NOT NULL DEFAULT '',
+                    ColorExtNameVN TEXT NOT NULL DEFAULT '',
+                    ColorIntCode TEXT NOT NULL DEFAULT '',
+                    ColorIntName TEXT NOT NULL DEFAULT '',
+                    ColorIntNameVN TEXT NOT NULL DEFAULT '',
+                    ColorFee REAL NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_CarColors_OrgId_ModelCode_ColorCode ON CarColors(OrgId, ModelCode, ColorCode);
+                CREATE INDEX IF NOT EXISTS IX_CarColors_OrgId_ModelCode ON CarColors(OrgId, ModelCode);
             ");
         }
         catch
@@ -13527,6 +13561,28 @@ public static class Seeder
                     new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_HN", StorageName = "Kho Tổng Hyundai Ninh Bình", DealerCode = "VN001", DealerName = "Hyundai Đông Đô", DelayTransport = 3m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_HN", StorageName = "Kho Tổng Hyundai Ninh Bình", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", DelayTransport = 5m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new DelayTransportMaster { OrgId = orgId, StorageCode = "KHO_TONG_SG", StorageName = "Kho Tổng Nam Bộ Hiệp Phước", DealerCode = "VN002", DealerName = "Hyundai Nam Trung", DelayTransport = 2m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-20), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Danh mục Dòng xe (Model) (Mst_CarModel / Master.Car.cs / Mst_CarModel_Get|Create|Update|Delete|Import)
+            if (!await db.CarModels.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.CarModels.AddRange(
+                    new CarModelMaster { OrgId = orgId, ModelCode = "SF25", ModelProductionCode = "MX5", ModelName = "Santa Fe 2.5 HTRAC", FlagBusinessPlan = "1", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new CarModelMaster { OrgId = orgId, ModelCode = "TU20", ModelProductionCode = "NX4", ModelName = "Tucson 2.0 AT", FlagBusinessPlan = "1", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new CarModelMaster { OrgId = orgId, ModelCode = "CR15", ModelProductionCode = "SU2", ModelName = "Creta 1.5 Cao Cấp", FlagBusinessPlan = "1", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new CarModelMaster { OrgId = orgId, ModelCode = "AC14", ModelProductionCode = "HC", ModelName = "Accent 1.4 AT", FlagBusinessPlan = "0", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" }
+                );
+            }
+
+            // Danh mục Màu sắc xe (Mst_CarColor / Master.Car.cs / Mst_CarColor_Get|Create|Update|Delete|Import)
+            if (!await db.CarColors.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.CarColors.AddRange(
+                    new CarColorMaster { OrgId = orgId, ModelCode = "SF25", ColorCode = "WHT", ColorExtType = "SOLID", ColorExtCode = "WHT", ColorExtName = "White", ColorExtNameVN = "Trắng", ColorIntCode = "BLK", ColorIntName = "Black", ColorIntNameVN = "Đen", ColorFee = 0m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new CarColorMaster { OrgId = orgId, ModelCode = "SF25", ColorCode = "BLK", ColorExtType = "METALLIC", ColorExtCode = "BLK", ColorExtName = "Black", ColorExtNameVN = "Đen", ColorIntCode = "BLK", ColorIntName = "Black", ColorIntNameVN = "Đen", ColorFee = 0m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new CarColorMaster { OrgId = orgId, ModelCode = "TU20", ColorCode = "GRY", ColorExtType = "METALLIC", ColorExtCode = "GRY", ColorExtName = "Grey", ColorExtNameVN = "Xám", ColorIntCode = "BLK", ColorIntName = "Black", ColorIntNameVN = "Đen", ColorFee = 5000000m, Remark = "Phụ phí màu xám", FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" },
+                    new CarColorMaster { OrgId = orgId, ModelCode = "CR15", ColorCode = "RED", ColorExtType = "METALLIC", ColorExtCode = "RED", ColorExtName = "Red", ColorExtNameVN = "Đỏ", ColorIntCode = "BLK", ColorIntName = "Black", ColorIntNameVN = "Đen", ColorFee = 0m, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-90), LogLUBy = "SYSADMIN" }
                 );
             }
 

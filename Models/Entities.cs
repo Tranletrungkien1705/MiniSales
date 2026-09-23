@@ -3899,6 +3899,41 @@ public sealed class DelayTransportMaster
     public string? LogLUBy { get; set; } // Người cập nhật gần nhất
 }
 
+/// <summary>Danh mục Dòng xe (Model) (DMS.Sales Mst_CarModel / Master.Car.cs / Mst_CarModel_Get|Create|Update|Delete|Import): cấp cao nhất trong phân cấp sản phẩm Model → Spec (phiên bản) → Color (màu sắc). ModelCode là khóa nghiệp vụ duy nhất; ModelProductionCode (mã sản xuất) và ModelName bắt buộc; FlagBusinessPlan đánh dấu dòng xe dùng cho kế hoạch kinh doanh; FlagActive là cờ hiệu lực.</summary>
+public sealed class CarModelMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ModelCode { get; set; } = ""; // Mã dòng xe (khóa nghiệp vụ duy nhất, vd: SF25, TU20)
+    public string ModelProductionCode { get; set; } = ""; // Mã sản xuất của dòng xe (bắt buộc)
+    public string ModelName { get; set; } = ""; // Tên dòng xe (bắt buộc)
+    public string FlagBusinessPlan { get; set; } = "1"; // Cờ dùng cho kế hoạch kinh doanh (1 = có, 0 = không)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
+/// <summary>Danh mục Màu sắc xe (DMS.Sales Mst_CarColor / Master.Car.cs / Mst_CarColor_Get|Create|Update|Delete|Import): màu sắc cho từng dòng xe, gồm màu ngoại thất (ColorExt*) và màu nội thất (ColorInt*). Khóa nghiệp vụ = (ModelCode, ColorCode); ModelCode phải tồn tại và đang hoạt động (Mst_CarModel). ColorFee là phụ phí màu (>= 0).</summary>
+public sealed class CarColorMaster
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ModelCode { get; set; } = ""; // Mã dòng xe (khóa nghiệp vụ, tham chiếu Mst_CarModel.ModelCode)
+    public string ColorCode { get; set; } = ""; // Mã màu (khóa nghiệp vụ, duy nhất trong 1 dòng xe)
+    public string ColorExtType { get; set; } = ""; // Loại màu ngoại thất (bắt buộc)
+    public string ColorExtCode { get; set; } = ""; // Mã màu ngoại thất (bắt buộc)
+    public string ColorExtName { get; set; } = ""; // Tên màu ngoại thất (EN, bắt buộc)
+    public string ColorExtNameVN { get; set; } = ""; // Tên màu ngoại thất (VN, bắt buộc)
+    public string ColorIntCode { get; set; } = ""; // Mã màu nội thất (bắt buộc)
+    public string ColorIntName { get; set; } = ""; // Tên màu nội thất (EN, bắt buộc)
+    public string ColorIntNameVN { get; set; } = ""; // Tên màu nội thất (VN, bắt buộc)
+    public decimal ColorFee { get; set; } // Phụ phí màu (>= 0)
+    public string? Remark { get; set; } // Ghi chú
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người cập nhật gần nhất
+}
+
 /// <summary>Giới tính khách hàng đến thăm đại lý (DMS.Sales Dlr_CtmVisit Gender: M = Nam, F = Nữ).</summary>
 public enum CustomerVisitGender { Male = 0, Female = 1 }
 

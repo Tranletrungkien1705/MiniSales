@@ -85,6 +85,7 @@ builder.Services.AddScoped<IOrderAllocationService, OrderAllocationService>();
 builder.Services.AddScoped<IDelayTransportService, DelayTransportService>();
 builder.Services.AddScoped<IBankService, BankService>();
 builder.Services.AddScoped<ITransportFeeService, TransportFeeService>();
+builder.Services.AddScoped<ICarModelService, CarModelService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -5719,6 +5720,80 @@ app.MapDelete("/api/transport-fees/{tfvCode}", async (string tfvCode, ITransport
     {
         var r = await svc.DeleteAsync(tfvCode);
         return r ? Results.Ok(new { deleted = true, tfvCode }) : Results.NotFound(new { tfvCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Danh mục Dòng xe (Model) & Màu sắc xe (Mst_CarModel + Mst_CarColor - DMS.Sales Master.Car.cs) =====
+app.MapPost("/api/car-models", async (CreateCarModelDto dto, ICarModelService svc) =>
+{
+    try { return Results.Ok(await svc.CreateModelAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/car-models", async (ICarModelService svc, string? modelCode, string? flagActive) =>
+    Results.Ok(await svc.SearchModelsAsync(modelCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/car-models/stats", async (ICarModelService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/car-models/{modelCode}", async (string modelCode, ICarModelService svc) =>
+{
+    var r = await svc.GetModelAsync(modelCode);
+    return r is null ? Results.NotFound(new { modelCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/car-models/{modelCode}", async (string modelCode, UpdateCarModelDto dto, ICarModelService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateModelAsync(modelCode, dto);
+        return r is null ? Results.NotFound(new { modelCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/car-models/{modelCode}", async (string modelCode, ICarModelService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteModelAsync(modelCode);
+        return r ? Results.Ok(new { deleted = true, modelCode }) : Results.NotFound(new { modelCode });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-colors", async (CreateCarColorDto dto, ICarModelService svc) =>
+{
+    try { return Results.Ok(await svc.CreateColorAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/car-colors", async (ICarModelService svc, string? modelCode, string? colorCode, string? flagActive) =>
+    Results.Ok(await svc.SearchColorsAsync(modelCode, colorCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/car-colors/{modelCode}/{colorCode}", async (string modelCode, string colorCode, ICarModelService svc) =>
+{
+    var r = await svc.GetColorAsync(modelCode, colorCode);
+    return r is null ? Results.NotFound(new { modelCode, colorCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/car-colors/{modelCode}/{colorCode}", async (string modelCode, string colorCode, UpdateCarColorDto dto, ICarModelService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateColorAsync(modelCode, colorCode, dto);
+        return r is null ? Results.NotFound(new { modelCode, colorCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/car-colors/{modelCode}/{colorCode}", async (string modelCode, string colorCode, ICarModelService svc) =>
+{
+    try
+    {
+        var r = await svc.DeleteColorAsync(modelCode, colorCode);
+        return r ? Results.Ok(new { deleted = true, modelCode, colorCode }) : Results.NotFound(new { modelCode, colorCode });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

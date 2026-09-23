@@ -113,6 +113,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<ZoneMaster> Zones => Set<ZoneMaster>();
     public DbSet<DealerZone> DealerZones => Set<DealerZone>();
     public DbSet<DelayTransportMaster> DelayTransports => Set<DelayTransportMaster>();
+    public DbSet<CarModelMaster> CarModels => Set<CarModelMaster>();
+    public DbSet<CarColorMaster> CarColors => Set<CarColorMaster>();
     public DbSet<CustomerVisit> CustomerVisits => Set<CustomerVisit>();
     public DbSet<TransporterMaster> Transporters => Set<TransporterMaster>();
     public DbSet<TransporterCar> TransporterCars => Set<TransporterCar>();
@@ -517,6 +519,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<DelayTransportMaster>().HasIndex(x => new { x.OrgId, x.StorageCode, x.DealerCode }).IsUnique();
         b.Entity<DelayTransportMaster>().HasIndex(x => new { x.OrgId, x.StorageCode });
         b.Entity<DelayTransportMaster>().HasIndex(x => new { x.OrgId, x.DealerCode });
+
+        b.Entity<CarModelMaster>().ToTable("CarModels");
+        b.Entity<CarModelMaster>().HasIndex(x => new { x.OrgId, x.ModelCode }).IsUnique();
+
+        b.Entity<CarColorMaster>().ToTable("CarColors");
+        b.Entity<CarColorMaster>().HasIndex(x => new { x.OrgId, x.ModelCode, x.ColorCode }).IsUnique();
+        b.Entity<CarColorMaster>().HasIndex(x => new { x.OrgId, x.ModelCode });
 
         b.Entity<CustomerVisit>().ToTable("CustomerVisits");
         b.Entity<CustomerVisit>().HasIndex(x => new { x.OrgId, x.CtmVisitCode, x.DealerCode }).IsUnique();
