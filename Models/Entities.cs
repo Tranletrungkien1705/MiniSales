@@ -2483,6 +2483,93 @@ public sealed class SupportRetail
     public string? CreatedBy { get; set; }
 }
 
+/// <summary>Trạng thái Kế hoạch dự kiến đặt hàng xe ô tô Đại lý (DMS.Sales Plan_EstimateOrder PLEOrdStatus: Pending = 'P' [Mới tạo/Đại lý lập dự kiến], Approved1 = 'A1' [Trưởng phòng BH duyệt cấp 1/nhu cầu], Approved2 = 'A2' [Lãnh đạo Khối duyệt cấp 2 chốt kế hoạch/chuyển HTMV], Cancelled = 'C' [Đã hủy]).</summary>
+public enum PlanEstimateOrderStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Cancelled = 3
+}
+
+/// <summary>Kế hoạch Dự kiến Đặt hàng Xe Ô tô Đại lý - NPP (DMS.Sales Plan_EstimateOrder / PlanEstimateOrderController / Order.cs / PlanEstimateOrder.txt / 04_DON_HANG_DOANH_SO.md): Quản lý dự báo nhu cầu đặt xe của Đại lý theo kỳ tháng (MonthEstimate yyyy-MM), kết nối với Kế hoạch kinh doanh năm (BusinessPlanCode) và phân vùng địa lý (AreaRootCode), tổng hợp sản lượng đặt buôn dự kiến T(N+1) và dự kiến bán lẻ các tháng N, N+1, N+2, N+3, quy trình phê duyệt 2 cấp NPP (Trưởng phòng Approve1HQ, Lãnh đạo Khối Approve2HQ chốt kế hoạch chuyển nhà máy sản xuất HTMV) và hủy/xóa kế hoạch.</summary>
+public sealed class PlanEstimateOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PLEOrdNo { get; set; } = ""; // Mã số đơn ước tính ({yyMM}PLE{seq:D5}, vd: 2603PLE00001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý (VS058, VN001, VN012...)
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public string MonthEstimate { get; set; } = ""; // Tháng dự kiến (yyyy-MM, vd: 2026-04)
+    public string? BusinessPlanCode { get; set; } // Mã kế hoạch kinh doanh năm liên kết (BPL_BusinessPlan)
+    public string? AreaRootCode { get; set; } // Vùng miền phụ trách (MB: Miền Bắc, MT: Miền Trung, MN: Miền Nam)
+    public PlanEstimateOrderStatus Status { get; set; } = PlanEstimateOrderStatus.Pending; // Trạng thái kế hoạch: Pending -> Approved1 -> Approved2 / Cancelled
+
+    // Tổng hợp sản lượng:
+    public int TotalQtyN1 { get; set; } // Tổng sản lượng đề xuất đặt hàng T(N+1)
+    public int TotalSellCusN0 { get; set; } // Tổng dự kiến bán lẻ tháng N
+    public int TotalSellCusN1 { get; set; } // Tổng dự kiến bán lẻ tháng N+1
+    public int TotalSellCusN2 { get; set; } // Tổng dự kiến bán lẻ tháng N+2
+    public int TotalSellCusN3 { get; set; } // Tổng dự kiến bán lẻ tháng N+3
+
+    public string? Remark { get; set; } // Ghi chú đơn ước tính
+    public string? CancelReason { get; set; } // Lý do hủy kế hoạch
+    public string? CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? Approve1By { get; set; } // Người duyệt cấp 1 (Trưởng phòng)
+    public DateTime? Approve1At { get; set; } // Thời điểm duyệt cấp 1
+    public string? Approve2By { get; set; } // Người duyệt cấp 2 (Lãnh đạo Khối)
+    public DateTime? Approve2At { get; set; } // Thời điểm duyệt cấp 2
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+
+    public List<PlanEstimateOrderDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe trong Kế hoạch dự kiến đặt hàng (DMS.Sales Plan_EstimateOrderDtl): quản lý số liệu theo từng model/spec xe gồm lượng tồn kho thực tế, xe trên đường, đơn hàng cũ chưa xuất kho, xe đang map VIN, dự báo bán lẻ 4 tháng liên tiếp N..N+3, tính toán Tổng hàng có, Tỷ lệ hàng có, Đề xuất đặt hàng T(N+1) và Dự phòng tồn kho an toàn.</summary>
+public sealed class PlanEstimateOrderDetail
+{
+    public long Id { get; set; }
+    public long PlanEstimateOrderId { get; set; }
+    public string PLEOrdNo { get; set; } = "";
+    public string ModelCode { get; set; } = ""; // Mã dòng xe (SANTAFE, TUCSON, CRETA, ACCENT, STARGAZER, CUSTIN, IONIQ5...)
+    public string ModelName { get; set; } = ""; // Tên model xe
+    public string? SpecCode { get; set; } // Mã cấu hình xe (SF25-PRE, TU20-STD, CR15-PRE...)
+    public string? SpecDescription { get; set; } // Mô tả bản xe
+
+    // Dữ liệu hiện trạng kho và chuỗi cung ứng:
+    public int QtySellCustomer { get; set; } // Xe đã ký hợp đồng bán lẻ chờ giao
+    public int QtySellDealer { get; set; } // Xe bán buôn giữa các đại lý
+    public int QtyInStock { get; set; } // Tồn kho thực tế tại bãi đại lý
+    public int QtyOnWay { get; set; } // Xe NPP đang vận chuyển trên đường
+    public int QtyBuyDealer { get; set; } // Xe mua ngang từ đại lý khác
+    public int QtyUnknown { get; set; } // Lượng xe đang kiểm tra chưa xác định
+    public int QtyBOChuaXuatKho { get; set; } // Đơn hàng cũ còn nợ tồn (Back-Order) chưa xuất kho
+    public int QtyBODangMapVIN { get; set; } // Đơn hàng đang được ghép số khung VIN
+    public int QtyBOKhongVINQuaKhu { get; set; } // BO chưa có VIN kỳ trước
+    public int QtyBOKhongVINHienTai { get; set; } // BO chưa có VIN kỳ hiện tại
+    public int QtyBOKhongVINTuongLai { get; set; } // BO chưa có VIN kỳ tới
+    public int QtyOrdCarID { get; set; } // Đã có CarID định danh
+    public int QtyOrdNotCarID { get; set; } // Chưa có CarID
+
+    // Dự báo kế hoạch đặt hàng và bán lẻ:
+    public int QtyEOrdN1 { get; set; } // Sản lượng ĐỀ XUẤT ĐẶT HÀNG T(N+1)
+    public decimal TiLeDatTN1 { get; set; } // Tỉ lệ đặt hàng T(N+1) (%)
+    public int QtyESellCusN0 { get; set; } // Dự kiến bán lẻ Tháng N
+    public int QtyESellCusN1 { get; set; } // Dự kiến bán lẻ Tháng N+1
+    public int QtyESellCusN2 { get; set; } // Dự kiến bán lẻ Tháng N+2
+    public int QtyESellCusN3 { get; set; } // Dự kiến bán lẻ Tháng N+3
+
+    // Chỉ số cân đối nguồn hàng và tồn kho an toàn:
+    public int TongHangCo { get; set; } // Tổng hàng có = QtyInStock + QtyOnWay + QtyBuyDealer + QtyBODangMapVIN
+    public decimal TiLeHangCo { get; set; } // Tỉ lệ tổng hàng có (%)
+    public int DuPhongTonKho { get; set; } // Tồn kho dự phòng = TongHangCo + QtyEOrdN1 - (QtyESellCusN0 + QtyESellCusN1)
+    public decimal TiLeDuPhongTonKho { get; set; } // Tỉ lệ dự phòng tồn kho (%)
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
 
 
 

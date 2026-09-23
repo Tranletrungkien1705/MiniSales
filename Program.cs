@@ -60,6 +60,7 @@ builder.Services.AddScoped<ISaleAwardMinutesService, SaleAwardMinutesService>();
 builder.Services.AddScoped<IBusinessPlanService, BusinessPlanService>();
 builder.Services.AddScoped<ICalcFnExpPmDcService, CalcFnExpPmDcService>();
 builder.Services.AddScoped<ISalesPolicyService, SalesPolicyService>();
+builder.Services.AddScoped<IPlanEstimateOrderService, PlanEstimateOrderService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -3443,6 +3444,93 @@ app.MapDelete("/api/support-retails/{supportCode}", async (string supportCode, I
     {
         var ok = await svc.DeleteSupportRetailDraftAsync(supportCode);
         return ok ? Results.Ok(new { success = true, message = $"Đã xóa hồ sơ hỗ trợ {supportCode}" }) : Results.NotFound(new { error = $"Không tìm thấy hồ sơ hỗ trợ {supportCode}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// PlanEstimateOrder - Quản lý Kế hoạch Dự kiến Đặt hàng Xe Ô tô Đại lý - NPP (Plan_EstimateOrder / PlanEstimateOrderController)
+app.MapGet("/api/plan-estimate-orders/seq", async (IPlanEstimateOrderService svc) =>
+    Results.Ok(new { success = true, pleOrdNo = await svc.GetNextPLEOrdNoSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/plan-estimate-orders", async (
+    IPlanEstimateOrderService svc,
+    string? dealerCode,
+    string? areaRootCode,
+    string? monthEstimate,
+    PlanEstimateOrderStatus? status,
+    DateTime? fromDate,
+    DateTime? toDate,
+    int pageIndex = 0,
+    int pageSize = 50) =>
+    Results.Ok(await svc.SearchAsync(dealerCode, areaRootCode, monthEstimate, status, fromDate, toDate, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/plan-estimate-orders/stats", async (IPlanEstimateOrderService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/plan-estimate-orders/{pleOrdNo}", async (string pleOrdNo, IPlanEstimateOrderService svc) =>
+{
+    var item = await svc.GetByPLEOrdNoAsync(pleOrdNo);
+    return item is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch dự kiến đặt hàng {pleOrdNo}" }) : Results.Ok(item);
+}).RequireAuthorization();
+
+app.MapPost("/api/plan-estimate-orders/calculate", async (CalculateEstimateInputDto dto, IPlanEstimateOrderService svc) =>
+{
+    try { return Results.Ok(await svc.CalculateEstimateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/plan-estimate-orders", async (CreatePlanEstimateOrderDto dto, IPlanEstimateOrderService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/plan-estimate-orders/{pleOrdNo}", async (string pleOrdNo, UpdatePlanEstimateOrderDto dto, IPlanEstimateOrderService svc) =>
+{
+    try
+    {
+        var item = await svc.UpdateAsync(pleOrdNo, dto);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch dự kiến đặt hàng {pleOrdNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/plan-estimate-orders/{pleOrdNo}/approve1", async (string pleOrdNo, string? approvedBy, IPlanEstimateOrderService svc) =>
+{
+    try
+    {
+        var item = await svc.Approve1Async(pleOrdNo, approvedBy);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch dự kiến đặt hàng {pleOrdNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/plan-estimate-orders/{pleOrdNo}/approve2", async (string pleOrdNo, string? approvedBy, IPlanEstimateOrderService svc) =>
+{
+    try
+    {
+        var item = await svc.Approve2Async(pleOrdNo, approvedBy);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch dự kiến đặt hàng {pleOrdNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/plan-estimate-orders/{pleOrdNo}/cancel", async (string pleOrdNo, CancelPlanEstimateOrderDto dto, IPlanEstimateOrderService svc) =>
+{
+    try
+    {
+        var item = await svc.CancelAsync(pleOrdNo, dto);
+        return item is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch dự kiến đặt hàng {pleOrdNo}" }) : Results.Ok(item);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/plan-estimate-orders/{pleOrdNo}", async (string pleOrdNo, IPlanEstimateOrderService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(pleOrdNo);
+        return ok ? Results.Ok(new { success = true, message = $"Đã xóa bản nháp kế hoạch dự kiến đặt hàng {pleOrdNo}" }) : Results.NotFound(new { error = $"Không tìm thấy kế hoạch {pleOrdNo}" });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

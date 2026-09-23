@@ -80,6 +80,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<SalesPolicyMaster> SalesPolicies => Set<SalesPolicyMaster>();
     public DbSet<SalesPolicyDetail> SalesPolicyDetails => Set<SalesPolicyDetail>();
     public DbSet<SupportRetail> SupportRetails => Set<SupportRetail>();
+    public DbSet<PlanEstimateOrder> PlanEstimateOrders => Set<PlanEstimateOrder>();
+    public DbSet<PlanEstimateOrderDetail> PlanEstimateOrderDetails => Set<PlanEstimateOrderDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -282,5 +284,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<SupportRetail>().HasIndex(x => new { x.OrgId, x.DealerCode });
         b.Entity<SupportRetail>().HasIndex(x => new { x.OrgId, x.Vin });
         b.Entity<SupportRetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PlanEstimateOrder>().ToTable("PlanEstimateOrders");
+        b.Entity<PlanEstimateOrder>().HasIndex(x => new { x.OrgId, x.PLEOrdNo }).IsUnique();
+        b.Entity<PlanEstimateOrder>().HasIndex(x => new { x.OrgId, x.DealerCode, x.MonthEstimate });
+        b.Entity<PlanEstimateOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PlanEstimateOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PlanEstimateOrderId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PlanEstimateOrderDetail>().ToTable("PlanEstimateOrderDetails");
+        b.Entity<PlanEstimateOrderDetail>().HasIndex(x => x.PLEOrdNo);
+        b.Entity<PlanEstimateOrderDetail>().HasIndex(x => x.ModelCode);
     }
 }

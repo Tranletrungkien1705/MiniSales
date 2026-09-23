@@ -2014,6 +2014,75 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_SupportRetails_OrgId_SPSRCode_Vin ON SupportRetails(OrgId, SPSRCode, Vin);
                 CREATE INDEX IF NOT EXISTS IX_SupportRetails_OrgId_DealerCode ON SupportRetails(OrgId, DealerCode);
                 CREATE INDEX IF NOT EXISTS IX_SupportRetails_OrgId_Vin ON SupportRetails(OrgId, Vin);
+
+                CREATE TABLE IF NOT EXISTS PlanEstimateOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PLEOrdNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    MonthEstimate TEXT NOT NULL,
+                    BusinessPlanCode TEXT,
+                    AreaRootCode TEXT,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    TotalQtyN1 INTEGER NOT NULL DEFAULT 0,
+                    TotalSellCusN0 INTEGER NOT NULL DEFAULT 0,
+                    TotalSellCusN1 INTEGER NOT NULL DEFAULT 0,
+                    TotalSellCusN2 INTEGER NOT NULL DEFAULT 0,
+                    TotalSellCusN3 INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    CancelReason TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    Approve1By TEXT,
+                    Approve1At TEXT,
+                    Approve2By TEXT,
+                    Approve2At TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PlanEstimateOrders_OrgId_PLEOrdNo ON PlanEstimateOrders(OrgId, PLEOrdNo);
+                CREATE INDEX IF NOT EXISTS IX_PlanEstimateOrders_OrgId_Dealer_Month ON PlanEstimateOrders(OrgId, DealerCode, MonthEstimate);
+                CREATE INDEX IF NOT EXISTS IX_PlanEstimateOrders_OrgId_Status ON PlanEstimateOrders(OrgId, Status);
+
+                CREATE TABLE IF NOT EXISTS PlanEstimateOrderDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PlanEstimateOrderId INTEGER NOT NULL,
+                    PLEOrdNo TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    QtySellCustomer INTEGER NOT NULL DEFAULT 0,
+                    QtySellDealer INTEGER NOT NULL DEFAULT 0,
+                    QtyInStock INTEGER NOT NULL DEFAULT 0,
+                    QtyOnWay INTEGER NOT NULL DEFAULT 0,
+                    QtyBuyDealer INTEGER NOT NULL DEFAULT 0,
+                    QtyUnknown INTEGER NOT NULL DEFAULT 0,
+                    QtyBOChuaXuatKho INTEGER NOT NULL DEFAULT 0,
+                    QtyBODangMapVIN INTEGER NOT NULL DEFAULT 0,
+                    QtyBOKhongVINQuaKhu INTEGER NOT NULL DEFAULT 0,
+                    QtyBOKhongVINHienTai INTEGER NOT NULL DEFAULT 0,
+                    QtyBOKhongVINTuongLai INTEGER NOT NULL DEFAULT 0,
+                    QtyOrdCarID INTEGER NOT NULL DEFAULT 0,
+                    QtyOrdNotCarID INTEGER NOT NULL DEFAULT 0,
+                    QtyEOrdN1 INTEGER NOT NULL DEFAULT 0,
+                    TiLeDatTN1 REAL NOT NULL DEFAULT 0,
+                    QtyESellCusN0 INTEGER NOT NULL DEFAULT 0,
+                    QtyESellCusN1 INTEGER NOT NULL DEFAULT 0,
+                    QtyESellCusN2 INTEGER NOT NULL DEFAULT 0,
+                    QtyESellCusN3 INTEGER NOT NULL DEFAULT 0,
+                    TongHangCo INTEGER NOT NULL DEFAULT 0,
+                    TiLeHangCo REAL NOT NULL DEFAULT 0,
+                    DuPhongTonKho INTEGER NOT NULL DEFAULT 0,
+                    TiLeDuPhongTonKho REAL NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    FOREIGN KEY(PlanEstimateOrderId) REFERENCES PlanEstimateOrders(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_PlanEstimateOrderDetails_PLEOrdNo ON PlanEstimateOrderDetails(PLEOrdNo);
+                CREATE INDEX IF NOT EXISTS IX_PlanEstimateOrderDetails_ModelCode ON PlanEstimateOrderDetails(ModelCode);
             ");
         }
         catch
@@ -8953,6 +9022,427 @@ public static class Seeder
             };
 
             db.SupportRetails.AddRange(sup1, sup2, sup3, sup4);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.PlanEstimateOrders.AnyAsync())
+        {
+            var ple1 = new PlanEstimateOrder
+            {
+                OrgId = orgId,
+                PLEOrdNo = "2603PLE00001",
+                DealerCode = "VS058",
+                DealerName = "Hyundai Bình Dương",
+                MonthEstimate = "2026-04",
+                BusinessPlanCode = "2603BPL0001",
+                AreaRootCode = "MN",
+                Status = PlanEstimateOrderStatus.Approved2,
+                TotalQtyN1 = 48,
+                TotalSellCusN0 = 42,
+                TotalSellCusN1 = 46,
+                TotalSellCusN2 = 46,
+                TotalSellCusN3 = 50,
+                Remark = "Kế hoạch dự kiến đặt hàng tháng 04/2026 - đã được Lãnh đạo Khối duyệt chuyển nhà máy HTMV",
+                CreatedBy = "VS058_PLAN_LEAD",
+                CreatedAt = new DateTime(2026, 3, 20, 9, 0, 0),
+                Approve1By = "HTC_SALES_LEADER",
+                Approve1At = new DateTime(2026, 3, 21, 10, 30, 0),
+                Approve2By = "HTC_DIV_DIRECTOR",
+                Approve2At = new DateTime(2026, 3, 22, 14, 0, 0),
+                LogLUDateTime = new DateTime(2026, 3, 22, 14, 0, 0),
+                LogLUBy = "HTC_DIV_DIRECTOR",
+                Details = new List<PlanEstimateOrderDetail>
+                {
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00001",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All-New",
+                        SpecCode = "SF25-PREM",
+                        SpecDescription = "Santa Fe 2.5 HTRAC Xăng Cao cấp",
+                        QtySellCustomer = 5,
+                        QtyInStock = 4,
+                        QtyOnWay = 2,
+                        QtyBuyDealer = 0,
+                        QtyBODangMapVIN = 1,
+                        QtyBOChuaXuatKho = 2,
+                        TongHangCo = 7,
+                        TiLeHangCo = 31.8m,
+                        QtyESellCusN0 = 10,
+                        QtyESellCusN1 = 12,
+                        QtyESellCusN2 = 12,
+                        QtyESellCusN3 = 14,
+                        QtyEOrdN1 = 14,
+                        TiLeDatTN1 = 116.7m,
+                        DuPhongTonKho = -1,
+                        TiLeDuPhongTonKho = -4.5m,
+                        Remark = "Ưu tiên phân bổ bản màu trắng ngọc trai"
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00001",
+                        ModelCode = "TUCSON",
+                        ModelName = "Hyundai Tucson Turbo",
+                        SpecCode = "TU20-TRB",
+                        SpecDescription = "Tucson 1.6T HTRAC Turbo",
+                        QtySellCustomer = 4,
+                        QtyInStock = 3,
+                        QtyOnWay = 1,
+                        QtyBuyDealer = 0,
+                        QtyBODangMapVIN = 1,
+                        QtyBOChuaXuatKho = 1,
+                        TongHangCo = 5,
+                        TiLeHangCo = 25.0m,
+                        QtyESellCusN0 = 9,
+                        QtyESellCusN1 = 11,
+                        QtyESellCusN2 = 11,
+                        QtyESellCusN3 = 12,
+                        QtyEOrdN1 = 12,
+                        TiLeDatTN1 = 109.1m,
+                        DuPhongTonKho = -3,
+                        TiLeDuPhongTonKho = -15.0m,
+                        Remark = "Khách đặt chờ nhiều dòng máy dầu và turbo"
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00001",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta Smart",
+                        SpecCode = "CR15-SMT",
+                        SpecDescription = "Creta 1.5 Smart CVT",
+                        QtySellCustomer = 6,
+                        QtyInStock = 5,
+                        QtyOnWay = 2,
+                        QtyBuyDealer = 0,
+                        QtyBODangMapVIN = 2,
+                        QtyBOChuaXuatKho = 2,
+                        TongHangCo = 9,
+                        TiLeHangCo = 40.9m,
+                        QtyESellCusN0 = 11,
+                        QtyESellCusN1 = 11,
+                        QtyESellCusN2 = 11,
+                        QtyESellCusN3 = 12,
+                        QtyEOrdN1 = 11,
+                        TiLeDatTN1 = 100.0m,
+                        DuPhongTonKho = -2,
+                        TiLeDuPhongTonKho = -9.1m,
+                        Remark = "Dự kiến giao cho khách mua cá nhân"
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00001",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent Sedan",
+                        SpecCode = "AC15-AT",
+                        SpecDescription = "Accent 1.5 AT Đặc biệt",
+                        QtySellCustomer = 6,
+                        QtyInStock = 5,
+                        QtyOnWay = 2,
+                        QtyBuyDealer = 0,
+                        QtyBODangMapVIN = 1,
+                        QtyBOChuaXuatKho = 2,
+                        TongHangCo = 8,
+                        TiLeHangCo = 33.3m,
+                        QtyESellCusN0 = 12,
+                        QtyESellCusN1 = 12,
+                        QtyESellCusN2 = 12,
+                        QtyESellCusN3 = 12,
+                        QtyEOrdN1 = 11,
+                        TiLeDatTN1 = 91.7m,
+                        DuPhongTonKho = -5,
+                        TiLeDuPhongTonKho = -20.8m,
+                        Remark = "Dự kiến nhu cầu bán lô taxi và kinh doanh"
+                    }
+                }
+            };
+
+            var ple2 = new PlanEstimateOrder
+            {
+                OrgId = orgId,
+                PLEOrdNo = "2603PLE00002",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                MonthEstimate = "2026-04",
+                BusinessPlanCode = "2603BPL0002",
+                AreaRootCode = "MB",
+                Status = PlanEstimateOrderStatus.Approved1,
+                TotalQtyN1 = 36,
+                TotalSellCusN0 = 34,
+                TotalSellCusN1 = 38,
+                TotalSellCusN2 = 38,
+                TotalSellCusN3 = 40,
+                Remark = "Kế hoạch ước tính tháng 04/2026 - Trưởng phòng bán hàng NPP đã thẩm duyệt cấp 1",
+                CreatedBy = "VN001_PLAN_STAFF",
+                CreatedAt = new DateTime(2026, 3, 21, 14, 0, 0),
+                Approve1By = "HTC_SALES_LEADER",
+                Approve1At = new DateTime(2026, 3, 22, 16, 0, 0),
+                LogLUDateTime = new DateTime(2026, 3, 22, 16, 0, 0),
+                LogLUBy = "HTC_SALES_LEADER",
+                Details = new List<PlanEstimateOrderDetail>
+                {
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00002",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All-New",
+                        SpecCode = "SF25-PREM",
+                        SpecDescription = "Santa Fe 2.5 HTRAC Xăng Cao cấp",
+                        QtySellCustomer = 4,
+                        QtyInStock = 3,
+                        QtyOnWay = 1,
+                        QtyBODangMapVIN = 1,
+                        TongHangCo = 5,
+                        TiLeHangCo = 26.3m,
+                        QtyESellCusN0 = 9,
+                        QtyESellCusN1 = 10,
+                        QtyESellCusN2 = 10,
+                        QtyESellCusN3 = 11,
+                        QtyEOrdN1 = 10,
+                        TiLeDatTN1 = 100.0m,
+                        DuPhongTonKho = -4,
+                        TiLeDuPhongTonKho = -21.1m,
+                        Remark = "Nhu cầu cao thị trường miền Bắc"
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00002",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta Smart",
+                        SpecCode = "CR15-SMT",
+                        SpecDescription = "Creta 1.5 Smart CVT",
+                        QtySellCustomer = 5,
+                        QtyInStock = 4,
+                        QtyOnWay = 1,
+                        QtyBODangMapVIN = 1,
+                        TongHangCo = 6,
+                        TiLeHangCo = 31.6m,
+                        QtyESellCusN0 = 9,
+                        QtyESellCusN1 = 10,
+                        QtyESellCusN2 = 10,
+                        QtyESellCusN3 = 11,
+                        QtyEOrdN1 = 10,
+                        TiLeDatTN1 = 100.0m,
+                        DuPhongTonKho = -3,
+                        TiLeDuPhongTonKho = -15.8m,
+                        Remark = "Màu đỏ mận và trắng"
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00002",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent Sedan",
+                        SpecCode = "AC15-AT",
+                        SpecDescription = "Accent 1.5 AT Đặc biệt",
+                        QtySellCustomer = 7,
+                        QtyInStock = 6,
+                        QtyOnWay = 2,
+                        QtyBODangMapVIN = 1,
+                        TongHangCo = 9,
+                        TiLeHangCo = 32.1m,
+                        QtyESellCusN0 = 13,
+                        QtyESellCusN1 = 15,
+                        QtyESellCusN2 = 15,
+                        QtyESellCusN3 = 15,
+                        QtyEOrdN1 = 13,
+                        TiLeDatTN1 = 86.7m,
+                        DuPhongTonKho = -6,
+                        TiLeDuPhongTonKho = -21.4m,
+                        Remark = "Số lượng đặt buôn theo chỉ tiêu tháng"
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00002",
+                        ModelCode = "CUSTIN",
+                        ModelName = "Hyundai Custin MPV",
+                        SpecCode = "CU15-PRE",
+                        SpecDescription = "Custin 1.5T-GDi Cao Cấp",
+                        QtySellCustomer = 2,
+                        QtyInStock = 1,
+                        QtyOnWay = 1,
+                        QtyBODangMapVIN = 0,
+                        TongHangCo = 2,
+                        TiLeHangCo = 28.6m,
+                        QtyESellCusN0 = 3,
+                        QtyESellCusN1 = 4,
+                        QtyESellCusN2 = 4,
+                        QtyESellCusN3 = 4,
+                        QtyEOrdN1 = 3,
+                        TiLeDatTN1 = 75.0m,
+                        DuPhongTonKho = -2,
+                        TiLeDuPhongTonKho = -28.6m,
+                        Remark = "Phục vụ đơn khách hàng doanh nghiệp"
+                    }
+                }
+            };
+
+            var ple3 = new PlanEstimateOrder
+            {
+                OrgId = orgId,
+                PLEOrdNo = "2603PLE00003",
+                DealerCode = "VN012",
+                DealerName = "Hyundai Hà Đông",
+                MonthEstimate = "2026-04",
+                BusinessPlanCode = null,
+                AreaRootCode = "MB",
+                Status = PlanEstimateOrderStatus.Pending,
+                TotalQtyN1 = 30,
+                TotalSellCusN0 = 28,
+                TotalSellCusN1 = 30,
+                TotalSellCusN2 = 32,
+                TotalSellCusN3 = 34,
+                Remark = "Đại lý Hà Đông lập dự kiến đặt hàng tháng 04/2026, chờ NPP xem xét thẩm tra",
+                CreatedBy = "VN012_PLAN_STAFF",
+                CreatedAt = new DateTime(2026, 3, 23, 11, 0, 0),
+                Details = new List<PlanEstimateOrderDetail>
+                {
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00003",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All-New",
+                        SpecCode = "SF25-PREM",
+                        SpecDescription = "Santa Fe 2.5 HTRAC Xăng Cao cấp",
+                        QtySellCustomer = 3,
+                        QtyInStock = 2,
+                        QtyOnWay = 1,
+                        QtyBODangMapVIN = 1,
+                        TongHangCo = 4,
+                        TiLeHangCo = 26.7m,
+                        QtyESellCusN0 = 7,
+                        QtyESellCusN1 = 8,
+                        QtyESellCusN2 = 8,
+                        QtyESellCusN3 = 9,
+                        QtyEOrdN1 = 8,
+                        TiLeDatTN1 = 100.0m,
+                        DuPhongTonKho = -3,
+                        TiLeDuPhongTonKho = -20.0m
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00003",
+                        ModelCode = "TUCSON",
+                        ModelName = "Hyundai Tucson Turbo",
+                        SpecCode = "TU20-TRB",
+                        SpecDescription = "Tucson 1.6T HTRAC Turbo",
+                        QtySellCustomer = 3,
+                        QtyInStock = 2,
+                        QtyOnWay = 1,
+                        QtyBODangMapVIN = 0,
+                        TongHangCo = 3,
+                        TiLeHangCo = 21.4m,
+                        QtyESellCusN0 = 6,
+                        QtyESellCusN1 = 8,
+                        QtyESellCusN2 = 8,
+                        QtyESellCusN3 = 8,
+                        QtyEOrdN1 = 8,
+                        TiLeDatTN1 = 100.0m,
+                        DuPhongTonKho = -3,
+                        TiLeDuPhongTonKho = -21.4m
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00003",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta Smart",
+                        SpecCode = "CR15-SMT",
+                        SpecDescription = "Creta 1.5 Smart CVT",
+                        QtySellCustomer = 4,
+                        QtyInStock = 3,
+                        QtyOnWay = 1,
+                        QtyBODangMapVIN = 1,
+                        TongHangCo = 5,
+                        TiLeHangCo = 35.7m,
+                        QtyESellCusN0 = 7,
+                        QtyESellCusN1 = 7,
+                        QtyESellCusN2 = 8,
+                        QtyESellCusN3 = 8,
+                        QtyEOrdN1 = 7,
+                        TiLeDatTN1 = 100.0m,
+                        DuPhongTonKho = -2,
+                        TiLeDuPhongTonKho = -14.3m
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00003",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent Sedan",
+                        SpecCode = "AC15-AT",
+                        SpecDescription = "Accent 1.5 AT Đặc biệt",
+                        QtySellCustomer = 4,
+                        QtyInStock = 4,
+                        QtyOnWay = 1,
+                        QtyBODangMapVIN = 1,
+                        TongHangCo = 6,
+                        TiLeHangCo = 40.0m,
+                        QtyESellCusN0 = 8,
+                        QtyESellCusN1 = 7,
+                        QtyESellCusN2 = 8,
+                        QtyESellCusN3 = 9,
+                        QtyEOrdN1 = 7,
+                        TiLeDatTN1 = 100.0m,
+                        DuPhongTonKho = -2,
+                        TiLeDuPhongTonKho = -13.3m
+                    }
+                }
+            };
+
+            var ple4 = new PlanEstimateOrder
+            {
+                OrgId = orgId,
+                PLEOrdNo = "2603PLE00004",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                MonthEstimate = "2026-04",
+                BusinessPlanCode = null,
+                AreaRootCode = "MB",
+                Status = PlanEstimateOrderStatus.Cancelled,
+                TotalQtyN1 = 20,
+                TotalSellCusN0 = 18,
+                TotalSellCusN1 = 20,
+                TotalSellCusN2 = 20,
+                TotalSellCusN3 = 22,
+                Remark = "Kế hoạch đã hủy do đại lý tái cơ cấu hạn mức tín dụng",
+                CancelReason = "Đại lý xin hủy để gom chung với đơn hàng SOU đột xuất quý 2",
+                CreatedBy = "VN002_STAFF",
+                CreatedAt = new DateTime(2026, 3, 19, 10, 0, 0),
+                CancelledBy = "HTC_SALES_LEADER",
+                CancelledAt = new DateTime(2026, 3, 20, 15, 0, 0),
+                LogLUDateTime = new DateTime(2026, 3, 20, 15, 0, 0),
+                LogLUBy = "HTC_SALES_LEADER",
+                Details = new List<PlanEstimateOrderDetail>
+                {
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00004",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All-New",
+                        SpecCode = "SF25-PREM",
+                        SpecDescription = "Santa Fe 2.5 HTRAC Xăng Cao cấp",
+                        QtySellCustomer = 2,
+                        QtyInStock = 2,
+                        TongHangCo = 2,
+                        QtyESellCusN0 = 8,
+                        QtyESellCusN1 = 10,
+                        QtyEOrdN1 = 10
+                    },
+                    new()
+                    {
+                        PLEOrdNo = "2603PLE00004",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent Sedan",
+                        SpecCode = "AC15-AT",
+                        SpecDescription = "Accent 1.5 AT Đặc biệt",
+                        QtySellCustomer = 3,
+                        QtyInStock = 3,
+                        TongHangCo = 3,
+                        QtyESellCusN0 = 10,
+                        QtyESellCusN1 = 10,
+                        QtyEOrdN1 = 10
+                    }
+                }
+            };
+
+            db.PlanEstimateOrders.AddRange(ple1, ple2, ple3, ple4);
             await db.SaveChangesAsync();
         }
     }
