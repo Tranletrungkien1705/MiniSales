@@ -2091,3 +2091,76 @@ public sealed class TransportPlan
     public DateTime? LUDateTime { get; set; }
     public string? LUBy { get; set; }
 }
+
+/// <summary>Trạng thái Biên bản Đối soát Thưởng Bán hàng Xe Ô tô (DMS.Sales Rec_SaleAwardMinutes SaleAwardMinutesStatus: Pending = 'Pending' [Chờ duyệt cấp 1], Approved1 = 'Approved1' [Trưởng phòng duyệt cấp 1], Approved2 = 'Approved2' [Lãnh đạo NPP duyệt cấp 2], Finished = 'Finished' [Đại lý đã ký nhận hoàn tất], Rejected = 'Rejected' [Từ chối duyệt], Canceled = 'Canceled' [Đã hủy]).</summary>
+public enum SaleAwardMinutesStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Finished = 3,
+    Rejected = 4,
+    Canceled = 5
+}
+
+/// <summary>Biên bản Đối soát Thưởng Bán hàng Xe Ô tô Đại lý - NPP (DMS.Sales Rec_SaleAwardMinutes / RecSaleAwardMinutesController / Minutes.cs / RecSaleAwardMinutes.txt): Quản lý việc lập biên bản đối soát và quyết toán thưởng doanh số, thưởng kích cầu bán buôn/bán lẻ theo từng công văn/quyết định (DocumentNo), quy trình phê duyệt 2 cấp NPP (Trưởng phòng Approve1HQ, Lãnh đạo Approve2HQ), Đại lý ký nhận/ký số điện tử (FinishDL nộp file PDF), từ chối duyệt (RejectHQ) và hủy biên bản (CancelHQ).</summary>
+public sealed class SaleAwardMinutes
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string SaleAwardMinutesNo { get; set; } = ""; // Mã biên bản thưởng ({yyMM}SAM{seq:D5}, vd: 2603SAM00001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public SaleAwardMinutesStatus SaleAwardMinutesStatus { get; set; } = SaleAwardMinutesStatus.Pending; // Trạng thái biên bản
+    public int TotalCars { get; set; } // Tổng số xe trong biên bản
+    public decimal TotalAwardAmount { get; set; } // Tổng tiền thưởng (VNĐ)
+    public string? FilePath { get; set; } // Đường dẫn lưu trữ file biên bản ký
+    public string? FileName { get; set; } // Tên file đã ký nộp qua FinishDL
+    public string? FileUrl { get; set; } // Đường dẫn tải file biên bản
+    public string? Remark { get; set; } // Ghi chú biên bản
+    public string? RejectReason { get; set; } // Lý do NPP từ chối duyệt
+    public DateTime? RejectDTime { get; set; }
+    public string? RejectBy { get; set; }
+    public string? CancelReason { get; set; } // Lý do hủy biên bản
+    public DateTime? CancelDTime { get; set; }
+    public string? CancelBy { get; set; }
+    public DateTime CreateDTime { get; set; } = DateTime.Now;
+    public string CreateBy { get; set; } = "";
+    public DateTime? Appr1DTime { get; set; }
+    public string? Appr1By { get; set; }
+    public DateTime? Appr2DTime { get; set; }
+    public string? Appr2By { get; set; }
+    public DateTime? FinishDTime { get; set; }
+    public string? FinishBy { get; set; }
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+
+    public List<SaleAwardMinutesDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe trong Biên bản Đối soát Thưởng Bán hàng (DMS.Sales Rec_SaleAwardMinutesDtl): quản lý số khung VIN xe, mã xe CarId, số công văn thưởng (DocumentNo bắt buộc), số tiền thưởng (AmountAward > 0 bắt buộc), thông tin model, phiên bản, màu sắc, năm sản xuất, ngày bán lẻ/giao xe từ giao dịch bán lẻ (DeliveryDate).</summary>
+public sealed class SaleAwardMinutesDetail
+{
+    public long Id { get; set; }
+    public long SaleAwardMinutesId { get; set; }
+    public string SaleAwardMinutesNo { get; set; } = ""; // Mã biên bản thưởng
+    public string Vin { get; set; } = ""; // Số khung xe (17 ký tự)
+    public string? CarId { get; set; } // Mã xe thương mại trong Car_Car
+    public string DealerCode { get; set; } = ""; // Mã đại lý
+    public string? DealerName { get; set; } // Tên đại lý
+    public string DocumentNo { get; set; } = ""; // Số công văn / quyết định thưởng (bắt buộc)
+    public decimal AmountAward { get; set; } // Số tiền thưởng cho xe (bắt buộc > 0)
+    public string? ModelCode { get; set; } // Mã model xe
+    public string? ModelName { get; set; } // Tên model xe
+    public string? SpecCode { get; set; } // Mã spec / phiên bản xe
+    public string? SpecDescription { get; set; } // Mô tả xe
+    public string? ColorCode { get; set; } // Mã màu
+    public string? ColorName { get; set; } // Tên màu
+    public int? VinYear { get; set; } // Năm sản xuất
+    public DateTime? DeliveryDate { get; set; } // Ngày giao xe bán lẻ (từ Dls_DealDetail)
+    public string? DealNo { get; set; } // Mã giao dịch bán lẻ liên kết
+    public string? Remark { get; set; } // Ghi chú dòng xe
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+}
+

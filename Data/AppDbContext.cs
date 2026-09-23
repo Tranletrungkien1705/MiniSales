@@ -71,6 +71,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<CarInsuranceRequest> InsuranceRequests => Set<CarInsuranceRequest>();
     public DbSet<CarInsuranceRequestDetail> InsuranceRequestDetails => Set<CarInsuranceRequestDetail>();
     public DbSet<TransportPlan> TransportPlans => Set<TransportPlan>();
+    public DbSet<SaleAwardMinutes> SaleAwardMinutes => Set<SaleAwardMinutes>();
+    public DbSet<SaleAwardMinutesDetail> SaleAwardMinutesDetails => Set<SaleAwardMinutesDetail>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -234,5 +236,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<TransportPlan>().Property(x => x.Status).HasConversion<int>();
         b.Entity<TransportPlan>().Property(x => x.TransporterStatus).HasConversion<int>();
         b.Entity<TransportPlan>().Property(x => x.TPType).HasConversion<int>();
+        b.Entity<SaleAwardMinutes>().ToTable("SaleAwardMinutes");
+        b.Entity<SaleAwardMinutes>().HasIndex(x => new { x.OrgId, x.SaleAwardMinutesNo }).IsUnique();
+        b.Entity<SaleAwardMinutes>().Property(x => x.SaleAwardMinutesStatus).HasConversion<int>();
+        b.Entity<SaleAwardMinutes>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.SaleAwardMinutesId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<SaleAwardMinutesDetail>().ToTable("SaleAwardMinutesDetails");
     }
 }

@@ -56,6 +56,7 @@ builder.Services.AddScoped<IRetailInvoiceService, RetailInvoiceService>();
 builder.Services.AddScoped<ICarRedeemService, CarRedeemService>();
 builder.Services.AddScoped<ICarInsuranceService, CarInsuranceService>();
 builder.Services.AddScoped<ITransportPlanService, TransportPlanService>();
+builder.Services.AddScoped<ISaleAwardMinutesService, SaleAwardMinutesService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2950,6 +2951,119 @@ app.MapDelete("/api/transport-plans/{planNo}", async (string planNo, ITransportP
     {
         var deleted = await svc.DeleteAsync(planNo);
         return deleted ? Results.Ok(new { success = true, planNo }) : Results.NotFound(new { error = $"Không tìm thấy kế hoạch {planNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Biên bản Đối soát Thưởng Bán hàng Xe Ô tô Đại lý - NPP (Sale Award Minutes - Rec_SaleAwardMinutes / RecSaleAwardMinutesController / Minutes.cs) =====
+app.MapGet("/api/sale-award-minutes/seq", async (ISaleAwardMinutesService svc) =>
+    Results.Ok(await svc.GetSeqAsync())).RequireAuthorization();
+
+app.MapGet("/api/sale-award-minutes/stats", async (ISaleAwardMinutesService svc) =>
+    Results.Ok(await svc.StatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/sale-award-minutes/eligible-cars", async (ISaleAwardMinutesService svc, string? dealerCode) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(null, dealerCode))).RequireAuthorization();
+
+app.MapPost("/api/sale-award-minutes/check-cars", async (List<CheckVinForAwardDto> checkVins, ISaleAwardMinutesService svc, string? dealerCode) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(checkVins, dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/sale-award-minutes", async (
+    ISaleAwardMinutesService svc,
+    string? status,
+    string? dealerCode,
+    string? documentNo,
+    string? vin,
+    DateTime? createDateFrom,
+    DateTime? createDateTo,
+    int page = 0,
+    int pageSize = 10
+) =>
+    Results.Ok(await svc.ListAsync(status, dealerCode, documentNo, vin, createDateFrom, createDateTo, page, pageSize))
+).RequireAuthorization();
+
+app.MapGet("/api/sale-award-minutes/{minutesNo}", async (string minutesNo, ISaleAwardMinutesService svc) =>
+{
+    var res = await svc.DetailAsync(minutesNo);
+    return res is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" }) : Results.Ok(res);
+}).RequireAuthorization();
+
+app.MapPost("/api/sale-award-minutes/multi", async (CreateMultiSaleAwardMinutesDto dto, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var res = await svc.CreateMultiAsync(dto);
+        return Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/sale-award-minutes/{minutesNo}", async (string minutesNo, UpdateSaleAwardMinutesDto dto, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var res = await svc.UpdateAsync(minutesNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/sale-award-minutes/{minutesNo}/approve1", async (string minutesNo, ApproveAwardMinutesDto? dto, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var res = await svc.Approve1Async(minutesNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/sale-award-minutes/{minutesNo}/approve2", async (string minutesNo, ApproveAwardMinutesDto? dto, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var res = await svc.Approve2Async(minutesNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/sale-award-minutes/{minutesNo}/finish", async (string minutesNo, FinishAwardMinutesDto dto, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var res = await svc.FinishAsync(minutesNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/sale-award-minutes/{minutesNo}/reject", async (string minutesNo, RejectAwardMinutesDto dto, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var res = await svc.RejectAsync(minutesNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/sale-award-minutes/{minutesNo}/cancel", async (string minutesNo, CancelAwardMinutesDto dto, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var res = await svc.CancelAsync(minutesNo, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/sale-award-minutes/{minutesNo}", async (string minutesNo, ISaleAwardMinutesService svc) =>
+{
+    try
+    {
+        var deleted = await svc.DeleteDraftAsync(minutesNo);
+        return deleted ? Results.Ok(new { success = true, minutesNo }) : Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();

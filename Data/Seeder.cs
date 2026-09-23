@@ -1713,6 +1713,67 @@ public static class Seeder
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_TransportPlans_OrgId_PlanNo ON TransportPlans(OrgId, PlanNo);
                 CREATE INDEX IF NOT EXISTS IX_TransportPlans_OrgId_VINPlan ON TransportPlans(OrgId, VINPlan);
                 CREATE INDEX IF NOT EXISTS IX_TransportPlans_OrgId_Status ON TransportPlans(OrgId, Status);
+
+                CREATE TABLE IF NOT EXISTS SaleAwardMinutes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    SaleAwardMinutesNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    SaleAwardMinutesStatus INTEGER NOT NULL DEFAULT 0,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    TotalAwardAmount REAL NOT NULL DEFAULT 0,
+                    FilePath TEXT,
+                    FileName TEXT,
+                    FileUrl TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    RejectDTime TEXT,
+                    RejectBy TEXT,
+                    CancelReason TEXT,
+                    CancelDTime TEXT,
+                    CancelBy TEXT,
+                    CreateDTime TEXT NOT NULL,
+                    CreateBy TEXT NOT NULL,
+                    Appr1DTime TEXT,
+                    Appr1By TEXT,
+                    Appr2DTime TEXT,
+                    Appr2By TEXT,
+                    FinishDTime TEXT,
+                    FinishBy TEXT,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_SaleAwardMinutes_OrgId_SaleAwardMinutesNo ON SaleAwardMinutes(OrgId, SaleAwardMinutesNo);
+                CREATE INDEX IF NOT EXISTS IX_SaleAwardMinutes_OrgId_DealerCode ON SaleAwardMinutes(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_SaleAwardMinutes_OrgId_Status ON SaleAwardMinutes(OrgId, SaleAwardMinutesStatus);
+
+                CREATE TABLE IF NOT EXISTS SaleAwardMinutesDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    SaleAwardMinutesId INTEGER NOT NULL,
+                    SaleAwardMinutesNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    CarId TEXT,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    DocumentNo TEXT NOT NULL,
+                    AmountAward REAL NOT NULL,
+                    ModelCode TEXT,
+                    ModelName TEXT,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    VinYear INTEGER,
+                    DeliveryDate TEXT,
+                    DealNo TEXT,
+                    Remark TEXT,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT,
+                    FOREIGN KEY(SaleAwardMinutesId) REFERENCES SaleAwardMinutes(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_SaleAwardMinutesDetails_Vin ON SaleAwardMinutesDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_SaleAwardMinutesDetails_DocumentNo ON SaleAwardMinutesDetails(DocumentNo);
             ");
         }
         catch
@@ -7732,6 +7793,192 @@ public static class Seeder
             };
 
             db.TransportPlans.AddRange(plan1, plan2, plan3);
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.SaleAwardMinutes.AnyAsync(m => m.OrgId == orgId))
+        {
+            var award1 = new SaleAwardMinutes
+            {
+                OrgId = orgId,
+                SaleAwardMinutesNo = "2603SAM00001",
+                DealerCode = "VS058",
+                DealerName = "Hyundai Bình Dương",
+                SaleAwardMinutesStatus = SaleAwardMinutesStatus.Finished,
+                TotalCars = 2,
+                TotalAwardAmount = 30000000m,
+                FilePath = "/uploads/sale_awards/2603SAM00001/2603SAM00001_Signed_VS058.pdf",
+                FileName = "2603SAM00001_Signed_VS058.pdf",
+                FileUrl = "/api/files/download/2603SAM00001_Signed_VS058.pdf",
+                Remark = "Biên bản đối soát thưởng bán lẻ xe đợt 1 tháng 3/2026 - Đại lý đã ký số hoàn tất quyết toán",
+                CreateDTime = DateTime.Today.AddDays(-15),
+                CreateBy = "HQ_SALES_SPECIALIST",
+                Appr1DTime = DateTime.Today.AddDays(-14),
+                Appr1By = "HQ_SALES_MNG_LAN",
+                Appr2DTime = DateTime.Today.AddDays(-12),
+                Appr2By = "HQ_SALES_DIR_TUAN",
+                FinishDTime = DateTime.Today.AddDays(-10),
+                FinishBy = "VS058_DIRECTOR_HUNG",
+                LogLUDateTime = DateTime.Today.AddDays(-10),
+                LogLUBy = "VS058_DIRECTOR_HUNG",
+                Details = new List<SaleAwardMinutesDetail>
+                {
+                    new()
+                    {
+                        SaleAwardMinutesNo = "2603SAM00001",
+                        Vin = "RLUGT41DBST012693",
+                        CarId = "CAR-ST012693",
+                        DealerCode = "VS058",
+                        DealerName = "Hyundai Bình Dương",
+                        DocumentNo = "CV-2026/02-HTV-SALES",
+                        AmountAward = 20000000m,
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe 2.2D HTRAC",
+                        SpecCode = "SF-2.2D-PRE",
+                        SpecDescription = "Santa Fe Máy dầu Cao cấp",
+                        ColorCode = "WH",
+                        ColorName = "Trắng Tuyết",
+                        VinYear = 2026,
+                        DeliveryDate = DateTime.Today.AddDays(-20),
+                        DealNo = "DEAL2603001",
+                        Remark = "Thưởng kích cầu dòng Santa Fe cao cấp",
+                        LogLUDateTime = DateTime.Today.AddDays(-15),
+                        LogLUBy = "HQ_SALES_SPECIALIST"
+                    },
+                    new()
+                    {
+                        SaleAwardMinutesNo = "2603SAM00001",
+                        Vin = "KMHE281BBSA129843",
+                        CarId = "CAR-SA129843",
+                        DealerCode = "VS058",
+                        DealerName = "Hyundai Bình Dương",
+                        DocumentNo = "CV-2026/02-HTV-SALES",
+                        AmountAward = 10000000m,
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta 1.5 Cao Cấp",
+                        SpecCode = "CR-1.5-PRE",
+                        SpecDescription = "Creta Bản Cao Cấp",
+                        ColorCode = "RD",
+                        ColorName = "Đỏ Mận",
+                        VinYear = 2026,
+                        DeliveryDate = DateTime.Today.AddDays(-18),
+                        DealNo = "DEAL2603002",
+                        Remark = "Thưởng chỉ tiêu bán lẻ Creta đạt target tuần",
+                        LogLUDateTime = DateTime.Today.AddDays(-15),
+                        LogLUBy = "HQ_SALES_SPECIALIST"
+                    }
+                }
+            };
+
+            var award2 = new SaleAwardMinutes
+            {
+                OrgId = orgId,
+                SaleAwardMinutesNo = "2603SAM00002",
+                DealerCode = "VN065",
+                DealerName = "Hyundai Đông Đô",
+                SaleAwardMinutesStatus = SaleAwardMinutesStatus.Approved2,
+                TotalCars = 2,
+                TotalAwardAmount = 25000000m,
+                Remark = "Lãnh đạo Khối Bán hàng đã duyệt chốt thưởng, chờ Đại lý tải file ký đóng dấu",
+                CreateDTime = DateTime.Today.AddDays(-6),
+                CreateBy = "HQ_SALES_SPECIALIST",
+                Appr1DTime = DateTime.Today.AddDays(-5),
+                Appr1By = "HQ_SALES_MNG_LAN",
+                Appr2DTime = DateTime.Today.AddDays(-3),
+                Appr2By = "HQ_SALES_DIR_TUAN",
+                LogLUDateTime = DateTime.Today.AddDays(-3),
+                LogLUBy = "HQ_SALES_DIR_TUAN",
+                Details = new List<SaleAwardMinutesDetail>
+                {
+                    new()
+                    {
+                        SaleAwardMinutesNo = "2603SAM00002",
+                        Vin = "KL4CJ63E8CB109283",
+                        CarId = "CAR-CB109283",
+                        DealerCode = "VN065",
+                        DealerName = "Hyundai Đông Đô",
+                        DocumentNo = "CV-2026/03-HTV-TUCSON",
+                        AmountAward = 15000000m,
+                        ModelCode = "TUCSON",
+                        ModelName = "Hyundai Tucson 2.0 AT",
+                        SpecCode = "TUC-2.0-GAS",
+                        SpecDescription = "Tucson Bản Xăng Đặc biệt",
+                        ColorCode = "BK",
+                        ColorName = "Đen Ánh Kim",
+                        VinYear = 2026,
+                        DeliveryDate = DateTime.Today.AddDays(-9),
+                        DealNo = "DEAL2603003",
+                        Remark = "Thưởng chuyên đề tăng trưởng doanh số Tucson",
+                        LogLUDateTime = DateTime.Today.AddDays(-6),
+                        LogLUBy = "HQ_SALES_SPECIALIST"
+                    },
+                    new()
+                    {
+                        SaleAwardMinutesNo = "2603SAM00002",
+                        Vin = "RLUGT41DBST012694",
+                        CarId = "CAR-ST012694",
+                        DealerCode = "VN065",
+                        DealerName = "Hyundai Đông Đô",
+                        DocumentNo = "CV-2026/03-HTV-TUCSON",
+                        AmountAward = 10000000m,
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent 1.4 AT",
+                        SpecCode = "ACC-1.4-AT",
+                        SpecDescription = "Accent 1.4 AT Đặc biệt",
+                        ColorCode = "WH",
+                        ColorName = "Trắng Sữa",
+                        VinYear = 2026,
+                        DeliveryDate = DateTime.Today.AddDays(-8),
+                        DealNo = "DEAL2603004",
+                        Remark = "Thưởng đại lý vượt mốc giao xe sedan",
+                        LogLUDateTime = DateTime.Today.AddDays(-6),
+                        LogLUBy = "HQ_SALES_SPECIALIST"
+                    }
+                }
+            };
+
+            var award3 = new SaleAwardMinutes
+            {
+                OrgId = orgId,
+                SaleAwardMinutesNo = "2603SAM00003",
+                DealerCode = "VN012",
+                DealerName = "Hyundai Hà Đông",
+                SaleAwardMinutesStatus = SaleAwardMinutesStatus.Pending,
+                TotalCars = 1,
+                TotalAwardAmount = 15000000m,
+                Remark = "Chuyên viên đối soát vừa lập biên bản theo công văn thưởng thế hệ mới, chờ Trưởng phòng duyệt cấp 1",
+                CreateDTime = DateTime.Today.AddDays(-1),
+                CreateBy = "HQ_SALES_SPECIALIST",
+                LogLUDateTime = DateTime.Today.AddDays(-1),
+                LogLUBy = "HQ_SALES_SPECIALIST",
+                Details = new List<SaleAwardMinutesDetail>
+                {
+                    new()
+                    {
+                        SaleAwardMinutesNo = "2603SAM00003",
+                        Vin = "RLUGT41DBST012695",
+                        CarId = "CAR-ST012695",
+                        DealerCode = "VN012",
+                        DealerName = "Hyundai Hà Đông",
+                        DocumentNo = "CV-2026/03-HTV-SANTAFE",
+                        AmountAward = 15000000m,
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe Calligraphy 2.5T",
+                        SpecCode = "SF-2.5T-CAL",
+                        SpecDescription = "Santa Fe Calligraphy Turbo",
+                        ColorCode = "GY",
+                        ColorName = "Xám Kim Loại",
+                        VinYear = 2026,
+                        DeliveryDate = DateTime.Today.AddDays(-3),
+                        DealNo = "DEAL2603005",
+                        Remark = "Thưởng bàn giao xe Santa Fe mới",
+                        LogLUDateTime = DateTime.Today.AddDays(-1),
+                        LogLUBy = "HQ_SALES_SPECIALIST"
+                    }
+                }
+            };
+
+            db.SaleAwardMinutes.AddRange(award1, award2, award3);
             await db.SaveChangesAsync();
         }
     }
