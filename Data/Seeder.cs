@@ -3152,6 +3152,22 @@ public static class Seeder
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_MaintainTaskItems_OrgId_MtnTkCode_MtnTkItemCode ON MaintainTaskItems(OrgId, MtnTkCode, MtnTkItemCode);
                 CREATE INDEX IF NOT EXISTS IX_MaintainTaskItems_OrgId_MtnTkCode ON MaintainTaskItems(OrgId, MtnTkCode);
 
+                CREATE TABLE IF NOT EXISTS DealerInventoryThresholds (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT,
+                    Qty REAL NOT NULL,
+                    FlagActive TEXT NOT NULL DEFAULT '1',
+                    LogLUDateTime TEXT NOT NULL,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_DealerInventoryThresholds_OrgId_DealerCode_ModelCode ON DealerInventoryThresholds(OrgId, DealerCode, ModelCode);
+                CREATE INDEX IF NOT EXISTS IX_DealerInventoryThresholds_OrgId_DealerCode ON DealerInventoryThresholds(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_DealerInventoryThresholds_OrgId_ModelCode ON DealerInventoryThresholds(OrgId, ModelCode);
+
                 CREATE TABLE IF NOT EXISTS CustomerVisits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -14336,6 +14352,17 @@ public static class Seeder
                     new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK003", MtnTkItemCode = "ITEM001", MtnTkItemName = "Thay dây curoa cam", ViewIdx = 1, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK003", MtnTkItemCode = "ITEM002", MtnTkItemName = "Thay bugi", ViewIdx = 2, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
                     new MaintainTaskItem { OrgId = orgId, MtnTkCode = "MTK004", MtnTkItemCode = "ITEM001", MtnTkItemName = "Kiểm tra tổng quát trước giao xe", ViewIdx = 1, FlagActive = "0", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
+                );
+            }
+
+            // Danh mục Ngưỡng tồn kho đại lý theo model (Mst_DealerInventoryThreshold / Master.cs / Mst_DealerInventoryThreshold_Get|Update|Import|Delete)
+            if (!await db.DealerInventoryThresholds.AnyAsync(o => o.OrgId == orgId))
+            {
+                db.DealerInventoryThresholds.AddRange(
+                    new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL001", DealerName = "Đại lý Hyundai Hà Nội", ModelCode = "SF25", ModelName = "Santa Fe", Qty = 5, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL001", DealerName = "Đại lý Hyundai Hà Nội", ModelCode = "TU20", ModelName = "Tucson", Qty = 8, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-60), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL002", DealerName = "Đại lý Hyundai Đà Nẵng", ModelCode = "CR10", ModelName = "Creta", Qty = 6, FlagActive = "1", LogLUDateTime = DateTime.Now.AddDays(-45), LogLUBy = "CHUYEN_VIEN_NPP" },
+                    new DealerInventoryThreshold { OrgId = orgId, DealerCode = "DL003", DealerName = "Đại lý Hyundai Sài Gòn", ModelCode = "AC10", ModelName = "Accent", Qty = 10, FlagActive = "0", LogLUDateTime = DateTime.Now.AddDays(-30), LogLUBy = "CHUYEN_VIEN_NPP" }
                 );
             }
 

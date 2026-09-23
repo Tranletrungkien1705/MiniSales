@@ -138,6 +138,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<SalesManHistoryInactive> SalesManHistoryInactives => Set<SalesManHistoryInactive>();
     public DbSet<MaintainTask> MaintainTasks => Set<MaintainTask>();
     public DbSet<MaintainTaskItem> MaintainTaskItems => Set<MaintainTaskItem>();
+    public DbSet<DealerInventoryThreshold> DealerInventoryThresholds => Set<DealerInventoryThreshold>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -642,5 +643,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<MaintainTaskItem>().ToTable("MaintainTaskItems");
         b.Entity<MaintainTaskItem>().HasIndex(x => new { x.OrgId, x.MtnTkCode, x.MtnTkItemCode }).IsUnique();
         b.Entity<MaintainTaskItem>().HasIndex(x => new { x.OrgId, x.MtnTkCode });
+
+        b.Entity<DealerInventoryThreshold>().ToTable("DealerInventoryThresholds");
+        b.Entity<DealerInventoryThreshold>().HasIndex(x => new { x.OrgId, x.DealerCode, x.ModelCode }).IsUnique();
+        b.Entity<DealerInventoryThreshold>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<DealerInventoryThreshold>().HasIndex(x => new { x.OrgId, x.ModelCode });
     }
 }

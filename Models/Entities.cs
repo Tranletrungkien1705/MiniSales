@@ -4493,4 +4493,17 @@ public sealed class MaintainTaskItem
     public string FlagActive { get; set; } = "1"; // Cờ hiệu lực ('1' = active, '0' = inactive)
     public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
     public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
+}/// <summary>Ngưỡng tồn kho đại lý theo model (DMS.Sales Mst_DealerInventoryThreshold / Master.cs / Mst_DealerInventoryThreshold_Get|Update|Import|Delete): danh mục quy định số lượng tồn kho tối thiểu (Qty) mà mỗi Đại lý cần duy trì cho từng dòng xe (ModelCode). Khóa nghiệp vụ = (DealerCode, ModelCode). FK DealerCode phải tồn tại và đang hoạt động (Mst_Dealer); FK ModelCode phải tồn tại và đang hoạt động (Mst_CarModel). Update chỉ cho sửa Qty + FlagActive (Master Fixed Updateable Scope).</summary>
+public sealed class DealerInventoryThreshold
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string DealerCode { get; set; } = ""; // Mã đại lý (khóa nghiệp vụ, tham chiếu Mst_Dealer.DealerCode)
+    public string? DealerName { get; set; } // Tên đại lý (tra cứu từ Mst_Dealer)
+    public string ModelCode { get; set; } = ""; // Mã dòng xe (khóa nghiệp vụ, tham chiếu Mst_CarModel.ModelCode)
+    public string? ModelName { get; set; } // Tên dòng xe (tra cứu từ Mst_CarModel)
+    public decimal Qty { get; set; } // Ngưỡng tồn kho tối thiểu (số lượng, >= 0)
+    public string FlagActive { get; set; } = "1"; // Cờ hiệu lực (1 = đang áp dụng, 0 = ngừng áp dụng)
+    public DateTime LogLUDateTime { get; set; } = DateTime.Now; // Thời điểm ghi log cập nhật gần nhất
+    public string? LogLUBy { get; set; } // Người ghi log cập nhật gần nhất
 }

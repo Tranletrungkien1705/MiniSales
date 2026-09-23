@@ -90,6 +90,7 @@ builder.Services.AddScoped<ICarModelService, CarModelService>();
 builder.Services.AddScoped<ISalesManService, SalesManService>();
 builder.Services.AddScoped<IStorageMasterService, StorageMasterService>();
 builder.Services.AddScoped<IMaintainTaskService, MaintainTaskService>();
+builder.Services.AddScoped<IDealerInventoryThresholdService, DealerInventoryThresholdService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -6124,6 +6125,41 @@ app.MapDelete("/api/maintain-task-items/{mtnTkCode}/{mtnTkItemCode}", async (str
 {
     var r = await svc.DeleteItemAsync(mtnTkCode, mtnTkItemCode);
     return r ? Results.Ok(new { deleted = true, mtnTkCode, mtnTkItemCode }) : Results.NotFound(new { mtnTkCode, mtnTkItemCode });
+}).RequireAuthorization();
+
+// ===== Ngưỡng tồn kho đại lý theo model (Mst_DealerInventoryThreshold - DMS.Sales Master.cs) =====
+app.MapPost("/api/dealer-inventory-thresholds/import", async (List<DealerInventoryThresholdImportRowDto> rows, IDealerInventoryThresholdService svc) =>
+{
+    try { return Results.Ok(await svc.ImportAsync(rows)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/dealer-inventory-thresholds", async (IDealerInventoryThresholdService svc, string? keyWord, string? dealerCode, string? modelCode, string? flagActive) =>
+    Results.Ok(await svc.SearchAsync(keyWord, dealerCode, modelCode, flagActive))).RequireAuthorization();
+
+app.MapGet("/api/dealer-inventory-thresholds/stats", async (IDealerInventoryThresholdService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/dealer-inventory-thresholds/{dealerCode}/{modelCode}", async (string dealerCode, string modelCode, IDealerInventoryThresholdService svc) =>
+{
+    var r = await svc.GetAsync(dealerCode, modelCode);
+    return r is null ? Results.NotFound(new { dealerCode, modelCode }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPut("/api/dealer-inventory-thresholds/{dealerCode}/{modelCode}", async (string dealerCode, string modelCode, UpdateDealerInventoryThresholdDto dto, IDealerInventoryThresholdService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(dealerCode, modelCode, dto);
+        return r is null ? Results.NotFound(new { dealerCode, modelCode }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/dealer-inventory-thresholds/{dealerCode}/{modelCode}", async (string dealerCode, string modelCode, IDealerInventoryThresholdService svc) =>
+{
+    var r = await svc.DeleteAsync(dealerCode, modelCode);
+    return r ? Results.Ok(new { deleted = true, dealerCode, modelCode }) : Results.NotFound(new { dealerCode, modelCode });
 }).RequireAuthorization();
 
 app.Run();
