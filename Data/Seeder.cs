@@ -1390,6 +1390,108 @@ public static class Seeder
                     PerformedAt TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS IX_MapVinAuditLogs_OrgId_CarId ON MapVinAuditLogs(OrgId, CarId);
+
+                CREATE TABLE IF NOT EXISTS RetailInvoiceRequests (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    ReqInvoiceNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT,
+                    ReqInvoiceType INTEGER NOT NULL,
+                    ReqInvoiceBaseNo TEXT,
+                    DlrContractNo TEXT,
+                    DealNo TEXT,
+                    CustomerCode TEXT NOT NULL,
+                    CustomerName TEXT NOT NULL,
+                    CustomerType TEXT NOT NULL,
+                    CustomerAddress TEXT,
+                    CustomerEmail TEXT,
+                    CustomerPhone TEXT,
+                    MST TEXT,
+                    TInvoiceCode TEXT,
+                    InvoiceCode TEXT,
+                    InvoiceNo TEXT,
+                    InvoiceDate TEXT,
+                    InvoiceSign TEXT,
+                    FormNo TEXT,
+                    InvoiceStatus INTEGER NOT NULL,
+                    InvoiceBaseNo TEXT,
+                    AdjType INTEGER NOT NULL,
+                    Remark TEXT,
+                    ReqInvoiceStatus INTEGER NOT NULL,
+                    FlagInvoice TEXT NOT NULL,
+                    FlagIsQInvoice INTEGER NOT NULL,
+                    QtyCtrCarId INTEGER NOT NULL,
+                    TotalTPBeforeVAT REAL NOT NULL,
+                    TotalValVAT REAL NOT NULL,
+                    TotalTPAfterVAT REAL NOT NULL,
+                    TaxAuthorityCode TEXT,
+                    InvoiceFileUrl TEXT,
+                    InvoiceFileName TEXT,
+                    CreatedBy TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    IssuedBy TEXT,
+                    IssuedAt TEXT,
+                    ApprovedBy TEXT,
+                    ApprovedAt TEXT,
+                    TaxTransmittedBy TEXT,
+                    TaxTransmittedAt TEXT,
+                    CancelReason TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_RetailInvoiceRequests_OrgId_ReqInvoiceNo ON RetailInvoiceRequests(OrgId, ReqInvoiceNo);
+
+                CREATE TABLE IF NOT EXISTS RetailInvoiceRequestDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    RetailInvoiceRequestId INTEGER NOT NULL,
+                    ReqInvoiceNo TEXT NOT NULL,
+                    CtrCarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    BrandName TEXT NOT NULL,
+                    CarType TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    ColorName TEXT,
+                    EngineNo TEXT,
+                    NumberOfSeats INTEGER NOT NULL,
+                    HTCInvoiceNo TEXT,
+                    HTCInvoiceDate TEXT,
+                    ProductionYearActual TEXT,
+                    CQNo TEXT,
+                    FGFormNo TEXT,
+                    UPBeforeVAT REAL NOT NULL,
+                    VatRate REAL NOT NULL,
+                    ValVAT REAL NOT NULL,
+                    UPAfterVAT REAL NOT NULL,
+                    Status TEXT NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(RetailInvoiceRequestId) REFERENCES RetailInvoiceRequests(Id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS RetailInvoiceRequestProducts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    RetailInvoiceRequestId INTEGER NOT NULL,
+                    ReqInvoiceNo TEXT NOT NULL,
+                    Idx INTEGER NOT NULL,
+                    ProductCode TEXT NOT NULL,
+                    ProductName TEXT NOT NULL,
+                    Unit TEXT NOT NULL,
+                    Qty INTEGER NOT NULL,
+                    VatRate REAL NOT NULL,
+                    UnitPrice REAL NOT NULL,
+                    TPBeforeVAT REAL NOT NULL,
+                    ValVAT REAL NOT NULL,
+                    TPAfterVAT REAL NOT NULL,
+                    FlagIsProduct INTEGER NOT NULL,
+                    Remark TEXT,
+                    FOREIGN KEY(RetailInvoiceRequestId) REFERENCES RetailInvoiceRequests(Id) ON DELETE CASCADE
+                );
             ");
         }
         catch
@@ -6478,6 +6580,380 @@ public static class Seeder
             };
             db.MapVinAuditLogs.AddRange(mapLogs);
 
+            await db.SaveChangesAsync();
+        }
+
+        if (!await db.RetailInvoiceRequests.AnyAsync(o => o.OrgId == orgId))
+        {
+            var ri1 = new RetailInvoiceRequest
+            {
+                OrgId = orgId,
+                ReqInvoiceNo = "2603RI0001",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ReqInvoiceType = RetailInvoiceType.Root,
+                DlrContractNo = "RC26090001",
+                DealNo = "DEAL26090001",
+                CustomerCode = "CUS00128",
+                CustomerName = "Nguyễn Thành Long",
+                CustomerType = "INDIVIDUAL",
+                CustomerAddress = "18 Tam Trinh, Hoàng Mai, Hà Nội",
+                CustomerEmail = "long.nt@gmail.com",
+                CustomerPhone = "0988123456",
+                MST = "001095012345",
+                TInvoiceCode = "1/001",
+                InvoiceCode = "LK9A8B7C6D5E",
+                InvoiceNo = "0000018",
+                InvoiceDate = DateTime.Today.AddDays(-3),
+                InvoiceSign = "1C26TAA",
+                FormNo = "1/001",
+                InvoiceStatus = RetailInvoiceEInvoiceStatus.Issued,
+                AdjType = RetailInvoiceAdjType.None,
+                Remark = "Hóa đơn GTGT điện tử bán lẻ xe Santa Fe 2.5 HTRAC và gói phụ kiện cao cấp",
+                ReqInvoiceStatus = RetailInvoiceRequestStatus.Issued,
+                FlagInvoice = "1",
+                FlagIsQInvoice = 1,
+                QtyCtrCarId = 1,
+                TotalTPBeforeVAT = 1220000000m,
+                TotalValVAT = 122000000m,
+                TotalTPAfterVAT = 1342000000m,
+                TaxAuthorityCode = "TCT260320-A1B2C3D4",
+                InvoiceFileUrl = "/invoices/retail/2603RI0001.pdf",
+                InvoiceFileName = "2603RI0001_0000018.pdf",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Today.AddDays(-4),
+                IssuedBy = "Trần Thị Mai (Kế toán Trưởng Đông Đô)",
+                IssuedAt = DateTime.Today.AddDays(-3),
+                ApprovedBy = "Nguyễn Hoàng Nam (Giám đốc Đại lý Đông Đô)",
+                ApprovedAt = DateTime.Today.AddDays(-3),
+                TaxTransmittedBy = "HỆ THỐNG Q-INVOICE TCT",
+                TaxTransmittedAt = DateTime.Today.AddDays(-3),
+                Details = new List<RetailInvoiceRequestDetail>
+                {
+                    new RetailInvoiceRequestDetail
+                    {
+                        ReqInvoiceNo = "2603RI0001",
+                        CtrCarId = "RC26090001.01",
+                        Vin = "KMHE281BBSA129841",
+                        BrandName = "Hyundai",
+                        CarType = "Ô tô con",
+                        ModelCode = "SF25",
+                        ModelName = "Santa Fe 2.5 HTRAC",
+                        SpecCode = "SF25-PRE-01",
+                        SpecDescription = "Santa Fe 2.5 xăng cao cấp dẫn động 4 bánh HTRAC",
+                        ColorCode = "WW2",
+                        ColorName = "Trắng ngọc trai",
+                        EngineNo = "G4KP-102941",
+                        NumberOfSeats = 7,
+                        HTCInvoiceNo = "INV260301-0012",
+                        HTCInvoiceDate = DateTime.Today.AddDays(-10),
+                        ProductionYearActual = "2026",
+                        CQNo = "CQ-2026-SF129841",
+                        FGFormNo = "PXX-2026-9812",
+                        UPBeforeVAT = 1200000000m,
+                        VatRate = 10m,
+                        ValVAT = 120000000m,
+                        UPAfterVAT = 1320000000m,
+                        Status = "Invoiced",
+                        Remark = "Xe đã bàn giao biên bản BBBG đầy đủ"
+                    }
+                },
+                Products = new List<RetailInvoiceRequestProduct>
+                {
+                    new RetailInvoiceRequestProduct
+                    {
+                        ReqInvoiceNo = "2603RI0001",
+                        Idx = 1,
+                        ProductCode = "PK-FILM3M",
+                        ProductName = "Gói dán phim cách nhiệt 3M Crystalline cao cấp toàn xe",
+                        Unit = "Gói",
+                        Qty = 1,
+                        VatRate = 10m,
+                        UnitPrice = 15000000m,
+                        TPBeforeVAT = 15000000m,
+                        ValVAT = 1500000m,
+                        TPAfterVAT = 16500000m,
+                        FlagIsProduct = true,
+                        Remark = "Bảo hành 10 năm điện tử chính hãng 3M"
+                    },
+                    new RetailInvoiceRequestProduct
+                    {
+                        ReqInvoiceNo = "2603RI0001",
+                        Idx = 2,
+                        ProductCode = "PK-CAMDASH",
+                        ProductName = "Camera hành trình Vietmap SpeedMap M1 cảnh báo tốc độ",
+                        Unit = "Bộ",
+                        Qty = 1,
+                        VatRate = 10m,
+                        UnitPrice = 5000000m,
+                        TPBeforeVAT = 5000000m,
+                        ValVAT = 500000m,
+                        TPAfterVAT = 5500000m,
+                        FlagIsProduct = true,
+                        Remark = "Kèm thẻ nhớ 64GB tốc độ cao"
+                    }
+                }
+            };
+
+            var ri2 = new RetailInvoiceRequest
+            {
+                OrgId = orgId,
+                ReqInvoiceNo = "2603RI0002",
+                DealerCode = "VN002",
+                DealerName = "Hyundai Nam Trung",
+                ReqInvoiceType = RetailInvoiceType.Root,
+                DlrContractNo = "RC26090002",
+                DealNo = "DEAL26090002",
+                CustomerCode = "CUS00204",
+                CustomerName = "Công ty CP Dịch vụ Vận tải Nam Trung",
+                CustomerType = "ORGANIZATION",
+                CustomerAddress = "Tòa nhà Nam Trung, Lê Văn Lương kéo dài, Hà Đông, Hà Nội",
+                CustomerEmail = "ketoan@namtrungtrans.vn",
+                CustomerPhone = "0912345678",
+                MST = "0108998877",
+                TInvoiceCode = "1/001",
+                InvoiceCode = "LK3D4E5F6G7H",
+                InvoiceNo = "0000019",
+                InvoiceDate = DateTime.Today.AddDays(-2),
+                InvoiceSign = "1C26TAA",
+                FormNo = "1/001",
+                InvoiceStatus = RetailInvoiceEInvoiceStatus.Issued,
+                AdjType = RetailInvoiceAdjType.None,
+                Remark = "Hóa đơn điện tử bán xe Tucson 2.0 AT xuất cho khách hàng doanh nghiệp",
+                ReqInvoiceStatus = RetailInvoiceRequestStatus.Issued,
+                FlagInvoice = "1",
+                FlagIsQInvoice = 1,
+                QtyCtrCarId = 1,
+                TotalTPBeforeVAT = 862500000m,
+                TotalValVAT = 86250000m,
+                TotalTPAfterVAT = 948750000m,
+                TaxAuthorityCode = "TCT260321-X9Y8Z7W6",
+                InvoiceFileUrl = "/invoices/retail/2603RI0002.pdf",
+                InvoiceFileName = "2603RI0002_0000019.pdf",
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Today.AddDays(-3),
+                IssuedBy = "Lê Thị Hồng (Kế toán Trưởng Nam Trung)",
+                IssuedAt = DateTime.Today.AddDays(-2),
+                ApprovedBy = "Vũ Nam Trung (Giám đốc)",
+                ApprovedAt = DateTime.Today.AddDays(-2),
+                TaxTransmittedBy = "HỆ THỐNG Q-INVOICE TCT",
+                TaxTransmittedAt = DateTime.Today.AddDays(-2),
+                Details = new List<RetailInvoiceRequestDetail>
+                {
+                    new RetailInvoiceRequestDetail
+                    {
+                        ReqInvoiceNo = "2603RI0002",
+                        CtrCarId = "RC26090002.01",
+                        Vin = "KMHE281BBSA987654",
+                        BrandName = "Hyundai",
+                        CarType = "Ô tô con",
+                        ModelCode = "TU20",
+                        ModelName = "Tucson 2.0 AT",
+                        SpecCode = "TU20-STD-01",
+                        SpecDescription = "Tucson 2.0 máy xăng số tự động tiêu chuẩn",
+                        ColorCode = "NKA",
+                        ColorName = "Đen Phantom",
+                        EngineNo = "G4NM-987654",
+                        NumberOfSeats = 5,
+                        HTCInvoiceNo = "INV260301-0015",
+                        HTCInvoiceDate = DateTime.Today.AddDays(-12),
+                        ProductionYearActual = "2026",
+                        CQNo = "CQ-2026-TU987654",
+                        FGFormNo = "PXX-2026-7788",
+                        UPBeforeVAT = 860000000m,
+                        VatRate = 10m,
+                        ValVAT = 86000000m,
+                        UPAfterVAT = 946000000m,
+                        Status = "Invoiced",
+                        Remark = "Đã xuất hóa đơn doanh nghiệp đầy đủ MST"
+                    }
+                },
+                Products = new List<RetailInvoiceRequestProduct>
+                {
+                    new RetailInvoiceRequestProduct
+                    {
+                        ReqInvoiceNo = "2603RI0002",
+                        Idx = 1,
+                        ProductCode = "PK-FLOOR",
+                        ProductName = "Bộ thảm lót sàn da 6D carbon cao cấp xe Tucson",
+                        Unit = "Bộ",
+                        Qty = 1,
+                        VatRate = 10m,
+                        UnitPrice = 2500000m,
+                        TPBeforeVAT = 2500000m,
+                        ValVAT = 250000m,
+                        TPAfterVAT = 2750000m,
+                        FlagIsProduct = true,
+                        Remark = "Màu đen viền chỉ đỏ"
+                    }
+                }
+            };
+
+            var ri3 = new RetailInvoiceRequest
+            {
+                OrgId = orgId,
+                ReqInvoiceNo = "2603RI0003",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ReqInvoiceType = RetailInvoiceType.Root,
+                DlrContractNo = "RC26090003",
+                DealNo = "DEAL26090003",
+                CustomerCode = "CUS00311",
+                CustomerName = "Lê Thị Mai",
+                CustomerType = "INDIVIDUAL",
+                CustomerAddress = "25 phố Vọng, Hai Bà Trưng, Hà Nội",
+                CustomerEmail = "maile89@gmail.com",
+                CustomerPhone = "0909876543",
+                MST = "001189033445",
+                TInvoiceCode = "1/001",
+                InvoiceSign = "1C26TAA",
+                FormNo = "1/001",
+                InvoiceStatus = RetailInvoiceEInvoiceStatus.Draft,
+                AdjType = RetailInvoiceAdjType.None,
+                Remark = "Đề nghị xuất hóa đơn xe Creta 1.5 Cao Cấp kèm gói phủ bóng Ceramic",
+                ReqInvoiceStatus = RetailInvoiceRequestStatus.Pending,
+                FlagInvoice = "0",
+                FlagIsQInvoice = 1,
+                QtyCtrCarId = 1,
+                TotalTPBeforeVAT = 662545455m,
+                TotalValVAT = 66254545m,
+                TotalTPAfterVAT = 728800000m,
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Today.AddDays(-1),
+                Details = new List<RetailInvoiceRequestDetail>
+                {
+                    new RetailInvoiceRequestDetail
+                    {
+                        ReqInvoiceNo = "2603RI0003",
+                        CtrCarId = "RC26090003.01",
+                        Vin = "KMHE281BBSA334455",
+                        BrandName = "Hyundai",
+                        CarType = "Ô tô con",
+                        ModelCode = "CR15",
+                        ModelName = "Creta 1.5 Cao Cấp",
+                        SpecCode = "CR15-PRE-02",
+                        SpecDescription = "Creta 1.5 CVT bản cao cấp 2 tông màu",
+                        ColorCode = "R3R",
+                        ColorName = "Đỏ mận",
+                        EngineNo = "G4FL-334455",
+                        NumberOfSeats = 5,
+                        HTCInvoiceNo = "INV260301-0020",
+                        HTCInvoiceDate = DateTime.Today.AddDays(-8),
+                        ProductionYearActual = "2026",
+                        CQNo = "CQ-2026-CR334455",
+                        FGFormNo = "PXX-2026-6655",
+                        UPBeforeVAT = 654545455m,
+                        VatRate = 10m,
+                        ValVAT = 65454545m,
+                        UPAfterVAT = 720000000m,
+                        Status = "Pending",
+                        Remark = "Chờ kế toán trưởng cấp số hóa đơn điện tử"
+                    }
+                },
+                Products = new List<RetailInvoiceRequestProduct>
+                {
+                    new RetailInvoiceRequestProduct
+                    {
+                        ReqInvoiceNo = "2603RI0003",
+                        Idx = 1,
+                        ProductCode = "DV-CERAMIC",
+                        ProductName = "Gói phủ bóng Ceramic bảo vệ bề mặt sơn xe 3 lớp",
+                        Unit = "Gói",
+                        Qty = 1,
+                        VatRate = 10m,
+                        UnitPrice = 8000000m,
+                        TPBeforeVAT = 8000000m,
+                        ValVAT = 800000m,
+                        TPAfterVAT = 8800000m,
+                        FlagIsProduct = false,
+                        Remark = "Bảo dưỡng lớp phủ định kỳ 6 tháng/lần"
+                    }
+                }
+            };
+
+            var ri4 = new RetailInvoiceRequest
+            {
+                OrgId = orgId,
+                ReqInvoiceNo = "2603RI0004",
+                DealerCode = "VN001",
+                DealerName = "Hyundai Đông Đô",
+                ReqInvoiceType = RetailInvoiceType.Adjusted,
+                ReqInvoiceBaseNo = "2603RI0001",
+                InvoiceBaseNo = "0000018",
+                DlrContractNo = "RC26090001",
+                DealNo = "DEAL26090001",
+                CustomerCode = "CUS00128",
+                CustomerName = "Nguyễn Thành Long",
+                CustomerType = "INDIVIDUAL",
+                CustomerAddress = "18 Tam Trinh, Hoàng Mai, Hà Nội",
+                CustomerEmail = "long.nt@gmail.com",
+                CustomerPhone = "0988123456",
+                MST = "001095012345",
+                TInvoiceCode = "1/001",
+                InvoiceSign = "1C26TAA",
+                FormNo = "1/001",
+                InvoiceStatus = RetailInvoiceEInvoiceStatus.Draft,
+                AdjType = RetailInvoiceAdjType.Increase,
+                Remark = "Đề nghị xuất hóa đơn điều chỉnh tăng giá trị do bổ sung gói bảo hiểm vật chất thân vỏ PTI 1 năm",
+                ReqInvoiceStatus = RetailInvoiceRequestStatus.Pending,
+                FlagInvoice = "0",
+                FlagIsQInvoice = 1,
+                QtyCtrCarId = 0,
+                TotalTPBeforeVAT = 18000000m,
+                TotalValVAT = 1800000m,
+                TotalTPAfterVAT = 19800000m,
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Today,
+                Products = new List<RetailInvoiceRequestProduct>
+                {
+                    new RetailInvoiceRequestProduct
+                    {
+                        ReqInvoiceNo = "2603RI0004",
+                        Idx = 1,
+                        ProductCode = "DV-INSURANCE",
+                        ProductName = "Gói Bảo hiểm vật chất thân vỏ xe ô tô PTI (thời hạn 1 năm)",
+                        Unit = "Gói",
+                        Qty = 1,
+                        VatRate = 10m,
+                        UnitPrice = 18000000m,
+                        TPBeforeVAT = 18000000m,
+                        ValVAT = 1800000m,
+                        TPAfterVAT = 19800000m,
+                        FlagIsProduct = false,
+                        Remark = "Phí bảo hiểm bổ sung điều chỉnh tăng vào hợp đồng mua xe"
+                    }
+                }
+            };
+
+            var ri5 = new RetailInvoiceRequest
+            {
+                OrgId = orgId,
+                ReqInvoiceNo = "2603RI0005",
+                DealerCode = "VN003",
+                DealerName = "Hyundai Tây Hồ",
+                ReqInvoiceType = RetailInvoiceType.Root,
+                CustomerCode = "CUS00999",
+                CustomerName = "Hoàng Minh Tuấn",
+                CustomerType = "INDIVIDUAL",
+                CustomerPhone = "0982223344",
+                InvoiceStatus = RetailInvoiceEInvoiceStatus.Cancelled,
+                AdjType = RetailInvoiceAdjType.None,
+                Remark = "Khách hàng đổi sang đứng tên đăng ký công ty, hủy để lập đề nghị mới theo MST doanh nghiệp",
+                ReqInvoiceStatus = RetailInvoiceRequestStatus.Cancelled,
+                FlagInvoice = "0",
+                FlagIsQInvoice = 1,
+                QtyCtrCarId = 0,
+                TotalTPBeforeVAT = 0m,
+                TotalValVAT = 0m,
+                TotalTPAfterVAT = 0m,
+                CancelReason = "Khách hàng đổi chủ thể mua xe sang doanh nghiệp, hủy đề nghị cá nhân",
+                CancelledBy = "DEALER_ADMIN",
+                CancelledAt = DateTime.Today,
+                CreatedBy = "DEALER_ACCOUNTANT",
+                CreatedAt = DateTime.Today.AddDays(-2)
+            };
+
+            db.RetailInvoiceRequests.AddRange(ri1, ri2, ri3, ri4, ri5);
             await db.SaveChangesAsync();
         }
     }

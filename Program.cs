@@ -52,6 +52,7 @@ builder.Services.AddScoped<IDealerDriveTestService, DealerDriveTestService>();
 builder.Services.AddScoped<IStorageRearrangeCBService, StorageRearrangeCBService>();
 builder.Services.AddScoped<ICarCancelService, CarCancelService>();
 builder.Services.AddScoped<IMapVinService, MapVinService>();
+builder.Services.AddScoped<IRetailInvoiceService, RetailInvoiceService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -2531,6 +2532,92 @@ app.MapGet("/api/map-vins/stats", async (IMapVinService svc) =>
 
 app.MapGet("/api/map-vins/logs", async (IMapVinService svc, string? carId, string? vin) =>
     Results.Ok(await svc.GetLogsAsync(carId, vin))).RequireAuthorization();
+
+// ===== Quản lý Đề nghị xuất Hóa đơn GTGT Bán lẻ Xe ô tô Khách hàng Đại lý (Retail VAT Invoice Request - DMS.Sales Req_RequestInvoice + Req_RequestInvoiceDtl / ReqRequestInvoiceController / ReqInvoice.cs) =====
+app.MapGet("/api/retail-invoices", async (IRetailInvoiceService svc, string? status, string? invoiceType, string? dealerCode, string? customerName, string? vin, string? reqInvoiceNo, DateTime? dateFrom, DateTime? dateTo) =>
+    Results.Ok(await svc.ListAsync(status, invoiceType, dealerCode, customerName, vin, reqInvoiceNo, dateFrom, dateTo))).RequireAuthorization();
+
+app.MapGet("/api/retail-invoices/stats", async (IRetailInvoiceService svc) =>
+    Results.Ok(await svc.GetStatsAsync())).RequireAuthorization();
+
+app.MapGet("/api/retail-invoices/eligible-cars", async (IRetailInvoiceService svc, string? dealerCode, string? contractNo) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(dealerCode, contractNo))).RequireAuthorization();
+
+app.MapGet("/api/retail-invoices/{reqInvoiceNo}", async (string reqInvoiceNo, IRetailInvoiceService svc) =>
+{
+    var r = await svc.GetByNoAsync(reqInvoiceNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy đề nghị xuất hóa đơn bán lẻ '{reqInvoiceNo}'." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-invoices/base", async (CreateRetailInvoiceRequestDto dto, IRetailInvoiceService svc) =>
+{
+    try { return Results.Ok(await svc.CreateBaseAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-invoices/adjust", async (CreateAdjustedRetailInvoiceDto dto, IRetailInvoiceService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAdjustedAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-invoices/replace", async (CreateReplacedRetailInvoiceDto dto, IRetailInvoiceService svc) =>
+{
+    try { return Results.Ok(await svc.CreateReplacedAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/retail-invoices/{reqInvoiceNo}", async (string reqInvoiceNo, UpdateRetailInvoiceRequestDto dto, IRetailInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(reqInvoiceNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/retail-invoices/{reqInvoiceNo}", async (string reqInvoiceNo, IRetailInvoiceService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(reqInvoiceNo);
+        return ok
+            ? Results.Ok(new { message = $"Đã xóa đề nghị xuất hóa đơn bán lẻ '{reqInvoiceNo}' thành công." })
+            : Results.NotFound(new { error = $"Không tìm thấy đề nghị xuất hóa đơn '{reqInvoiceNo}'." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-invoices/{reqInvoiceNo}/issue", async (string reqInvoiceNo, IssueRetailInvoiceDto? dto, IRetailInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.IssueEInvoiceAsync(reqInvoiceNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-invoices/{reqInvoiceNo}/sign-transmit", async (string reqInvoiceNo, SignAndTransmitRetailInvoiceDto? dto, IRetailInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.SignAndTransmitAsync(reqInvoiceNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/retail-invoices/{reqInvoiceNo}/cancel", async (string reqInvoiceNo, CancelRetailInvoiceDto dto, IRetailInvoiceService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(reqInvoiceNo, dto);
+        return Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).
 // Dedupe theo Code (DealNo). Status luôn Draft/Paid=0 — nguồn DeliveryStatus không đủ rõ nghĩa để map an toàn

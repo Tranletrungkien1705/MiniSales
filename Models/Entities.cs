@@ -1764,6 +1764,126 @@ public sealed class MapVinAuditLog
     public DateTime PerformedAt { get; set; } = DateTime.Now;
 }
 
+/// <summary>Loại đề nghị xuất hóa đơn bán lẻ xe ô tô (DMS.Sales Req_RequestInvoice ReqInvoiceType: Root = Hóa đơn gốc, Adjusted = Hóa đơn điều chỉnh, Replaced = Hóa đơn thay thế).</summary>
+public enum RetailInvoiceType { Root = 0, Adjusted = 1, Replaced = 2 }
+
+/// <summary>Trạng thái đề nghị xuất hóa đơn bán lẻ xe ô tô (DMS.Sales Req_RequestInvoice ReqInvoiceStatus: Pending = 'P' [Mới tạo], Issued = 'F' [Đã phát hành], Adjusted = 'A' [Đã điều chỉnh], Replaced = 'C' [Đã thay thế], Rejected = 'R' [Từ chối], Cancelled = 'CAN' [Đã hủy]).</summary>
+public enum RetailInvoiceRequestStatus { Pending = 0, Issued = 1, Adjusted = 2, Replaced = 3, Rejected = 4, Cancelled = 5 }
+
+/// <summary>Trạng thái hóa đơn điện tử e-Invoice (DMS.Sales Req_RequestInvoice InvoiceStatus / QInvoice: Draft = 'DRAFT' [Nháp], Pending = 'PENDING' [Đã cấp số chờ ký], Approved = 'APPROVED' [Đã ký số], SentTCT = 'SENTTCT' [Đã truyền cơ quan thuế], Issued = 'ISSUED' [Đã phát hành hợp lệ], Cancelled = 'CANCELED' [Đã hủy]).</summary>
+public enum RetailInvoiceEInvoiceStatus { Draft = 0, Pending = 1, Approved = 2, SentTCT = 3, Issued = 4, Cancelled = 5 }
+
+/// <summary>Loại điều chỉnh hóa đơn bán lẻ (DMS.Sales Req_RequestInvoice AdjType: None = Không, Increase = Tăng giá trị/thuế, Decrease = Giảm giá trị/thuế, Information = Điều chỉnh thông tin không thay đổi tiền).</summary>
+public enum RetailInvoiceAdjType { None = 0, Increase = 1, Decrease = 2, Information = 3 }
+
+/// <summary>Đề nghị xuất Hóa đơn GTGT Bán lẻ Xe ô tô & Dịch vụ Phụ kiện cho Khách hàng Đại lý (DMS.Sales Req_RequestInvoice / ReqRequestInvoiceController / ReqInvoice.cs / 11_HOA_DON_VAT.md): Đại lý lập đề nghị xuất hóa đơn GTGT điện tử (e-Invoice) cho khách hàng cá nhân / doanh nghiệp mua xe ô tô kèm phụ kiện lắp thêm hoặc gói bảo hiểm/dịch vụ theo Hợp đồng bán lẻ (DlrRetailContract) và Giao dịch bán lẻ (RetailDeal), hỗ trợ hóa đơn gốc (Root), hóa đơn điều chỉnh (Adjusted), hóa đơn thay thế (Replaced), quy trình cấp số hóa đơn điện tử qua QInvoice, ký số điện tử và truyền dữ liệu cơ quan thuế TCT, đồng bộ vào Deal bán lẻ.</summary>
+public sealed class RetailInvoiceRequest
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string ReqInvoiceNo { get; set; } = ""; // Số đề nghị xuất HĐ (PK ReqInvoiceNo, format: {yyMM}RI{seq:D4}, vd: 2603RI0001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý xuất hóa đơn
+    public string? DealerName { get; set; } // Tên đại lý
+    public RetailInvoiceType ReqInvoiceType { get; set; } = RetailInvoiceType.Root; // Loại đề nghị: Gốc, Điều chỉnh, Thay thế
+    public string? ReqInvoiceBaseNo { get; set; } // Số đề nghị gốc liên quan khi Điều chỉnh hoặc Thay thế
+    public string? DlrContractNo { get; set; } // Số hợp đồng bán lẻ xe ô tô liên quan (Dlr_Contract)
+    public string? DealNo { get; set; } // Số giao dịch bán lẻ liên kết (DLS_Deal)
+    public string CustomerCode { get; set; } = ""; // Mã khách hàng
+    public string CustomerName { get; set; } = ""; // Tên khách hàng sở hữu xe
+    public string CustomerType { get; set; } = "INDIVIDUAL"; // INDIVIDUAL | ORGANIZATION
+    public string? CustomerAddress { get; set; } // Địa chỉ xuất hóa đơn
+    public string? CustomerEmail { get; set; } // Email nhận hóa đơn điện tử
+    public string? CustomerPhone { get; set; } // Điện thoại liên hệ
+    public string? MST { get; set; } // Mã số thuế DN hoặc số CCCD/CMND cá nhân
+    public string? TInvoiceCode { get; set; } // Mẫu hóa đơn điện tử (vd: 1/001, 01GTKT0/001)
+    public string? InvoiceCode { get; set; } // Mã tra cứu hóa đơn điện tử (LookupCode / GUID tra cứu QInvoice)
+    public string? InvoiceNo { get; set; } // Số hóa đơn chính thức (7-8 chữ số, vd: 0001234)
+    public DateTime? InvoiceDate { get; set; } // Ngày hóa đơn
+    public string? InvoiceSign { get; set; } // Ký hiệu hóa đơn (vd: 1C26TAA, C26TMB)
+    public string? FormNo { get; set; } // Mẫu số hóa đơn (vd: 1/001)
+    public RetailInvoiceEInvoiceStatus InvoiceStatus { get; set; } = RetailInvoiceEInvoiceStatus.Draft; // Trạng thái HĐĐT
+    public string? InvoiceBaseNo { get; set; } // Số hóa đơn gốc khi điều chỉnh/thay thế
+    public RetailInvoiceAdjType AdjType { get; set; } = RetailInvoiceAdjType.None; // Loại điều chỉnh
+    public string? Remark { get; set; } // Lý do xuất / điều chỉnh / thay thế
+    public RetailInvoiceRequestStatus ReqInvoiceStatus { get; set; } = RetailInvoiceRequestStatus.Pending; // Trạng thái đề nghị
+    public string FlagInvoice { get; set; } = "0"; // "0" = Chưa xuất xong, "1" = Đã phát hành hoàn tất
+    public int FlagIsQInvoice { get; set; } = 1; // 1 = Tích hợp hệ thống QInvoice điện tử, 0 = Xuất ngoài
+    public int QtyCtrCarId { get; set; } // Số lượng xe xuất trên hóa đơn
+    public decimal TotalTPBeforeVAT { get; set; } // Tổng tiền hàng trước thuế VAT (xe + phụ kiện)
+    public decimal TotalValVAT { get; set; } // Tổng tiền thuế GTGT (VNĐ)
+    public decimal TotalTPAfterVAT { get; set; } // Tổng cộng tiền thanh toán sau VAT (VNĐ)
+    public string? TaxAuthorityCode { get; set; } // Mã cơ quan thuế cấp khi truyền CQT thành công
+    public string? InvoiceFileUrl { get; set; } // Đường dẫn file PDF bản thể hiện hóa đơn điện tử
+    public string? InvoiceFileName { get; set; } // Tên file PDF hóa đơn
+    public string? CreatedBy { get; set; } // Người lập đề nghị
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? IssuedBy { get; set; } // Người cấp số hóa đơn
+    public DateTime? IssuedAt { get; set; }
+    public string? ApprovedBy { get; set; } // Người ký số hóa đơn
+    public DateTime? ApprovedAt { get; set; }
+    public string? TaxTransmittedBy { get; set; } // Người gửi cơ quan thuế
+    public DateTime? TaxTransmittedAt { get; set; }
+    public string? CancelReason { get; set; } // Lý do hủy hóa đơn
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<RetailInvoiceRequestDetail> Details { get; set; } = new();
+    public List<RetailInvoiceRequestProduct> Products { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô trong Đề nghị xuất hóa đơn bán lẻ (DMS.Sales Req_RequestInvoiceDtl): quản lý số khung VIN, thông tin đăng kiểm CQNo/số PXX FGFormNo, số hóa đơn buôn NPP HTC, đơn giá xe trước VAT, tỷ lệ thuế và thành tiền sau thuế.</summary>
+public sealed class RetailInvoiceRequestDetail
+{
+    public long Id { get; set; }
+    public long RetailInvoiceRequestId { get; set; }
+    public string ReqInvoiceNo { get; set; } = "";
+    public string CtrCarId { get; set; } = ""; // Mã xe hợp đồng bán lẻ (CarId trong Dlr_ContractCar)
+    public string Vin { get; set; } = ""; // Số khung VIN chuẩn 17 ký tự
+    public string BrandName { get; set; } = "Hyundai"; // Nhãn hiệu xe
+    public string CarType { get; set; } = "Ô tô con"; // Loại xe: Ô tô con, Xe tải, SUV...
+    public string ModelCode { get; set; } = ""; // Mã model (SF25, TU20, CR15, AC14...)
+    public string ModelName { get; set; } = ""; // Tên thương mại dòng xe (Santa Fe, Tucson, Creta...)
+    public string? SpecCode { get; set; } // Mã cấu hình xe (spec)
+    public string? SpecDescription { get; set; } // Mô tả bản xe (1.6 Turbo HTRAC, 2.0 AT Tiêu chuẩn...)
+    public string? ColorCode { get; set; } // Mã màu ngoại thất
+    public string? ColorName { get; set; } // Tên màu xe
+    public string? EngineNo { get; set; } // Số máy
+    public int NumberOfSeats { get; set; } = 5; // Số chỗ ngồi
+    public string? HTCInvoiceNo { get; set; } // Số hóa đơn bán buôn NPP HTC xuất tương ứng
+    public DateTime? HTCInvoiceDate { get; set; } // Ngày hóa đơn bán buôn
+    public string? ProductionYearActual { get; set; } // Năm sản xuất xe
+    public string? CQNo { get; set; } // Số chứng nhận chất lượng xuất xưởng / Đăng kiểm (CBU)
+    public string? FGFormNo { get; set; } // Số phiếu xuất xưởng PXX (CKD)
+    public decimal UPBeforeVAT { get; set; } // Đơn giá xe trước VAT (VNĐ)
+    public decimal VatRate { get; set; } = 10m; // Tỷ lệ thuế GTGT (%)
+    public decimal ValVAT { get; set; } // Tiền thuế GTGT (VNĐ)
+    public decimal UPAfterVAT { get; set; } // Đơn giá xe sau VAT (VNĐ)
+    public string Status { get; set; } = "Pending"; // Pending | Approved | Invoiced | Cancelled
+    public string? Remark { get; set; }
+}
+
+/// <summary>Chi tiết dòng hàng hóa, phụ kiện & dịch vụ kèm theo xe trong Đề nghị xuất hóa đơn bán lẻ (DMS.Sales Req_RequestInvoicePrd): quản lý các món phụ kiện (phim cách nhiệt, camera hành trình, lót sàn...) hoặc dịch vụ gia tăng được xuất cùng trên hóa đơn GTGT.</summary>
+public sealed class RetailInvoiceRequestProduct
+{
+    public long Id { get; set; }
+    public long RetailInvoiceRequestId { get; set; }
+    public string ReqInvoiceNo { get; set; } = "";
+    public int Idx { get; set; } = 1; // STT dòng phụ kiện/dịch vụ
+    public string ProductCode { get; set; } = ""; // Mã phụ kiện/dịch vụ (PK-FILM3M, PK-CAMDASH, DV-COATING...)
+    public string ProductName { get; set; } = ""; // Tên hàng hóa / phụ kiện / dịch vụ
+    public string Unit { get; set; } = "Gói"; // Đơn vị tính: Bộ, Gói, Chiếc, Lần...
+    public int Qty { get; set; } = 1; // Số lượng
+    public decimal VatRate { get; set; } = 10m; // Tỷ lệ thuế VAT (%)
+    public decimal UnitPrice { get; set; } // Đơn giá trước VAT
+    public decimal TPBeforeVAT { get; set; } // Thành tiền trước VAT = Qty * UnitPrice
+    public decimal ValVAT { get; set; } // Tiền thuế VAT
+    public decimal TPAfterVAT { get; set; } // Thành tiền sau VAT = TPBeforeVAT + ValVAT
+    public bool FlagIsProduct { get; set; } = true; // true = Phụ kiện/Hàng hóa vật lý, false = Dịch vụ công
+    public string? Remark { get; set; }
+}
+
 
 
 

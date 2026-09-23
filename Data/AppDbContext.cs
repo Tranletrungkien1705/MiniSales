@@ -63,6 +63,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<MapVinSession> MapVinSessions => Set<MapVinSession>();
     public DbSet<MapVinSessionDetail> MapVinSessionDetails => Set<MapVinSessionDetail>();
     public DbSet<MapVinAuditLog> MapVinAuditLogs => Set<MapVinAuditLog>();
+    public DbSet<RetailInvoiceRequest> RetailInvoiceRequests => Set<RetailInvoiceRequest>();
+    public DbSet<RetailInvoiceRequestDetail> RetailInvoiceRequestDetails => Set<RetailInvoiceRequestDetail>();
+    public DbSet<RetailInvoiceRequestProduct> RetailInvoiceRequestProducts => Set<RetailInvoiceRequestProduct>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -196,5 +199,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<MapVinSession>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<MapVinSessionDetail>().Property(x => x.Status).HasConversion<int>();
         b.Entity<MapVinAuditLog>().HasIndex(x => new { x.OrgId, x.CarId });
+        b.Entity<RetailInvoiceRequest>().HasIndex(x => new { x.OrgId, x.ReqInvoiceNo }).IsUnique();
+        b.Entity<RetailInvoiceRequest>().Property(x => x.ReqInvoiceType).HasConversion<int>();
+        b.Entity<RetailInvoiceRequest>().Property(x => x.ReqInvoiceStatus).HasConversion<int>();
+        b.Entity<RetailInvoiceRequest>().Property(x => x.InvoiceStatus).HasConversion<int>();
+        b.Entity<RetailInvoiceRequest>().Property(x => x.AdjType).HasConversion<int>();
+        b.Entity<RetailInvoiceRequest>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.RetailInvoiceRequestId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<RetailInvoiceRequest>().HasMany(x => x.Products).WithOne().HasForeignKey(x => x.RetailInvoiceRequestId).OnDelete(DeleteBehavior.Cascade);
     }
 }
