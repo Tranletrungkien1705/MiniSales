@@ -2164,3 +2164,94 @@ public sealed class SaleAwardMinutesDetail
     public string? LogLUBy { get; set; }
 }
 
+/// <summary>Trạng thái Kế hoạch Kinh doanh Đại lý (DMS.Sales BPL_BusinessPlan BusinessPlanStatus: Pending = 'P' [Chờ duyệt], Approved1 = 'A1' [Trưởng phòng duyệt cấp 1], Approved2 = 'A2' [Lãnh đạo Khối duyệt cấp 2 / Chốt kế hoạch], Cancelled = 'C' [Hủy kế hoạch]).</summary>
+public enum BusinessPlanStatus
+{
+    Pending = 0,
+    Approved1 = 1,
+    Approved2 = 2,
+    Cancelled = 3
+}
+
+/// <summary>Kế hoạch Kinh doanh Bán buôn / Bán lẻ Xe Ô tô Đại lý - NPP (DMS.Sales BPL_BusinessPlan / BPLBusinessPlanController / BusinessPlan.cs / BPLBusinessPlan.txt): Quản lý chỉ tiêu kế hoạch kinh doanh năm (YearPlan) cho từng Đại lý (DealerCode), phân rã sản lượng bán lẻ (Retail - Deal) và bán buôn (Wholesale - Order) theo 12 tháng (M1..M12) cho từng model xe (ModelCode), quản lý tồn kho và back-order đầu kỳ (BO_TotalQtyBO), quy trình thẩm định & phê duyệt 2 cấp NPP (Trưởng phòng Approve1HQ, Lãnh đạo Khối Approve2HQ chốt kế hoạch và chuyển Version sang ACTUAL), bỏ duyệt (UnApprove2HQ) và hủy kế hoạch (Cancel).</summary>
+public sealed class BusinessPlan
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string BusinessPlanCode { get; set; } = ""; // Mã kế hoạch ({yyMM}BPL{seq:D4}, vd: 2603BPL0001)
+    public string DealerCode { get; set; } = ""; // Mã đại lý (VS058, VN001...)
+    public string DealerName { get; set; } = ""; // Tên đại lý
+    public int YearPlan { get; set; } // Năm kế hoạch (vd: 2026)
+    public string Version { get; set; } = "INIT"; // Phiên bản kế hoạch: INIT (khởi tạo) -> ACTUAL (chính thức sau duyệt)
+    public int TimesPlan { get; set; } = 1; // Kế hoạch lần thứ N
+    public BusinessPlanStatus Status { get; set; } = BusinessPlanStatus.Pending; // Trạng thái: Pending -> Approved1 -> Approved2 / Cancelled
+    public string? HTCStaffInCharge { get; set; } // Chuyên viên / Quản lý NPP phụ trách đại lý
+    public int TotalRtlTarget { get; set; } // Tổng sản lượng bán lẻ mục tiêu cả năm (tính từ tổng các model)
+    public int TotalOrdTarget { get; set; } // Tổng sản lượng bán buôn / đặt hàng mục tiêu cả năm
+    public int TotalBOInitial { get; set; } // Tổng tồn kho + Back-order đầu kỳ
+    public string? Remark { get; set; } // Ghi chú chung kế hoạch
+    public string? RejectReason { get; set; } // Lý do từ chối (nếu có)
+    public string? CancelReason { get; set; } // Lý do hủy kế hoạch
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string CreatedBy { get; set; } = "";
+    public DateTime? Approve1At { get; set; }
+    public string? Approve1By { get; set; }
+    public DateTime? Approve2At { get; set; }
+    public string? Approve2By { get; set; }
+    public DateTime? LogLUDateTime { get; set; }
+    public string? LogLUBy { get; set; }
+
+    public List<BusinessPlanDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết chỉ tiêu Kế hoạch Kinh doanh theo từng Model xe (DMS.Sales BPL_BusinessPlanDtl): phân rã mục tiêu bán lẻ (Rtl) và đặt buôn (Ord) cho 12 tháng (M1..M12), tính tổng sản lượng cả năm (Rtl_TotalQtyDeal, Ord_TotalQtyOrder), so sánh với năm trước (Rtl_QtyPre, Ord_QtyPre) và tính tỷ lệ tăng trưởng (%).</summary>
+public sealed class BusinessPlanDetail
+{
+    public long Id { get; set; }
+    public long BusinessPlanId { get; set; }
+    public string BusinessPlanCode { get; set; } = "";
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT, ELANTRA...)
+    public string ModelName { get; set; } = ""; // Tên model xe
+
+    // Bán lẻ (Retail - Deal) theo 12 tháng:
+    public int Rtl_TotalQtyDeal { get; set; } // Tổng sản lượng bán lẻ năm kế hoạch = sum(M1..M12)
+    public int Rtl_QtyM1 { get; set; }
+    public int Rtl_QtyM2 { get; set; }
+    public int Rtl_QtyM3 { get; set; }
+    public int Rtl_QtyM4 { get; set; }
+    public int Rtl_QtyM5 { get; set; }
+    public int Rtl_QtyM6 { get; set; }
+    public int Rtl_QtyM7 { get; set; }
+    public int Rtl_QtyM8 { get; set; }
+    public int Rtl_QtyM9 { get; set; }
+    public int Rtl_QtyM10 { get; set; }
+    public int Rtl_QtyM11 { get; set; }
+    public int Rtl_QtyM12 { get; set; }
+    public int Rtl_QtyPre { get; set; } // Thực tế bán lẻ năm trước (n-1)
+    public decimal Rtl_GrowthRate { get; set; } // Tỷ lệ tăng trưởng bán lẻ (%)
+
+    // Bán buôn / Đặt hàng NPP (Wholesale / Order) theo 12 tháng:
+    public int Ord_TotalQtyOrder { get; set; } // Tổng sản lượng đặt buôn năm kế hoạch = sum(M1..M12)
+    public int Ord_QtyM1 { get; set; }
+    public int Ord_QtyM2 { get; set; }
+    public int Ord_QtyM3 { get; set; }
+    public int Ord_QtyM4 { get; set; }
+    public int Ord_QtyM5 { get; set; }
+    public int Ord_QtyM6 { get; set; }
+    public int Ord_QtyM7 { get; set; }
+    public int Ord_QtyM8 { get; set; }
+    public int Ord_QtyM9 { get; set; }
+    public int Ord_QtyM10 { get; set; }
+    public int Ord_QtyM11 { get; set; }
+    public int Ord_QtyM12 { get; set; }
+    public int Ord_QtyPre { get; set; } // Thực tế đặt buôn năm trước (n-1)
+    public decimal Ord_GrowthRate { get; set; } // Tỷ lệ tăng trưởng bán buôn (%)
+
+    // Tồn kho và Back-order:
+    public int BO_TotalQtyBO { get; set; } // Số lượng tồn kho + B/O năm trước chuyển sang
+    public string? Remark { get; set; } // Ghi chú model
+}
+
+

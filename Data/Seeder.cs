@@ -1774,6 +1774,81 @@ public static class Seeder
                 );
                 CREATE INDEX IF NOT EXISTS IX_SaleAwardMinutesDetails_Vin ON SaleAwardMinutesDetails(Vin);
                 CREATE INDEX IF NOT EXISTS IX_SaleAwardMinutesDetails_DocumentNo ON SaleAwardMinutesDetails(DocumentNo);
+
+                CREATE TABLE IF NOT EXISTS BusinessPlans (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    BusinessPlanCode TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    YearPlan INTEGER NOT NULL DEFAULT 2026,
+                    Version TEXT NOT NULL DEFAULT 'INIT',
+                    TimesPlan INTEGER NOT NULL DEFAULT 1,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    HTCStaffInCharge TEXT,
+                    TotalRtlTarget INTEGER NOT NULL DEFAULT 0,
+                    TotalOrdTarget INTEGER NOT NULL DEFAULT 0,
+                    TotalBOInitial INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CancelledBy TEXT,
+                    CancelledAt TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT NOT NULL,
+                    Approve1At TEXT,
+                    Approve1By TEXT,
+                    Approve2At TEXT,
+                    Approve2By TEXT,
+                    LogLUDateTime TEXT,
+                    LogLUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_BusinessPlans_OrgId_BusinessPlanCode ON BusinessPlans(OrgId, BusinessPlanCode);
+                CREATE INDEX IF NOT EXISTS IX_BusinessPlans_OrgId_Dealer_Year ON BusinessPlans(OrgId, DealerCode, YearPlan);
+                CREATE INDEX IF NOT EXISTS IX_BusinessPlans_OrgId_Status ON BusinessPlans(OrgId, Status);
+
+                CREATE TABLE IF NOT EXISTS BusinessPlanDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    BusinessPlanId INTEGER NOT NULL,
+                    BusinessPlanCode TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    Rtl_TotalQtyDeal INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM1 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM2 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM3 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM4 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM5 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM6 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM7 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM8 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM9 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM10 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM11 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyM12 INTEGER NOT NULL DEFAULT 0,
+                    Rtl_QtyPre INTEGER NOT NULL DEFAULT 0,
+                    Rtl_GrowthRate REAL NOT NULL DEFAULT 0,
+                    Ord_TotalQtyOrder INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM1 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM2 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM3 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM4 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM5 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM6 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM7 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM8 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM9 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM10 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM11 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyM12 INTEGER NOT NULL DEFAULT 0,
+                    Ord_QtyPre INTEGER NOT NULL DEFAULT 0,
+                    Ord_GrowthRate REAL NOT NULL DEFAULT 0,
+                    BO_TotalQtyBO INTEGER NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    FOREIGN KEY(BusinessPlanId) REFERENCES BusinessPlans(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_BusinessPlanDetails_BusinessPlanId ON BusinessPlanDetails(BusinessPlanId);
+                CREATE INDEX IF NOT EXISTS IX_BusinessPlanDetails_ModelCode ON BusinessPlanDetails(ModelCode);
             ");
         }
         catch
@@ -7979,6 +8054,289 @@ public static class Seeder
             };
 
             db.SaleAwardMinutes.AddRange(award1, award2, award3);
+            await db.SaveChangesAsync();
+        }
+
+        // Seed Kế hoạch Kinh doanh Bán buôn / Bán lẻ xe Ô tô Đại lý (BPL_BusinessPlan)
+        if (!await db.BusinessPlans.AnyAsync(x => x.OrgId == orgId))
+        {
+            var plan1 = new BusinessPlan
+            {
+                OrgId = orgId,
+                BusinessPlanCode = "2603BPL0001",
+                DealerCode = "VS058",
+                DealerName = "Hyundai Bình Dương",
+                YearPlan = 2026,
+                Version = "ACTUAL",
+                TimesPlan = 1,
+                Status = BusinessPlanStatus.Approved2,
+                HTCStaffInCharge = "HQ_PLAN_SPECIALIST_NAM",
+                TotalRtlTarget = 1480,
+                TotalOrdTarget = 1550,
+                TotalBOInitial = 115,
+                Remark = "Kế hoạch kinh doanh xe năm 2026 đã được Lãnh đạo Khối Bán hàng phê duyệt chốt chính thức",
+                CreatedAt = DateTime.Today.AddDays(-60),
+                CreatedBy = "HQ_PLANNING",
+                Approve1At = DateTime.Today.AddDays(-55),
+                Approve1By = "HQ_PLAN_MNG_LAN",
+                Approve2At = DateTime.Today.AddDays(-50),
+                Approve2By = "HQ_SALES_DIR_TUAN",
+                LogLUDateTime = DateTime.Today.AddDays(-50),
+                LogLUBy = "HQ_SALES_DIR_TUAN",
+                Details = new List<BusinessPlanDetail>
+                {
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0001",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All New",
+                        Rtl_TotalQtyDeal = 330,
+                        Rtl_QtyM1 = 22, Rtl_QtyM2 = 22, Rtl_QtyM3 = 23,
+                        Rtl_QtyM4 = 27, Rtl_QtyM5 = 28, Rtl_QtyM6 = 28,
+                        Rtl_QtyM7 = 28, Rtl_QtyM8 = 28, Rtl_QtyM9 = 28,
+                        Rtl_QtyM10 = 34, Rtl_QtyM11 = 35, Rtl_QtyM12 = 35,
+                        Rtl_QtyPre = 290,
+                        Rtl_GrowthRate = 13.79m,
+                        Ord_TotalQtyOrder = 345,
+                        Ord_QtyM1 = 23, Ord_QtyM2 = 23, Ord_QtyM3 = 24,
+                        Ord_QtyM4 = 28, Ord_QtyM5 = 29, Ord_QtyM6 = 30,
+                        Ord_QtyM7 = 30, Ord_QtyM8 = 30, Ord_QtyM9 = 30,
+                        Ord_QtyM10 = 36, Ord_QtyM11 = 36, Ord_QtyM12 = 36,
+                        Ord_QtyPre = 305,
+                        Ord_GrowthRate = 13.11m,
+                        BO_TotalQtyBO = 25,
+                        Remark = "Model chủ lực phân khúc D-SUV"
+                    },
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0001",
+                        ModelCode = "TUCSON",
+                        ModelName = "Hyundai Tucson Turbo",
+                        Rtl_TotalQtyDeal = 380,
+                        Rtl_QtyM1 = 25, Rtl_QtyM2 = 25, Rtl_QtyM3 = 26,
+                        Rtl_QtyM4 = 31, Rtl_QtyM5 = 32, Rtl_QtyM6 = 32,
+                        Rtl_QtyM7 = 32, Rtl_QtyM8 = 32, Rtl_QtyM9 = 33,
+                        Rtl_QtyM10 = 39, Rtl_QtyM11 = 40, Rtl_QtyM12 = 41,
+                        Rtl_QtyPre = 340,
+                        Rtl_GrowthRate = 11.76m,
+                        Ord_TotalQtyOrder = 400,
+                        Ord_QtyM1 = 26, Ord_QtyM2 = 27, Ord_QtyM3 = 27,
+                        Ord_QtyM4 = 33, Ord_QtyM5 = 34, Ord_QtyM6 = 34,
+                        Ord_QtyM7 = 34, Ord_QtyM8 = 34, Ord_QtyM9 = 35,
+                        Ord_QtyM10 = 41, Ord_QtyM11 = 42, Ord_QtyM12 = 43,
+                        Ord_QtyPre = 355,
+                        Ord_GrowthRate = 12.68m,
+                        BO_TotalQtyBO = 30,
+                        Remark = "C-SUV giữ nhịp tăng trưởng 12%"
+                    },
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0001",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta B-SUV",
+                        Rtl_TotalQtyDeal = 420,
+                        Rtl_QtyM1 = 28, Rtl_QtyM2 = 28, Rtl_QtyM3 = 28,
+                        Rtl_QtyM4 = 35, Rtl_QtyM5 = 35, Rtl_QtyM6 = 35,
+                        Rtl_QtyM7 = 35, Rtl_QtyM8 = 35, Rtl_QtyM9 = 35,
+                        Rtl_QtyM10 = 42, Rtl_QtyM11 = 42, Rtl_QtyM12 = 42,
+                        Rtl_QtyPre = 380,
+                        Rtl_GrowthRate = 10.53m,
+                        Ord_TotalQtyOrder = 440,
+                        Ord_QtyM1 = 29, Ord_QtyM2 = 29, Ord_QtyM3 = 30,
+                        Ord_QtyM4 = 37, Ord_QtyM5 = 37, Ord_QtyM6 = 37,
+                        Ord_QtyM7 = 37, Ord_QtyM8 = 37, Ord_QtyM9 = 37,
+                        Ord_QtyM10 = 45, Ord_QtyM11 = 45, Ord_QtyM12 = 45,
+                        Ord_QtyPre = 395,
+                        Ord_GrowthRate = 11.39m,
+                        BO_TotalQtyBO = 35,
+                        Remark = "B-SUV doanh số ổn định"
+                    },
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0001",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent Sedan",
+                        Rtl_TotalQtyDeal = 350,
+                        Rtl_QtyM1 = 23, Rtl_QtyM2 = 23, Rtl_QtyM3 = 24,
+                        Rtl_QtyM4 = 29, Rtl_QtyM5 = 29, Rtl_QtyM6 = 30,
+                        Rtl_QtyM7 = 29, Rtl_QtyM8 = 29, Rtl_QtyM9 = 30,
+                        Rtl_QtyM10 = 36, Rtl_QtyM11 = 36, Rtl_QtyM12 = 38,
+                        Rtl_QtyPre = 320,
+                        Rtl_GrowthRate = 9.38m,
+                        Ord_TotalQtyOrder = 365,
+                        Ord_QtyM1 = 24, Ord_QtyM2 = 24, Ord_QtyM3 = 25,
+                        Ord_QtyM4 = 30, Ord_QtyM5 = 31, Ord_QtyM6 = 31,
+                        Ord_QtyM7 = 30, Ord_QtyM8 = 31, Ord_QtyM9 = 31,
+                        Ord_QtyM10 = 38, Ord_QtyM11 = 38, Ord_QtyM12 = 40,
+                        Ord_QtyPre = 335,
+                        Ord_GrowthRate = 8.96m,
+                        BO_TotalQtyBO = 25,
+                        Remark = "Sedan thế hệ mới"
+                    }
+                }
+            };
+
+            var plan2 = new BusinessPlan
+            {
+                OrgId = orgId,
+                BusinessPlanCode = "2603BPL0002",
+                DealerCode = "VN065",
+                DealerName = "Hyundai Đông Đô",
+                YearPlan = 2026,
+                Version = "INIT",
+                TimesPlan = 1,
+                Status = BusinessPlanStatus.Approved1,
+                HTCStaffInCharge = "HQ_PLAN_SPECIALIST_HOANG",
+                TotalRtlTarget = 1120,
+                TotalOrdTarget = 1180,
+                TotalBOInitial = 80,
+                Remark = "Trưởng phòng kế hoạch kinh doanh đã thẩm tra và duyệt cấp 1, đang trình Lãnh đạo Khối phê duyệt chốt",
+                CreatedAt = DateTime.Today.AddDays(-20),
+                CreatedBy = "HQ_PLANNING",
+                Approve1At = DateTime.Today.AddDays(-15),
+                Approve1By = "HQ_PLAN_MNG_LAN",
+                LogLUDateTime = DateTime.Today.AddDays(-15),
+                LogLUBy = "HQ_PLAN_MNG_LAN",
+                Details = new List<BusinessPlanDetail>
+                {
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0002",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All New",
+                        Rtl_TotalQtyDeal = 300,
+                        Rtl_QtyM1 = 20, Rtl_QtyM2 = 20, Rtl_QtyM3 = 20,
+                        Rtl_QtyM4 = 25, Rtl_QtyM5 = 25, Rtl_QtyM6 = 25,
+                        Rtl_QtyM7 = 25, Rtl_QtyM8 = 25, Rtl_QtyM9 = 25,
+                        Rtl_QtyM10 = 30, Rtl_QtyM11 = 30, Rtl_QtyM12 = 30,
+                        Rtl_QtyPre = 260,
+                        Rtl_GrowthRate = 15.38m,
+                        Ord_TotalQtyOrder = 315,
+                        Ord_QtyM1 = 21, Ord_QtyM2 = 21, Ord_QtyM3 = 21,
+                        Ord_QtyM4 = 26, Ord_QtyM5 = 26, Ord_QtyM6 = 27,
+                        Ord_QtyM7 = 26, Ord_QtyM8 = 26, Ord_QtyM9 = 27,
+                        Ord_QtyM10 = 31, Ord_QtyM11 = 32, Ord_QtyM12 = 32,
+                        Ord_QtyPre = 275,
+                        Ord_GrowthRate = 14.55m,
+                        BO_TotalQtyBO = 20,
+                        Remark = "Kế hoạch đẩy mạnh Santa Fe tại khu vực miền Bắc"
+                    },
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0002",
+                        ModelCode = "TUCSON",
+                        ModelName = "Hyundai Tucson Turbo",
+                        Rtl_TotalQtyDeal = 350,
+                        Rtl_QtyM1 = 23, Rtl_QtyM2 = 23, Rtl_QtyM3 = 24,
+                        Rtl_QtyM4 = 29, Rtl_QtyM5 = 29, Rtl_QtyM6 = 30,
+                        Rtl_QtyM7 = 29, Rtl_QtyM8 = 29, Rtl_QtyM9 = 30,
+                        Rtl_QtyM10 = 35, Rtl_QtyM11 = 35, Rtl_QtyM12 = 37,
+                        Rtl_QtyPre = 310,
+                        Rtl_GrowthRate = 12.90m,
+                        Ord_TotalQtyOrder = 370,
+                        Ord_QtyM1 = 24, Ord_QtyM2 = 25, Ord_QtyM3 = 25,
+                        Ord_QtyM4 = 31, Ord_QtyM5 = 31, Ord_QtyM6 = 31,
+                        Ord_QtyM7 = 31, Ord_QtyM8 = 31, Ord_QtyM9 = 31,
+                        Ord_QtyM10 = 37, Ord_QtyM11 = 37, Ord_QtyM12 = 39,
+                        Ord_QtyPre = 325,
+                        Ord_GrowthRate = 13.85m,
+                        BO_TotalQtyBO = 25,
+                        Remark = "Tucson bản xăng đặc biệt"
+                    },
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0002",
+                        ModelCode = "CRETA",
+                        ModelName = "Hyundai Creta B-SUV",
+                        Rtl_TotalQtyDeal = 470,
+                        Rtl_QtyM1 = 31, Rtl_QtyM2 = 31, Rtl_QtyM3 = 32,
+                        Rtl_QtyM4 = 39, Rtl_QtyM5 = 39, Rtl_QtyM6 = 40,
+                        Rtl_QtyM7 = 39, Rtl_QtyM8 = 39, Rtl_QtyM9 = 40,
+                        Rtl_QtyM10 = 47, Rtl_QtyM11 = 47, Rtl_QtyM12 = 49,
+                        Rtl_QtyPre = 420,
+                        Rtl_GrowthRate = 11.90m,
+                        Ord_TotalQtyOrder = 495,
+                        Ord_QtyM1 = 33, Ord_QtyM2 = 33, Ord_QtyM3 = 34,
+                        Ord_QtyM4 = 41, Ord_QtyM5 = 41, Ord_QtyM6 = 42,
+                        Ord_QtyM7 = 41, Ord_QtyM8 = 41, Ord_QtyM9 = 42,
+                        Ord_QtyM10 = 49, Ord_QtyM11 = 50, Ord_QtyM12 = 51,
+                        Ord_QtyPre = 440,
+                        Ord_GrowthRate = 12.50m,
+                        BO_TotalQtyBO = 35,
+                        Remark = "Creta dẫn đầu thị phần B-SUV"
+                    }
+                }
+            };
+
+            var plan3 = new BusinessPlan
+            {
+                OrgId = orgId,
+                BusinessPlanCode = "2603BPL0003",
+                DealerCode = "VN012",
+                DealerName = "Hyundai Hà Đông",
+                YearPlan = 2026,
+                Version = "INIT",
+                TimesPlan = 1,
+                Status = BusinessPlanStatus.Pending,
+                HTCStaffInCharge = "HQ_PLAN_SPECIALIST_HOANG",
+                TotalRtlTarget = 850,
+                TotalOrdTarget = 890,
+                TotalBOInitial = 60,
+                Remark = "Đại lý vừa nộp dự thảo kế hoạch năm 2026, đang chờ Trưởng phòng kế hoạch thẩm tra sơ bộ",
+                CreatedAt = DateTime.Today.AddDays(-5),
+                CreatedBy = "VN012_DIRECTOR",
+                LogLUDateTime = DateTime.Today.AddDays(-5),
+                LogLUBy = "VN012_DIRECTOR",
+                Details = new List<BusinessPlanDetail>
+                {
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0003",
+                        ModelCode = "SANTAFE",
+                        ModelName = "Hyundai Santa Fe All New",
+                        Rtl_TotalQtyDeal = 250,
+                        Rtl_QtyM1 = 16, Rtl_QtyM2 = 17, Rtl_QtyM3 = 17,
+                        Rtl_QtyM4 = 21, Rtl_QtyM5 = 21, Rtl_QtyM6 = 21,
+                        Rtl_QtyM7 = 21, Rtl_QtyM8 = 21, Rtl_QtyM9 = 21,
+                        Rtl_QtyM10 = 25, Rtl_QtyM11 = 25, Rtl_QtyM12 = 27,
+                        Rtl_QtyPre = 220,
+                        Rtl_GrowthRate = 13.64m,
+                        Ord_TotalQtyOrder = 260,
+                        Ord_QtyM1 = 17, Ord_QtyM2 = 17, Ord_QtyM3 = 18,
+                        Ord_QtyM4 = 22, Ord_QtyM5 = 22, Ord_QtyM6 = 22,
+                        Ord_QtyM7 = 22, Ord_QtyM8 = 22, Ord_QtyM9 = 22,
+                        Ord_QtyM10 = 26, Ord_QtyM11 = 26, Ord_QtyM12 = 28,
+                        Ord_QtyPre = 230,
+                        Ord_GrowthRate = 13.04m,
+                        BO_TotalQtyBO = 20,
+                        Remark = "Dự thảo chỉ tiêu Santa Fe"
+                    },
+                    new()
+                    {
+                        BusinessPlanCode = "2603BPL0003",
+                        ModelCode = "ACCENT",
+                        ModelName = "Hyundai Accent Sedan",
+                        Rtl_TotalQtyDeal = 600,
+                        Rtl_QtyM1 = 40, Rtl_QtyM2 = 40, Rtl_QtyM3 = 40,
+                        Rtl_QtyM4 = 50, Rtl_QtyM5 = 50, Rtl_QtyM6 = 50,
+                        Rtl_QtyM7 = 50, Rtl_QtyM8 = 50, Rtl_QtyM9 = 50,
+                        Rtl_QtyM10 = 60, Rtl_QtyM11 = 60, Rtl_QtyM12 = 60,
+                        Rtl_QtyPre = 540,
+                        Rtl_GrowthRate = 11.11m,
+                        Ord_TotalQtyOrder = 630,
+                        Ord_QtyM1 = 42, Ord_QtyM2 = 42, Ord_QtyM3 = 42,
+                        Ord_QtyM4 = 52, Ord_QtyM5 = 53, Ord_QtyM6 = 53,
+                        Ord_QtyM7 = 52, Ord_QtyM8 = 53, Ord_QtyM9 = 53,
+                        Ord_QtyM10 = 63, Ord_QtyM11 = 63, Ord_QtyM12 = 63,
+                        Ord_QtyPre = 565,
+                        Ord_GrowthRate = 11.50m,
+                        BO_TotalQtyBO = 40,
+                        Remark = "Dự thảo chỉ tiêu Accent dịch vụ & cá nhân"
+                    }
+                }
+            };
+
+            db.BusinessPlans.AddRange(plan1, plan2, plan3);
             await db.SaveChangesAsync();
         }
     }

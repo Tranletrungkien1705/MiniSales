@@ -57,6 +57,7 @@ builder.Services.AddScoped<ICarRedeemService, CarRedeemService>();
 builder.Services.AddScoped<ICarInsuranceService, CarInsuranceService>();
 builder.Services.AddScoped<ITransportPlanService, TransportPlanService>();
 builder.Services.AddScoped<ISaleAwardMinutesService, SaleAwardMinutesService>();
+builder.Services.AddScoped<IBusinessPlanService, BusinessPlanService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -3064,6 +3065,106 @@ app.MapDelete("/api/sale-award-minutes/{minutesNo}", async (string minutesNo, IS
     {
         var deleted = await svc.DeleteDraftAsync(minutesNo);
         return deleted ? Results.Ok(new { success = true, minutesNo }) : Results.NotFound(new { error = $"Không tìm thấy biên bản đối soát thưởng {minutesNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ==================== KẾ HOẠCH KINH DOANH BÁN BUÔN / BÁN LẺ ĐẠI LÝ (BPL_BusinessPlan) ====================
+app.MapGet("/api/business-plans/seq", async (IBusinessPlanService svc) => Results.Ok(await svc.GetSeqAsync())).RequireAuthorization();
+
+app.MapGet("/api/business-plans/models", async (IBusinessPlanService svc) => Results.Ok(await svc.GetStandardModelsAsync())).RequireAuthorization();
+
+app.MapPost("/api/business-plans/calculate", async (CalcPlanRequestDto dto, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.CalculateInitialPlanAsync(dto);
+        return Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/business-plans", async (int? yearPlan, string? dealerCode, BusinessPlanStatus? status, string? version, int page, int pageSize, IBusinessPlanService svc) =>
+{
+    var p = page < 0 ? 0 : page;
+    var ps = pageSize <= 0 ? 10 : pageSize;
+    return Results.Ok(await svc.ListAsync(yearPlan, dealerCode, status, version, p, ps));
+}).RequireAuthorization();
+
+app.MapGet("/api/business-plans/stats", async (int? yearPlan, IBusinessPlanService svc) => Results.Ok(await svc.StatsAsync(yearPlan))).RequireAuthorization();
+
+app.MapGet("/api/business-plans/{planCode}", async (string planCode, IBusinessPlanService svc) =>
+{
+    var res = await svc.DetailAsync(planCode);
+    return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" }) : Results.Ok(res);
+}).RequireAuthorization();
+
+app.MapPost("/api/business-plans", async (CreateBusinessPlanDto dto, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.CreateAsync(dto);
+        return Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/business-plans/{planCode}", async (string planCode, UpdateBusinessPlanDto dto, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.UpdateAsync(planCode, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/business-plans/{planCode}/approve1", async (string planCode, Approve1BusinessPlanDto? dto, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.Approve1Async(planCode, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/business-plans/{planCode}/approve2", async (string planCode, Approve2BusinessPlanDto? dto, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.Approve2Async(planCode, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/business-plans/{planCode}/unapprove", async (string planCode, UnApproveBusinessPlanDto? dto, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.UnApproveAsync(planCode, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/business-plans/{planCode}/cancel", async (string planCode, CancelBusinessPlanDto dto, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var res = await svc.CancelAsync(planCode, dto);
+        return res is null ? Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" }) : Results.Ok(res);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/business-plans/{planCode}", async (string planCode, IBusinessPlanService svc) =>
+{
+    try
+    {
+        var deleted = await svc.DeleteDraftAsync(planCode);
+        return deleted ? Results.Ok(new { success = true, planCode }) : Results.NotFound(new { error = $"Không tìm thấy kế hoạch kinh doanh {planCode}" });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
