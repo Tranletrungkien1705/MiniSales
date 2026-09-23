@@ -3146,6 +3146,99 @@ public sealed class InventoryCostMaster
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái thế chấp / giải chấp hồ sơ gốc xe ô tô tại ngân hàng (DMS.Sales Car_VIN StatusMortageEnd: Free = '2' [Chưa thế chấp / tự do], Mortgaged = '0' [Đang thế chấp ngân hàng], Redeemed = '1' [Đã giải chấp hoàn tất]).</summary>
+public enum CarMortageStatus
+{
+    Free = 0,
+    Mortgaged = 1,
+    Redeemed = 2
+}
+
+/// <summary>Hồ sơ Giấy tờ Xe Ô tô & Đăng kiểm CQ/CO & Thế chấp Ngân hàng / Hóa đơn nhà máy (Car VIN Profile Management - DMS.Sales Car_VINProfile + Car_VIN + Pmt_GuaranteeDetail / CarVINProfileController.cs / CarVINProfile.txt / 05_QUAN_LY_XE.md): Quản lý toàn diện hồ sơ pháp lý, kỹ thuật và ngân hàng của từng số khung xe VIN 17 ký tự trong suốt vòng đời phân phối; kiểm soát giấy chứng nhận chất lượng xuất xưởng (CQNo, QCNo, FGFormNo, CQStartDate, CQEndDate), chứng nhận nguồn gốc xuất xứ CO (CONo, CODate), hóa đơn nhà máy sản xuất (InvoiceNoFactory, InvoiceFactoryDate), hóa đơn chuyển nhượng (InvoiceNoTransferred, InvoiceTransferredDate), thông tin thùng xe ô tô thương mại (LoaiThung, CabinCertificateNo, CabinCONo, CabinInvoiceNo), bàn giao hồ sơ gốc cho ngân hàng tài trợ thế chấp (BillNo, HandOverBankCode, MortageEndDate), giải chấp hồ sơ gốc (RedeemDate, StatusMortageEnd), thời hạn bảo lãnh ngân hàng & bảo hành (DateStart, DateExpired, GuaranteeValue), cờ cho phép Đại lý lập đề nghị rút hồ sơ (FlagDocReq) và gửi email nhắc hồ sơ chứng từ.</summary>
+public sealed class CarVinProfile
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN, Unique theo Org)
+    public string? CarId { get; set; } // Mã định danh xe thương mại (vd: 2605C64655BN7I-CKD)
+    public string DealerCode { get; set; } = ""; // Mã đại lý quản lý xe (VS058, VN001, VN012...)
+    public string? DealerName { get; set; } // Tên đại lý
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT, STARGAZER, PORTER, MIGHTY...)
+    public string ModelName { get; set; } = ""; // Tên model thương mại
+    public string? SpecCode { get; set; } // Mã cấu hình xe (SF25-PRE, TU20-STD, H150-TK...)
+    public string? SpecDescription { get; set; } // Mô tả cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu ngoại thất
+    public string? ColorName { get; set; } // Tên màu xe
+    public string? EngineNo { get; set; } // Số máy (Engine Number)
+    public string? StorageCode { get; set; } // Mã kho lưu bãi hiện tại (KHO_NB, KHO_DY, KHO_CANG_HP...)
+    public string? StorageName { get; set; } // Tên kho lưu bãi
+
+    // Thông tin Đăng kiểm CLXX & Xuất xưởng:
+    public string? CQNo { get; set; } // Số Đăng kiểm / Chứng nhận chất lượng CLXX
+    public DateTime? CQStartDate { get; set; } // Ngày bắt đầu hiệu lực đăng kiểm
+    public DateTime? CQEndDate { get; set; } // Ngày hết hạn đăng kiểm
+    public string? FGFormNo { get; set; } // Số phiếu kiểm tra chất lượng xuất xưởng PXX (xe CKD)
+    public string? QCNo { get; set; } // Số giấy chứng nhận an toàn kỹ thuật xe
+    public DateTime? IssuedDate { get; set; } // Ngày cấp GCN / PXX
+
+    // Chứng nhận nguồn gốc xuất xứ (CO):
+    public string? CONo { get; set; } // Số giấy chứng nhận xuất xứ hàng hóa CO
+    public DateTime? CODate { get; set; } // Ngày cấp CO
+    public DateTime? CODateExpected { get; set; } // Ngày dự kiến có CO
+
+    // Hóa đơn nhà máy & Hóa đơn chuyển nhượng:
+    public string? InvoiceNoFactory { get; set; } // Số hóa đơn nhà máy sản xuất
+    public DateTime? InvoiceFactoryDate { get; set; } // Ngày hóa đơn nhà máy
+    public string? InvoiceFactorySearch { get; set; } // Mã tra cứu hóa đơn điện tử nhà máy
+    public string? InvoiceNoTransferred { get; set; } // Số hóa đơn chuyển nhượng nội bộ NPP - Đại lý
+    public DateTime? InvoiceTransferredDate { get; set; } // Ngày hóa đơn chuyển nhượng
+    public string? InvoiceTransferredSearch { get; set; } // Mã tra cứu hóa đơn chuyển nhượng
+    public string? InvoiceSpecName { get; set; } // Tên loại xe trên hóa đơn GTGT
+
+    // Thông tin thùng xe ô tô thương mại (Cabin / Crate Box):
+    public bool TypeCB { get; set; } = false; // true = Xe có đóng thùng thương mại
+    public string? LoaiThung { get; set; } // Loại thùng: THUNG_KIN, THUNG_BAT, THUNG_DONG_LANH, THUNG_LUNG
+    public string? CabinCertificateNo { get; set; } // Số GCN chất lượng thùng xe
+    public DateTime? CabinCertificateDate { get; set; } // Ngày nhận phiếu chứng nhận thùng
+    public string? CabinCONo { get; set; } // Số chứng nhận nguồn gốc xuất xứ thùng
+    public string? CabinInvoiceNo { get; set; } // Số hóa đơn thùng xe
+    public DateTime? CabinInvoiceDate { get; set; } // Ngày hóa đơn thùng xe
+
+    // Thế chấp ngân hàng & Bàn giao hồ sơ gốc:
+    public CarMortageStatus MortageStatus { get; set; } = CarMortageStatus.Free; // Free / Mortgaged / Redeemed
+    public string? MortageBankCode { get; set; } // Mã ngân hàng thế chấp tài sản (VCB, TCB, BIDV, CTG, VPB...)
+    public string? MortageBankName { get; set; } // Tên ngân hàng thế chấp tài sản
+    public DateTime? MortageStartDate { get; set; } // Ngày bắt đầu thế chấp tài sản
+    public string? HandOverBankCode { get; set; } // Mã ngân hàng nhận bàn giao hồ sơ gốc
+    public string? HandOverBankName { get; set; } // Tên ngân hàng nhận bàn giao hồ sơ gốc
+    public string? BillNo { get; set; } // Số vận đơn / số biên nhận bàn giao hồ sơ gốc
+    public DateTime? MortageEndDate { get; set; } // Ngày bàn giao hồ sơ gốc cho ngân hàng
+    public DateTime? RedeemDate { get; set; } // Ngày giải chấp ngân hàng hoàn tất
+    public DateTime? LogDateTimeStatusMortageEnd { get; set; } // Thời điểm ghi nhận giải chấp
+
+    // Bảo lãnh & Bảo hành điện tử:
+    public string? GuaranteeNo { get; set; } // Mã bảo lãnh thanh toán (Pmt_Guarantee)
+    public string? BankGuaranteeNo { get; set; } // Số bảo lãnh do ngân hàng phát hành
+    public DateTime? DateStart { get; set; } // Ngày kích hoạt hiệu lực bảo lãnh / bảo hành xe
+    public DateTime? DateExpired { get; set; } // Ngày hết hạn bảo lãnh / bảo hành xe
+    public decimal? GuaranteeValue { get; set; } // Giá trị bảo lãnh xe (VNĐ)
+    public bool FlagDtlDiscount { get; set; } = false; // Cờ giảm giá / chiết khấu theo bảo lãnh
+    public bool FlagGrtExt { get; set; } = false; // Cờ gia hạn bảo lãnh
+
+    // Trạng thái hồ sơ & Cờ Đề nghị rút hồ sơ:
+    public string DocumentsStatus { get; set; } = "0"; // "0" = Chưa đủ hồ sơ gốc, "1" = Đã đủ hồ sơ gốc
+    public string FlagDocReq { get; set; } = "0"; // "0" = Khóa rút hồ sơ, "1" = Đã mở cờ cho phép Đại lý lập ĐNGT rút hồ sơ
+    public DateTime? DocDeliveryReqDate { get; set; } // Ngày đại lý lập ĐNGT rút hồ sơ
+    public DateTime? SendMailDocDate { get; set; } // Thời điểm gửi email nhắc hồ sơ gần nhất
+    public string? Remark { get; set; } // Ghi chú hồ sơ xe
+
+    // Audit fields:
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 
 
 

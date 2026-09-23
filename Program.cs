@@ -66,6 +66,7 @@ builder.Services.AddScoped<IBankingTransactionService, BankingTransactionService
 builder.Services.AddScoped<ICustomsDeclarationService, CustomsDeclarationService>();
 builder.Services.AddScoped<IPaymentGPSService, PaymentGPSService>();
 builder.Services.AddScoped<IPaymentStorageService, PaymentStorageService>();
+builder.Services.AddScoped<ICarVinProfileService, CarVinProfileService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -4230,6 +4231,173 @@ app.MapGet("/api/payment-storage/{paymentStorageNo}/print", async (string paymen
 {
     var r = await svc.GetPrintDataAsync(paymentStorageNo);
     return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán lưu kho {paymentStorageNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+// ===== Quản lý Hồ sơ Giấy tờ Xe Ô tô & Thế chấp Ngân hàng / Hóa đơn nhà máy / Đăng kiểm CLXX (Car VIN Profile Management - Car_VINProfile + Car_VIN + Pmt_GuaranteeDetail · CarVINProfileController.cs / CarVINProfile.txt / 05_QUAN_LY_XE.md) =====
+app.MapGet("/api/car-vin-profiles", async (
+    string? vin,
+    string? carId,
+    string? dealerCode,
+    string? modelCode,
+    string? storageCode,
+    CarMortageStatus? mortageStatus,
+    string? mortageBankCode,
+    string? handOverBankCode,
+    string? flagDocReq,
+    string? documentsStatus,
+    string? flagMortageEndDate,
+    string? flagInvoiceNoFactory,
+    string? dateStartStatus,
+    bool? typeCB,
+    DateTime? createdDateFrom,
+    DateTime? createdDateTo,
+    int pageIndex = 0,
+    int pageSize = 50,
+    ICarVinProfileService svc = default!) =>
+{
+    var filter = new CarVinProfileSearchFilterDto(
+        vin, carId, dealerCode, modelCode, storageCode,
+        mortageStatus, mortageBankCode, handOverBankCode,
+        flagDocReq, documentsStatus, flagMortageEndDate,
+        flagInvoiceNoFactory, dateStartStatus, typeCB,
+        createdDateFrom, createdDateTo, pageIndex, pageSize
+    );
+    return Results.Ok(await svc.SearchAsync(filter));
+}).RequireAuthorization();
+
+app.MapGet("/api/car-vin-profiles/stats", async (string? dealerCode, ICarVinProfileService svc) =>
+    Results.Ok(await svc.GetStatsAsync(dealerCode))).RequireAuthorization();
+
+app.MapGet("/api/car-vin-profiles/{vin}", async (string vin, ICarVinProfileService svc) =>
+{
+    var r = await svc.GetByVinAsync(vin);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe với số khung {vin}." }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/car-vin-profiles", async (CreateCarVinProfileDto dto, ICarVinProfileService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/car-vin-profiles/{vin}", async (string vin, UpdateCarVinProfileDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPatch("/api/car-vin-profiles/{vin}/documents", async (string vin, UpdateVinDocumentsDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateDocumentsAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPatch("/api/car-vin-profiles/{vin}/cabin", async (string vin, UpdateVinCabinDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateCabinAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-vin-profiles/multi-cabin", async (List<BatchUpdateCabinItemDto> items, string? updatedBy, ICarVinProfileService svc) =>
+{
+    try { return Results.Ok(new { updatedCount = await svc.BatchUpdateCabinAsync(items, updatedBy) }); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPatch("/api/car-vin-profiles/{vin}/handover-bank", async (string vin, UpdateVinHandoverBankDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateHandoverBankAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPatch("/api/car-vin-profiles/{vin}/invoice-factory", async (string vin, UpdateVinInvoiceFactoryDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateInvoiceFactoryAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-vin-profiles/multi-invoice-factory", async (List<BatchUpdateInvFactoryItemDto> items, string? updatedBy, ICarVinProfileService svc) =>
+{
+    try { return Results.Ok(new { updatedCount = await svc.BatchUpdateInvoiceFactoryAsync(items, updatedBy) }); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPatch("/api/car-vin-profiles/{vin}/invoice-transferred", async (string vin, UpdateVinInvoiceTransferredDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateInvoiceTransferredAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-vin-profiles/multi-invoice-transferred", async (List<BatchUpdateInvTransferredItemDto> items, string? updatedBy, ICarVinProfileService svc) =>
+{
+    try { return Results.Ok(new { updatedCount = await svc.BatchUpdateInvoiceTransferredAsync(items, updatedBy) }); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPatch("/api/car-vin-profiles/{vin}/date-start", async (string vin, UpdateVinDateStartDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateDateStartAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-vin-profiles/batch-flag-docreq", async (BatchUpdateFlagDocReqDto dto, ICarVinProfileService svc) =>
+{
+    try { return Results.Ok(new { updatedCount = await svc.BatchUpdateFlagDocReqAsync(dto) }); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-vin-profiles/{vin}/redeem", async (string vin, RedeemVinProfileDto dto, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var r = await svc.RedeemAsync(vin, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/car-vin-profiles/send-mail", async (SendMailVinDocDto dto, ICarVinProfileService svc) =>
+{
+    try { return Results.Ok(new { sentCount = await svc.SendMailDocReminderAsync(dto) }); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/car-vin-profiles/{vin}", async (string vin, ICarVinProfileService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteAsync(vin);
+        return ok ? Results.Ok(new { success = true, vin }) : Results.NotFound(new { error = $"Không tìm thấy hồ sơ xe {vin}." });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
 }).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).

@@ -95,6 +95,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<PaymentStorageOrder> PaymentStorageOrders => Set<PaymentStorageOrder>();
     public DbSet<PaymentStorageDetail> PaymentStorageDetails => Set<PaymentStorageDetail>();
     public DbSet<InventoryCostMaster> InventoryCosts => Set<InventoryCostMaster>();
+    public DbSet<CarVinProfile> CarVinProfiles => Set<CarVinProfile>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -374,5 +375,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<PaymentStorageDetail>().HasIndex(x => x.StorageCode);
         b.Entity<InventoryCostMaster>().ToTable("InventoryCosts");
         b.Entity<InventoryCostMaster>().HasIndex(x => new { x.StorageCode, x.CostTypeCode, x.ModelCode }).IsUnique();
+        b.Entity<CarVinProfile>().ToTable("CarVinProfiles");
+        b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.Vin }).IsUnique();
+        b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.DealerCode });
+        b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.CarId });
+        b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.MortageStatus });
+        b.Entity<CarVinProfile>().HasIndex(x => new { x.OrgId, x.FlagDocReq });
+        b.Entity<CarVinProfile>().Property(x => x.MortageStatus).HasConversion<int>();
     }
 }
