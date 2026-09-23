@@ -2142,6 +2142,113 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_PackingListDetails_Vin ON PackingListDetails(Vin);
                 CREATE INDEX IF NOT EXISTS IX_PackingListDetails_ModelCode ON PackingListDetails(ModelCode);
 
+                CREATE TABLE IF NOT EXISTS BankingTransactions (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    RQ_BankingTransNo TEXT NOT NULL,
+                    DealerCode TEXT NOT NULL,
+                    DealerName TEXT NOT NULL,
+                    BankCode TEXT NOT NULL,
+                    BankName TEXT NOT NULL,
+                    TaxCode TEXT,
+                    TransType INTEGER NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    BankStatus INTEGER NOT NULL DEFAULT 0,
+                    RefBankCode TEXT,
+                    BankRemark TEXT,
+                    Remark TEXT,
+                    TotalAmount REAL NOT NULL DEFAULT 0,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    PaymentNo TEXT,
+                    PaymentType TEXT,
+                    DisbursementType INTEGER NOT NULL DEFAULT 0,
+                    TransferAmount REAL NOT NULL DEFAULT 0,
+                    LoanPeriod INTEGER,
+                    LoanPeriodDate TEXT,
+                    InterestRate REAL,
+                    ReceivingUnit TEXT,
+                    BankAccountReceive TEXT,
+                    BankNameReceive TEXT,
+                    CreditContractNo TEXT,
+                    DisbursementRequestDate TEXT,
+                    LDNo TEXT,
+                    DisbursementAmount REAL NOT NULL DEFAULT 0,
+                    DisbursementDate TEXT,
+                    GuaranteeType TEXT,
+                    DateExpiredValue INTEGER,
+                    GrtForm TEXT,
+                    GrtReceive TEXT,
+                    MDNo TEXT,
+                    GrtAmount REAL NOT NULL DEFAULT 0,
+                    GrtDateStart TEXT,
+                    GrtDateEnd TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    PushedToBankAt TEXT,
+                    PushedToBankBy TEXT,
+                    BankApprovedAt TEXT,
+                    BankApprovedBy TEXT,
+                    DisbursedAt TEXT,
+                    DisbursedBy TEXT,
+                    RejectedAt TEXT,
+                    RejectedBy TEXT,
+                    RejectReason TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    CancelReason TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_BankingTransactions_OrgId_RQ_BankingTransNo ON BankingTransactions(OrgId, RQ_BankingTransNo);
+                CREATE INDEX IF NOT EXISTS IX_BankingTransactions_OrgId_DealerCode ON BankingTransactions(OrgId, DealerCode);
+                CREATE INDEX IF NOT EXISTS IX_BankingTransactions_OrgId_BankCode ON BankingTransactions(OrgId, BankCode);
+
+                CREATE TABLE IF NOT EXISTS BankingTransactionDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    BankingTransactionId INTEGER NOT NULL,
+                    RQ_BankingTransNo TEXT NOT NULL,
+                    CarId TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    SpecDescription TEXT,
+                    ColorCode TEXT,
+                    DlrCtrNo TEXT,
+                    SOCode TEXT,
+                    HTCInvoiceNo TEXT,
+                    AmountActual REAL NOT NULL DEFAULT 0,
+                    AllocPercent REAL NOT NULL DEFAULT 100,
+                    AllocAmount REAL NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    FOREIGN KEY(BankingTransactionId) REFERENCES BankingTransactions(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_BankingTransactionDetails_RQ_BankingTransNo ON BankingTransactionDetails(RQ_BankingTransNo);
+                CREATE INDEX IF NOT EXISTS IX_BankingTransactionDetails_CarId ON BankingTransactionDetails(CarId);
+                CREATE INDEX IF NOT EXISTS IX_BankingTransactionDetails_Vin ON BankingTransactionDetails(Vin);
+
+                CREATE TABLE IF NOT EXISTS BankingTransactionAttachFiles (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    BankingTransactionId INTEGER NOT NULL,
+                    RQ_BankingTransNo TEXT NOT NULL,
+                    FileIndex INTEGER NOT NULL DEFAULT 1,
+                    FileType INTEGER NOT NULL DEFAULT 0,
+                    FileName TEXT NOT NULL,
+                    FilePath TEXT NOT NULL,
+                    FileUrl TEXT,
+                    FileSize INTEGER,
+                    SerialNumber TEXT,
+                    CaSubject TEXT,
+                    FlagSigned INTEGER NOT NULL DEFAULT 0,
+                    SignedAt TEXT,
+                    SignedBy TEXT,
+                    Remark TEXT,
+                    UploadedAt TEXT NOT NULL,
+                    UploadedBy TEXT,
+                    FOREIGN KEY(BankingTransactionId) REFERENCES BankingTransactions(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_BankingTransactionAttachFiles_RQ_BankingTransNo ON BankingTransactionAttachFiles(RQ_BankingTransNo);
+
                 CREATE TABLE IF NOT EXISTS CustomsDeclarations (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     OrgId TEXT NOT NULL,
@@ -2210,6 +2317,88 @@ public static class Seeder
                 CREATE INDEX IF NOT EXISTS IX_CustomsDeclarationDetails_DeclarationNo ON CustomsDeclarationDetails(DeclarationNo);
                 CREATE INDEX IF NOT EXISTS IX_CustomsDeclarationDetails_Vin ON CustomsDeclarationDetails(Vin);
                 CREATE INDEX IF NOT EXISTS IX_CustomsDeclarationDetails_ModelCode ON CustomsDeclarationDetails(ModelCode);
+
+                CREATE TABLE IF NOT EXISTS GpsUnitPrices (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PriceCode TEXT NOT NULL,
+                    PriceName TEXT NOT NULL,
+                    DailyRate REAL NOT NULL DEFAULT 1500,
+                    MonthlyRate REAL NOT NULL DEFAULT 45000,
+                    EffStartDate TEXT NOT NULL,
+                    EffEndDate TEXT,
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    Remark TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_GpsUnitPrices_PriceCode ON GpsUnitPrices(PriceCode);
+
+                CREATE TABLE IF NOT EXISTS PaymentGPSOrders (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    OrgId TEXT NOT NULL,
+                    PaymentGPSNo TEXT NOT NULL,
+                    PmtMonth TEXT NOT NULL,
+                    FromDate TEXT NOT NULL,
+                    ToDate TEXT NOT NULL,
+                    TotalCars INTEGER NOT NULL DEFAULT 0,
+                    AmountTotal REAL NOT NULL DEFAULT 0,
+                    VatRate REAL NOT NULL DEFAULT 10,
+                    UnitPriceVAT REAL NOT NULL DEFAULT 0,
+                    TotalAmountVAT REAL NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    HTVSignStatus INTEGER NOT NULL DEFAULT 0,
+                    HTVSignDate TEXT,
+                    HTVSignBy TEXT,
+                    TCMSSignStatus INTEGER NOT NULL DEFAULT 0,
+                    TCMSSignDate TEXT,
+                    TCMSSignBy TEXT,
+                    FilePath TEXT,
+                    Remark TEXT,
+                    RejectReason TEXT,
+                    CancelReason TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    CreatedBy TEXT,
+                    Approved1At TEXT,
+                    Approved1By TEXT,
+                    Approved2At TEXT,
+                    Approved2By TEXT,
+                    RejectedAt TEXT,
+                    RejectedBy TEXT,
+                    CancelledAt TEXT,
+                    CancelledBy TEXT,
+                    LUDateTime TEXT,
+                    LUBy TEXT
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_PaymentGPSOrders_OrgId_PaymentGPSNo ON PaymentGPSOrders(OrgId, PaymentGPSNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentGPSOrders_OrgId_PmtMonth ON PaymentGPSOrders(OrgId, PmtMonth);
+
+                CREATE TABLE IF NOT EXISTS PaymentGPSDetails (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    PaymentGPSId INTEGER NOT NULL,
+                    PaymentGPSNo TEXT NOT NULL,
+                    Vin TEXT NOT NULL,
+                    CarId TEXT,
+                    ModelCode TEXT NOT NULL,
+                    ModelName TEXT NOT NULL,
+                    SpecCode TEXT,
+                    ColorCode TEXT,
+                    PlateNo TEXT,
+                    DealerCode TEXT,
+                    DealerName TEXT,
+                    GPSDvNo TEXT NOT NULL,
+                    GPSStartDate TEXT NOT NULL,
+                    RetailDate TEXT,
+                    CostGPSStartDate TEXT NOT NULL,
+                    CostGPSEndDate TEXT NOT NULL,
+                    PlanCostGPSDate INTEGER NOT NULL DEFAULT 0,
+                    DeductDate INTEGER NOT NULL DEFAULT 0,
+                    ActualCostGPSDate INTEGER NOT NULL DEFAULT 0,
+                    PriceGPS REAL NOT NULL DEFAULT 1500,
+                    AmountGPS REAL NOT NULL DEFAULT 0,
+                    Remark TEXT,
+                    FOREIGN KEY(PaymentGPSId) REFERENCES PaymentGPSOrders(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_PaymentGPSDetails_PaymentGPSNo ON PaymentGPSDetails(PaymentGPSNo);
+                CREATE INDEX IF NOT EXISTS IX_PaymentGPSDetails_Vin ON PaymentGPSDetails(Vin);
+                CREATE INDEX IF NOT EXISTS IX_PaymentGPSDetails_GPSDvNo ON PaymentGPSDetails(GPSDvNo);
             ");
         }
         catch
@@ -10610,6 +10799,357 @@ public static class Seeder
             };
 
             db.CustomsDeclarations.AddRange(tk1, tk2, tk3, tk4);
+
+            // Seed Bảng kê Quyết toán Chi phí Quản lý Thiết bị GPS Xe Ô tô HTV - TCMS
+            if (!await db.GpsUnitPrices.AnyAsync())
+            {
+                db.GpsUnitPrices.AddRange(
+                    new GpsUnitPriceMaster
+                    {
+                        PriceCode = "GPS-STD-2026",
+                        PriceName = "Gói cước giám sát định vị tiêu chuẩn ô tô HTV",
+                        DailyRate = 1500m,
+                        MonthlyRate = 45000m,
+                        EffStartDate = new DateTime(2026, 1, 1),
+                        IsActive = true,
+                        Remark = "Biểu phí tiêu chuẩn dịch vụ viễn thông giám sát xe ô tô HTV - TCMS áp dụng từ 01/01/2026"
+                    },
+                    new GpsUnitPriceMaster
+                    {
+                        PriceCode = "GPS-VIP-2026",
+                        PriceName = "Gói cước xe điện cao cấp & chuyên dùng",
+                        DailyRate = 2000m,
+                        MonthlyRate = 60000m,
+                        EffStartDate = new DateTime(2026, 1, 1),
+                        IsActive = true,
+                        Remark = "Biểu phí xe điện và xe chuyên dùng có tần suất truyền tin định vị 10s/lần"
+                    }
+                );
+            }
+
+            if (!await db.PaymentGPSOrders.AnyAsync(o => o.OrgId == orgId))
+            {
+                var pg1 = new PaymentGPSOrder
+                {
+                    OrgId = orgId,
+                    PaymentGPSNo = "2603PG0001",
+                    PmtMonth = "2026-02",
+                    FromDate = new DateTime(2026, 2, 1),
+                    ToDate = new DateTime(2026, 2, 28),
+                    TotalCars = 3,
+                    AmountTotal = 118500m,
+                    VatRate = 10m,
+                    UnitPriceVAT = 11850m,
+                    TotalAmountVAT = 130350m,
+                    Status = PaymentGPSStatus.TCMSSigned,
+                    HTVSignStatus = PaymentGPSSignStatus.DaKy,
+                    HTVSignDate = new DateTime(2026, 3, 5, 14, 30, 0),
+                    HTVSignBy = "Hoàng Quốc Việt (Kế toán Trưởng HTV)",
+                    TCMSSignStatus = PaymentGPSSignStatus.DaKy,
+                    TCMSSignDate = new DateTime(2026, 3, 6, 9, 15, 0),
+                    TCMSSignBy = "Nguyễn Văn Hùng (Giám đốc Khối Viễn thông TCMS)",
+                    FilePath = "/reports/payment-gps/2603PG0001_FullySigned.pdf",
+                    Remark = "Quyết toán phí dịch vụ GPS xe ô tô tháng 02/2026 đã đối soát hoàn tất 2 bên",
+                    CreatedBy = "HTC_GPS_ADMIN",
+                    CreatedAt = new DateTime(2026, 3, 1, 8, 0, 0),
+                    Approved1At = new DateTime(2026, 3, 3, 10, 0, 0),
+                    Approved1By = "Trần Văn Long (Trưởng phòng Bán hàng HTV)",
+                    Approved2At = new DateTime(2026, 3, 5, 14, 30, 0),
+                    Approved2By = "Hoàng Quốc Việt (Kế toán Trưởng HTV)",
+                    Details = new List<PaymentGPSDetail>
+                    {
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0001",
+                            Vin = "KMHE281BBSA129841",
+                            CarId = "CAR2026-SF0988",
+                            ModelCode = "SANTAFE",
+                            ModelName = "Hyundai Santa Fe 2.5 HTRAC",
+                            SpecCode = "SF25-PRE-01",
+                            ColorCode = "WW2",
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            GPSDvNo = "GPS-129841",
+                            GPSStartDate = new DateTime(2026, 1, 10),
+                            CostGPSStartDate = new DateTime(2026, 2, 1),
+                            CostGPSEndDate = new DateTime(2026, 2, 28),
+                            PlanCostGPSDate = 28,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 28,
+                            PriceGPS = 1500m,
+                            AmountGPS = 42000m,
+                            Remark = "Định vị hoạt động ổn định trên cung đường vận tải"
+                        },
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0001",
+                            Vin = "KMHE281BBSA987654",
+                            CarId = "CAR2026-TU1102",
+                            ModelCode = "TUCSON",
+                            ModelName = "Hyundai Tucson 1.6 Turbo",
+                            SpecCode = "TU16-TRB-01",
+                            ColorCode = "BK1",
+                            DealerCode = "VN002",
+                            DealerName = "Hyundai Nam Trung",
+                            GPSDvNo = "GPS-987654",
+                            GPSStartDate = new DateTime(2026, 1, 15),
+                            CostGPSStartDate = new DateTime(2026, 2, 1),
+                            CostGPSEndDate = new DateTime(2026, 2, 28),
+                            PlanCostGPSDate = 28,
+                            DeductDate = 1,
+                            ActualCostGPSDate = 27,
+                            PriceGPS = 1500m,
+                            AmountGPS = 40500m,
+                            Remark = "Khấu trừ 01 ngày mất tín hiệu tại hầm kho chi nhánh"
+                        },
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0001",
+                            Vin = "KMHE281BBSA334455",
+                            CarId = "CAR2026-CR0192",
+                            ModelCode = "CRETA",
+                            ModelName = "Hyundai Creta 1.5 Cao Cấp",
+                            SpecCode = "CR15-PRE-02",
+                            ColorCode = "R3R",
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            GPSDvNo = "GPS-334455",
+                            GPSStartDate = new DateTime(2026, 2, 5),
+                            CostGPSStartDate = new DateTime(2026, 2, 5),
+                            CostGPSEndDate = new DateTime(2026, 2, 28),
+                            PlanCostGPSDate = 24,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 24,
+                            PriceGPS = 1500m,
+                            AmountGPS = 36000m,
+                            Remark = "Kích hoạt ngày 05/02 sau khi lắp xong thiết bị"
+                        }
+                    }
+                };
+
+                var pg2 = new PaymentGPSOrder
+                {
+                    OrgId = orgId,
+                    PaymentGPSNo = "2603PG0002",
+                    PmtMonth = "2026-03",
+                    FromDate = new DateTime(2026, 3, 1),
+                    ToDate = new DateTime(2026, 3, 31),
+                    TotalCars = 3,
+                    AmountTotal = 117000m,
+                    VatRate = 10m,
+                    UnitPriceVAT = 11700m,
+                    TotalAmountVAT = 128700m,
+                    Status = PaymentGPSStatus.Approved2,
+                    HTVSignStatus = PaymentGPSSignStatus.DaKy,
+                    HTVSignDate = DateTime.Today.AddDays(-2),
+                    HTVSignBy = "Hoàng Quốc Việt (Kế toán Trưởng HTV)",
+                    TCMSSignStatus = PaymentGPSSignStatus.ChuaKy,
+                    FilePath = "/reports/payment-gps/2603PG0002_HTVSigned.pdf",
+                    Remark = "Bảng kê chi phí GPS kỳ 03/2026 HTV đã thẩm duyệt và ký số, đang chờ TCMS ký xác nhận",
+                    CreatedBy = "HTC_GPS_ADMIN",
+                    CreatedAt = DateTime.Today.AddDays(-5),
+                    Approved1At = DateTime.Today.AddDays(-3),
+                    Approved1By = "Trần Văn Long (Trưởng phòng Bán hàng HTV)",
+                    Approved2At = DateTime.Today.AddDays(-2),
+                    Approved2By = "Hoàng Quốc Việt (Kế toán Trưởng HTV)",
+                    Details = new List<PaymentGPSDetail>
+                    {
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0002",
+                            Vin = "KMHE281BBSA556677",
+                            CarId = "CAR2026-CU0211",
+                            ModelCode = "CUSTIN",
+                            ModelName = "Hyundai Custin 1.5T-GDi Cao Cấp",
+                            SpecCode = "CU15-PRE-01",
+                            ColorCode = "SL1",
+                            DealerCode = "VN001",
+                            DealerName = "Hyundai Đông Đô",
+                            GPSDvNo = "GPS-556677",
+                            GPSStartDate = new DateTime(2026, 2, 15),
+                            CostGPSStartDate = new DateTime(2026, 3, 1),
+                            CostGPSEndDate = new DateTime(2026, 3, 31),
+                            PlanCostGPSDate = 31,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 31,
+                            PriceGPS = 1500m,
+                            AmountGPS = 46500m,
+                            Remark = "Tính đủ 31 ngày trong tháng"
+                        },
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0002",
+                            Vin = "KMHE281BBSA778899",
+                            CarId = "CAR2026-SG0109",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X 1.5 Cao Cấp",
+                            SpecCode = "SG15-PRE-01",
+                            ColorCode = "MB1",
+                            DealerCode = "VN002",
+                            DealerName = "Hyundai Nam Trung",
+                            GPSDvNo = "GPS-778899",
+                            GPSStartDate = new DateTime(2026, 2, 20),
+                            RetailDate = new DateTime(2026, 3, 20),
+                            CostGPSStartDate = new DateTime(2026, 3, 1),
+                            CostGPSEndDate = new DateTime(2026, 3, 20),
+                            PlanCostGPSDate = 20,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 20,
+                            PriceGPS = 1500m,
+                            AmountGPS = 30000m,
+                            Remark = "Xe đã bàn giao giao dịch bán lẻ ngày 20/03, dừng tính phí từ ngày giao"
+                        },
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0002",
+                            Vin = "KMHE281BBSA900101",
+                            CarId = "CAR2026-PAL-001",
+                            ModelCode = "PALISADE",
+                            ModelName = "Hyundai Palisade 2.2D Exclusive",
+                            SpecCode = "PAL-EXC-01",
+                            ColorCode = "WW1",
+                            GPSDvNo = "GPS-900101",
+                            GPSStartDate = new DateTime(2026, 3, 5),
+                            CostGPSStartDate = new DateTime(2026, 3, 5),
+                            CostGPSEndDate = new DateTime(2026, 3, 31),
+                            PlanCostGPSDate = 27,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 27,
+                            PriceGPS = 1500m,
+                            AmountGPS = 40500m,
+                            Remark = "Lắp GPS sau khi hoàn tất thủ tục hải quan ngày 05/03"
+                        }
+                    }
+                };
+
+                var pg3 = new PaymentGPSOrder
+                {
+                    OrgId = orgId,
+                    PaymentGPSNo = "2603PG0003",
+                    PmtMonth = "2026-03",
+                    FromDate = new DateTime(2026, 3, 1),
+                    ToDate = new DateTime(2026, 3, 31),
+                    TotalCars = 2,
+                    AmountTotal = 88000m,
+                    VatRate = 10m,
+                    UnitPriceVAT = 8800m,
+                    TotalAmountVAT = 96800m,
+                    Status = PaymentGPSStatus.Pending,
+                    HTVSignStatus = PaymentGPSSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentGPSSignStatus.ChuaKy,
+                    Remark = "Bảng kê chi phí thiết bị GPS đợt bổ sung xe điện Ioniq 5 cập bến tháng 3/2026, chờ phê duyệt cấp 1",
+                    CreatedBy = "HTC_LOGISTICS_GPS",
+                    CreatedAt = DateTime.Today.AddDays(-2),
+                    Details = new List<PaymentGPSDetail>
+                    {
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0003",
+                            Vin = "KMHE281BBSA900301",
+                            CarId = "CAR2026-IQ5-001",
+                            ModelCode = "IONIQ5",
+                            ModelName = "Hyundai Ioniq 5 Prestige",
+                            SpecCode = "IQ5-PRE-01",
+                            ColorCode = "WW1",
+                            GPSDvNo = "GPS-900301",
+                            GPSStartDate = new DateTime(2026, 3, 10),
+                            CostGPSStartDate = new DateTime(2026, 3, 10),
+                            CostGPSEndDate = new DateTime(2026, 3, 31),
+                            PlanCostGPSDate = 22,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 22,
+                            PriceGPS = 2000m,
+                            AmountGPS = 44000m,
+                            Remark = "Gói VIP định vị xe điện 2,000 đ/ngày"
+                        },
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0003",
+                            Vin = "KMHE281BBSA900302",
+                            CarId = "CAR2026-IQ5-002",
+                            ModelCode = "IONIQ5",
+                            ModelName = "Hyundai Ioniq 5 Exclusive",
+                            SpecCode = "IQ5-EXC-01",
+                            ColorCode = "SL1",
+                            GPSDvNo = "GPS-900302",
+                            GPSStartDate = new DateTime(2026, 3, 10),
+                            CostGPSStartDate = new DateTime(2026, 3, 10),
+                            CostGPSEndDate = new DateTime(2026, 3, 31),
+                            PlanCostGPSDate = 22,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 22,
+                            PriceGPS = 2000m,
+                            AmountGPS = 44000m,
+                            Remark = "Gói VIP định vị xe điện 2,000 đ/ngày"
+                        }
+                    }
+                };
+
+                var pg4 = new PaymentGPSOrder
+                {
+                    OrgId = orgId,
+                    PaymentGPSNo = "2603PG0004",
+                    PmtMonth = "2026-03",
+                    FromDate = new DateTime(2026, 3, 1),
+                    ToDate = new DateTime(2026, 3, 31),
+                    TotalCars = 2,
+                    AmountTotal = 51000m,
+                    VatRate = 10m,
+                    UnitPriceVAT = 5100m,
+                    TotalAmountVAT = 56100m,
+                    Status = PaymentGPSStatus.Draft,
+                    HTVSignStatus = PaymentGPSSignStatus.ChuaKy,
+                    TCMSSignStatus = PaymentGPSSignStatus.ChuaKy,
+                    Remark = "Bảng kê nháp xe lô Stargazer X đang kiểm tra đối chiếu dữ liệu thiết bị viễn thông",
+                    CreatedBy = "HTC_GPS_ADMIN",
+                    CreatedAt = DateTime.Today.AddDays(-1),
+                    Details = new List<PaymentGPSDetail>
+                    {
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0004",
+                            Vin = "KMHE281BBSA900401",
+                            CarId = "CAR2026-SG-001",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X Cao Cấp",
+                            SpecCode = "SG-PRE-01",
+                            ColorCode = "WW1",
+                            GPSDvNo = "GPS-900401",
+                            GPSStartDate = new DateTime(2026, 3, 15),
+                            CostGPSStartDate = new DateTime(2026, 3, 15),
+                            CostGPSEndDate = new DateTime(2026, 3, 31),
+                            PlanCostGPSDate = 17,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 17,
+                            PriceGPS = 1500m,
+                            AmountGPS = 25500m,
+                            Remark = "Lô xe Stargazer mới map GPS"
+                        },
+                        new()
+                        {
+                            PaymentGPSNo = "2603PG0004",
+                            Vin = "KMHE281BBSA900402",
+                            CarId = "CAR2026-SG-002",
+                            ModelCode = "STARGAZER",
+                            ModelName = "Hyundai Stargazer X Tiêu Chuẩn",
+                            SpecCode = "SG-STD-01",
+                            ColorCode = "BK1",
+                            GPSDvNo = "GPS-900402",
+                            GPSStartDate = new DateTime(2026, 3, 15),
+                            CostGPSStartDate = new DateTime(2026, 3, 15),
+                            CostGPSEndDate = new DateTime(2026, 3, 31),
+                            PlanCostGPSDate = 17,
+                            DeductDate = 0,
+                            ActualCostGPSDate = 17,
+                            PriceGPS = 1500m,
+                            AmountGPS = 25500m,
+                            Remark = "Lô xe Stargazer mới map GPS"
+                        }
+                    }
+                };
+
+                db.PaymentGPSOrders.AddRange(pg1, pg2, pg3, pg4);
+            }
 
             // Đồng bộ DeclarationNo cho các xe trong kho xe CarVinInventory
             var v1 = await db.CarVinInventories.FirstOrDefaultAsync(x => x.OrgId == orgId && x.Vin == "KMHE281BBSA900101");

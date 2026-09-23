@@ -64,6 +64,7 @@ builder.Services.AddScoped<IPlanEstimateOrderService, PlanEstimateOrderService>(
 builder.Services.AddScoped<IPackingListService, PackingListService>();
 builder.Services.AddScoped<IBankingTransactionService, BankingTransactionService>();
 builder.Services.AddScoped<ICustomsDeclarationService, CustomsDeclarationService>();
+builder.Services.AddScoped<IPaymentGPSService, PaymentGPSService>();
 
 var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
@@ -3920,6 +3921,144 @@ app.MapDelete("/api/customs-declarations/{declarationNo}", async (string declara
         return ok ? Results.Ok(new { success = true, declarationNo }) : Results.NotFound(new { error = $"Không tìm thấy tờ khai {declarationNo}" });
     }
     catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+// ===== Quản lý Bảng kê Quyết toán Chi phí Quản lý Thiết bị GPS Xe Ô tô HTV - TCMS (GPS Payment Management - Pmt_PaymentGPS + Pmt_PaymentGPSDetail + Mst_UnitPriceGPS · PmtPaymentGPSController / Payment.cs / PmtPaymentGPS.txt / 10_GPS_TRACKING.md) =====
+app.MapGet("/api/payment-gps/seq", async (IPaymentGPSService svc) =>
+    Results.Ok(new { nextSeq = await svc.GetNextSeqAsync() })).RequireAuthorization();
+
+app.MapGet("/api/payment-gps/unit-prices", async (IPaymentGPSService svc) =>
+    Results.Ok(await svc.GetUnitPricesAsync())).RequireAuthorization();
+
+app.MapGet("/api/payment-gps/eligible-vins", async (string? pmtMonth, string? modelCode, IPaymentGPSService svc) =>
+    Results.Ok(await svc.GetEligibleCarsAsync(pmtMonth ?? "", modelCode))).RequireAuthorization();
+
+app.MapPost("/api/payment-gps/preview", async (PaymentGpsPreviewRequestDto dto, IPaymentGPSService svc) =>
+{
+    try { return Results.Ok(await svc.PreviewCalculationAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-gps/stats", async (string? pmtMonth, IPaymentGPSService svc) =>
+    Results.Ok(await svc.GetStatsAsync(pmtMonth))).RequireAuthorization();
+
+app.MapGet("/api/payment-gps", async (
+    string? pmtMonth,
+    PaymentGPSStatus? status,
+    string? paymentGPSNo,
+    PaymentGPSSignStatus? htvSignStatus,
+    PaymentGPSSignStatus? tcmsSignStatus,
+    int pageIndex = 0,
+    int pageSize = 50,
+    IPaymentGPSService svc = default!) =>
+    Results.Ok(await svc.ListAsync(pmtMonth, status, paymentGPSNo, htvSignStatus, tcmsSignStatus, pageIndex, pageSize))).RequireAuthorization();
+
+app.MapGet("/api/payment-gps/{paymentGPSNo}", async (string paymentGPSNo, IPaymentGPSService svc) =>
+{
+    var r = await svc.DetailAsync(paymentGPSNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-gps", async (CreatePaymentGPSDto dto, IPaymentGPSService svc) =>
+{
+    try { return Results.Ok(await svc.CreateAsync(dto)); }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPut("/api/payment-gps/{paymentGPSNo}", async (string paymentGPSNo, UpdatePaymentGPSDto dto, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.UpdateAsync(paymentGPSNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-gps/{paymentGPSNo}/cars", async (string paymentGPSNo, AddPaymentGPSCarsDto dto, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.AddCarsAsync(paymentGPSNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-gps/{paymentGPSNo}/cars/{vin}", async (string paymentGPSNo, string vin, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.RemoveCarAsync(paymentGPSNo, vin);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-gps/{paymentGPSNo}/approve1", async (string paymentGPSNo, Approve1PaymentGPSDto? dto, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve1Async(paymentGPSNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-gps/{paymentGPSNo}/approve2", async (string paymentGPSNo, Approve2PaymentGPSDto? dto, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.Approve2Async(paymentGPSNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-gps/{paymentGPSNo}/tcms-sign", async (string paymentGPSNo, TCMSSignPaymentGPSDto? dto, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.TCMSSignAsync(paymentGPSNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-gps/{paymentGPSNo}/reject", async (string paymentGPSNo, RejectPaymentGPSDto dto, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.RejectAsync(paymentGPSNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapPost("/api/payment-gps/{paymentGPSNo}/cancel", async (string paymentGPSNo, CancelPaymentGPSDto dto, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var r = await svc.CancelAsync(paymentGPSNo, dto);
+        return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapDelete("/api/payment-gps/{paymentGPSNo}", async (string paymentGPSNo, IPaymentGPSService svc) =>
+{
+    try
+    {
+        var ok = await svc.DeleteDraftAsync(paymentGPSNo);
+        return ok ? Results.Ok(new { success = true, paymentGPSNo }) : Results.NotFound(new { error = $"Không tìm thấy bảng kê {paymentGPSNo}" });
+    }
+    catch (InvalidOperationException ex) { return Results.BadRequest(new { error = ex.Message }); }
+}).RequireAuthorization();
+
+app.MapGet("/api/payment-gps/{paymentGPSNo}/print", async (string paymentGPSNo, IPaymentGPSService svc) =>
+{
+    var r = await svc.GetPrintDataAsync(paymentGPSNo);
+    return r is null ? Results.NotFound(new { error = $"Không tìm thấy bảng kê quyết toán GPS {paymentGPSNo}" }) : Results.Ok(r);
 }).RequireAuthorization();
 
 // Import hàng loạt hợp đồng thật (SQL nguồn DLS_Deal+Dls_DealDetail+DLS_DealerCustomer+Car_Car, 2010.HTC).

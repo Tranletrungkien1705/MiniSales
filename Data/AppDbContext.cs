@@ -89,6 +89,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
     public DbSet<BankingTransactionAttachFile> BankingTransactionAttachFiles => Set<BankingTransactionAttachFile>();
     public DbSet<CustomsDeclaration> CustomsDeclarations => Set<CustomsDeclaration>();
     public DbSet<CustomsDeclarationDetail> CustomsDeclarationDetails => Set<CustomsDeclarationDetail>();
+    public DbSet<PaymentGPSOrder> PaymentGPSOrders => Set<PaymentGPSOrder>();
+    public DbSet<PaymentGPSDetail> PaymentGPSDetails => Set<PaymentGPSDetail>();
+    public DbSet<GpsUnitPriceMaster> GpsUnitPrices => Set<GpsUnitPriceMaster>();
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Org>().HasIndex(x => x.ApiKey).IsUnique();
@@ -341,5 +344,18 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> opt) : DbContext
         b.Entity<CustomsDeclarationDetail>().HasIndex(x => x.Vin);
         b.Entity<CustomsDeclarationDetail>().HasIndex(x => x.ModelCode);
         b.Entity<CustomsDeclarationDetail>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentGPSOrder>().ToTable("PaymentGPSOrders");
+        b.Entity<PaymentGPSOrder>().HasIndex(x => new { x.OrgId, x.PaymentGPSNo }).IsUnique();
+        b.Entity<PaymentGPSOrder>().HasIndex(x => new { x.OrgId, x.PmtMonth });
+        b.Entity<PaymentGPSOrder>().Property(x => x.Status).HasConversion<int>();
+        b.Entity<PaymentGPSOrder>().Property(x => x.HTVSignStatus).HasConversion<int>();
+        b.Entity<PaymentGPSOrder>().Property(x => x.TCMSSignStatus).HasConversion<int>();
+        b.Entity<PaymentGPSOrder>().HasMany(x => x.Details).WithOne().HasForeignKey(x => x.PaymentGPSId).OnDelete(DeleteBehavior.Cascade);
+        b.Entity<PaymentGPSDetail>().ToTable("PaymentGPSDetails");
+        b.Entity<PaymentGPSDetail>().HasIndex(x => x.PaymentGPSNo);
+        b.Entity<PaymentGPSDetail>().HasIndex(x => x.Vin);
+        b.Entity<PaymentGPSDetail>().HasIndex(x => x.GPSDvNo);
+        b.Entity<GpsUnitPriceMaster>().ToTable("GpsUnitPrices");
+        b.Entity<GpsUnitPriceMaster>().HasIndex(x => x.PriceCode).IsUnique();
     }
 }

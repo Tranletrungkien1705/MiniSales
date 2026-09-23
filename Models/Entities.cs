@@ -2912,6 +2912,115 @@ public sealed class CustomsDeclarationDetail
     public string? Remark { get; set; }
 }
 
+/// <summary>Trạng thái Bảng kê Quyết toán Chi phí Quản lý Thiết bị GPS Xe Ô tô (DMS.Sales Pmt_PaymentGPS: Draft = 'Draft' [Nháp], Pending = 'Pending' [Chờ duyệt đối soát], Approved1 = 'Approve1' [Bán hàng HTV duyệt cấp 1], Approved2 = 'Approve2' [TCKT HTV duyệt cấp 2 & ký số], TCMSSigned = 'TCMSSigned' [TCMS ký số hoàn tất quyết toán], Rejected = 'Reject' [Từ chối duyệt], Cancelled = 'Cancel' [Đã hủy]).</summary>
+public enum PaymentGPSStatus
+{
+    Draft = 0,
+    Pending = 1,
+    Approved1 = 2,
+    Approved2 = 3,
+    TCMSSigned = 4,
+    Rejected = 5,
+    Cancelled = 6
+}
+
+/// <summary>Trạng thái ký số điện tử biên bản quyết toán GPS (DMS.Sales HTVSignStatus / TCMSSignStatus: ChuaKy = 0, DaKy = 1).</summary>
+public enum PaymentGPSSignStatus
+{
+    ChuaKy = 0,
+    DaKy = 1
+}
+
+/// <summary>Bảng kê Quyết toán Chi phí Quản lý Thiết bị Giám sát Định vị GPS Xe Ô tô HTV - TCMS (DMS.Sales Pmt_PaymentGPS / PmtPaymentGPSController / Payment.cs / PmtPaymentGPS.txt / 10_GPS_TRACKING.md): Định kỳ hàng tháng NPP Hyundai Thành Công (HTV) và Công ty Quản lý Thiết bị Viễn thông (TCMS) lập bảng kê đối soát chi phí quản lý dịch vụ thiết bị GPS lắp trên xe ô tô lưu kho bãi, xe vận chuyển đường bộ và xe giao đại lý, tính phí theo số ngày kích hoạt thực tế (ActualCostGPSDate) trừ số ngày khấu trừ gián đoạn tín hiệu (DeductDate), nhân đơn giá ngày (Mst_UnitPriceGPS), quy trình phê duyệt đối soát 2 cấp 2 bên (HTV Bán hàng duyệt cấp 1 Approve1HQ, HTV TCKT duyệt cấp 2 & ký số E-Sign Approve2HQ, TCMS ký số biên bản đối soát hoàn tất TCMSSign).</summary>
+public sealed class PaymentGPSOrder
+{
+    public long Id { get; set; }
+    public Guid OrgId { get; set; }
+    public string PaymentGPSNo { get; set; } = ""; // Mã bảng kê ({yyMM}PG{seq:D4}, vd: 2603PG0001)
+    public string PmtMonth { get; set; } = ""; // Tháng quyết toán (yyyy-MM, vd: 2026-03)
+    public DateTime FromDate { get; set; } // Ngày bắt đầu kỳ tính phí
+    public DateTime ToDate { get; set; } // Ngày kết thúc kỳ tính phí
+    public int TotalCars { get; set; } // Tổng số lượng xe tính phí trong bảng kê
+    public decimal AmountTotal { get; set; } // Tổng chi phí GPS trước thuế VAT (VNĐ)
+    public decimal VatRate { get; set; } = 10m; // Thuế suất VAT (%)
+    public decimal UnitPriceVAT { get; set; } // Tiền thuế GTGT (VNĐ) = AmountTotal * VatRate / 100
+    public decimal TotalAmountVAT { get; set; } // Tổng số tiền thanh toán sau VAT (VNĐ) = AmountTotal + UnitPriceVAT
+    public PaymentGPSStatus Status { get; set; } = PaymentGPSStatus.Draft;
+
+    // Ký số phía Nhà phân phối HTV:
+    public PaymentGPSSignStatus HTVSignStatus { get; set; } = PaymentGPSSignStatus.ChuaKy;
+    public DateTime? HTVSignDate { get; set; }
+    public string? HTVSignBy { get; set; }
+
+    // Ký số phía Đơn vị dịch vụ quản lý thiết bị GPS (TCMS):
+    public PaymentGPSSignStatus TCMSSignStatus { get; set; } = PaymentGPSSignStatus.ChuaKy;
+    public DateTime? TCMSSignDate { get; set; }
+    public string? TCMSSignBy { get; set; }
+
+    public string? FilePath { get; set; } // Đường dẫn / URL file quyết toán PDF ký số 2 bên
+    public string? Remark { get; set; } // Ghi chú bảng kê
+    public string? RejectReason { get; set; } // Lý do từ chối duyệt
+    public string? CancelReason { get; set; } // Lý do hủy bảng kê
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public string? CreatedBy { get; set; }
+    public DateTime? Approved1At { get; set; }
+    public string? Approved1By { get; set; }
+    public DateTime? Approved2At { get; set; }
+    public string? Approved2By { get; set; }
+    public DateTime? RejectedAt { get; set; }
+    public string? RejectedBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? LUDateTime { get; set; }
+    public string? LUBy { get; set; }
+
+    public List<PaymentGPSDetail> Details { get; set; } = new();
+}
+
+/// <summary>Chi tiết dòng xe ô tô tính phí quản lý thiết bị GPS trong kỳ (DMS.Sales Pmt_PaymentGPSDetail): theo dõi từng số khung VIN, model xe, mã thiết bị GPS gắn xe (GPSDvNo), ngày map kích hoạt GPS (GPSStartDate), ngày bán lẻ giao khách (RetailDate), khoảng ngày tính phí trong kỳ (CostGPSStartDate -> CostGPSEndDate), số ngày dự kiến (PlanCostGPSDate), số ngày khấu trừ vi phạm/lỗi tín hiệu (DeductDate), số ngày tính phí thực tế (ActualCostGPSDate), đơn giá GPS/ngày (PriceGPS) và thành tiền chi phí GPS (AmountGPS).</summary>
+public sealed class PaymentGPSDetail
+{
+    public long Id { get; set; }
+    public long PaymentGPSId { get; set; }
+    public string PaymentGPSNo { get; set; } = "";
+    public string Vin { get; set; } = ""; // Số khung xe chuẩn 17 ký tự (VIN)
+    public string? CarId { get; set; } // Mã định danh xe hệ thống
+    public string ModelCode { get; set; } = ""; // Mã model (SANTAFE, TUCSON, CRETA, ACCENT, ELANTRA...)
+    public string ModelName { get; set; } = ""; // Tên thương mại dòng xe
+    public string? SpecCode { get; set; } // Mã cấu hình xe
+    public string? ColorCode { get; set; } // Mã màu xe
+    public string? PlateNo { get; set; } // Biển số xe (nếu có)
+    public string? DealerCode { get; set; } // Đại lý đang nhận xe / bán xe
+    public string? DealerName { get; set; } // Tên đại lý
+    public string GPSDvNo { get; set; } = ""; // Mã thiết bị giám sát hành trình GPS gắn xe
+    public DateTime GPSStartDate { get; set; } // Thời điểm map gắn GPS vào xe
+    public DateTime? RetailDate { get; set; } // Ngày xe bàn giao bán lẻ cho khách hàng
+    public DateTime CostGPSStartDate { get; set; } // Ngày bắt đầu tính phí GPS trong kỳ này
+    public DateTime CostGPSEndDate { get; set; } // Ngày kết thúc tính phí GPS trong kỳ này
+    public int PlanCostGPSDate { get; set; } // Số ngày tính phí GPS dự kiến = (CostGPSEndDate - CostGPSStartDate).Days + 1
+    public int DeductDate { get; set; } // Số ngày khấu trừ (mất tín hiệu, bảo hành, nằm kho chờ)
+    public int ActualCostGPSDate { get; set; } // Số ngày tính phí thực tế = PlanCostGPSDate - DeductDate
+    public decimal PriceGPS { get; set; } = 1500m; // Đơn giá dịch vụ GPS theo ngày (VNĐ/ngày)
+    public decimal AmountGPS { get; set; } // Thành tiền phí GPS = ActualCostGPSDate * PriceGPS (VNĐ)
+    public string? Remark { get; set; } // Ghi chú dòng xe
+}
+
+/// <summary>Bảng đơn giá định mức dịch vụ quản lý thiết bị GPS xe ô tô (DMS.Sales Mst_UnitPriceGPS / MstUnitPriceGPSController / MstUnitPriceGPS.txt): quản lý đơn giá cước quản lý định vị theo ngày hoặc tháng áp dụng theo kỳ hiệu lực (EffStartDate -> EffEndDate).</summary>
+public sealed class GpsUnitPriceMaster
+{
+    public long Id { get; set; }
+    public string PriceCode { get; set; } = ""; // Mã biểu giá (vd: GPS-STD-2026)
+    public string PriceName { get; set; } = ""; // Tên gói cước định vị GPS
+    public decimal DailyRate { get; set; } = 1500m; // Đơn giá theo ngày (VNĐ/ngày/xe, vd: 1,500 đ)
+    public decimal MonthlyRate { get; set; } = 45000m; // Đơn giá theo tháng quy chuẩn (VNĐ/tháng/xe, vd: 45,000 đ)
+    public DateTime EffStartDate { get; set; } = new DateTime(2026, 1, 1); // Ngày bắt đầu áp dụng
+    public DateTime? EffEndDate { get; set; } // Ngày kết thúc áp dụng (null nếu đang hiệu lực)
+    public bool IsActive { get; set; } = true;
+    public string? Remark { get; set; }
+}
+
+
 
 
 
